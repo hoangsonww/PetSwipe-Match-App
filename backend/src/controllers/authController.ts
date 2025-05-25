@@ -7,6 +7,18 @@ import { assignPetsToUser } from "../utils/assignmentHelper";
 
 const userRepo = () => AppDataSource.getRepository(AppUser);
 
+function cookieOpts(req: Request) {
+  // detect if this request arrived via HTTPS
+  const isSecure = req.secure || req.headers["x-forwarded-proto"] === "https";
+  return {
+    httpOnly: true,
+    secure:   isSecure,      // <— must be true if SameSite=None
+    sameSite: "none" as const,
+    path:     "/",
+    maxAge:   7 * 24 * 60 * 60 * 1000,
+  };
+}
+
 /**
  * @openapi
  * /api/auth/signup:
@@ -100,10 +112,7 @@ export const signup = async (
     await userRepo().save(user);
 
     const token = generateToken(user.id);
-    res.cookie("token", token, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-    });
+    res.cookie("token", token, cookieOpts(req));
 
     try {
       await assignPetsToUser(user.id);
@@ -195,10 +204,7 @@ export const login = async (
     }
 
     const token = generateToken(user.id);
-    res.cookie("token", token, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-    });
+    res.cookie("token", token, cookieOpts(req));
 
     try {
       await assignPetsToUser(user.id, 20);
