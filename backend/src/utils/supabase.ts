@@ -2,10 +2,7 @@ import { createClient } from "@supabase/supabase-js";
 import { v4 as uuidv4 } from "uuid";
 import config from "../config";
 
-const supabase = createClient(
-  config.supabase.url,
-  config.supabase.key
-);
+const supabase = createClient(config.supabase.url, config.supabase.key);
 
 /**
  * Uploads a buffer to a given Supabase Storage bucket and returns its public URL.
@@ -18,7 +15,7 @@ async function uploadBufferToBucket(
   bucketName: string,
   buffer: Buffer,
   filename: string,
-  contentType: string
+  contentType: string,
 ): Promise<string> {
   const uniquePath = `uploads/${Date.now()}_${uuidv4()}_${filename}`;
 
@@ -32,7 +29,7 @@ async function uploadBufferToBucket(
 
   if (uploadError) {
     throw new Error(
-      `Supabase upload error (bucket: ${bucketName}): ${uploadError.message}`
+      `Supabase upload error (bucket: ${bucketName}): ${uploadError.message}`,
     );
   }
 
@@ -40,7 +37,7 @@ async function uploadBufferToBucket(
   const { data } = supabase.storage.from(bucketName).getPublicUrl(uniquePath);
   if (!data?.publicUrl) {
     throw new Error(
-      `Could not get public URL from Supabase for bucket "${bucketName}", file "${uniquePath}".`
+      `Could not get public URL from Supabase for bucket "${bucketName}", file "${uniquePath}".`,
     );
   }
 
@@ -56,7 +53,7 @@ async function uploadBufferToBucket(
 export async function uploadAvatar(
   buffer: Buffer,
   filename: string,
-  contentType: string
+  contentType: string,
 ): Promise<string> {
   return uploadBufferToBucket("avatars", buffer, filename, contentType);
 }
@@ -70,7 +67,7 @@ export async function uploadAvatar(
 export async function uploadPetPic(
   buffer: Buffer,
   filename: string,
-  contentType: string
+  contentType: string,
 ): Promise<string> {
   return uploadBufferToBucket("pets", buffer, filename, contentType);
 }

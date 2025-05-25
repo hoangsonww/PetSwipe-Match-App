@@ -94,8 +94,8 @@ export function Navbar() {
         <a className="flex-shrink-0 flex items-center space-x-2">
           <PawPrint className="h-8 w-8 text-[#7097A8]" />
           <span className="text-2xl font-extrabold text-[#234851] dark:text-gray-100">
-        PetSwipe
-      </span>
+            PetSwipe
+          </span>
         </a>
       </Link>
 
@@ -208,6 +208,5 @@ export function Navbar() {
         </Popover>
       </div>
     </nav>
-
   );
 }

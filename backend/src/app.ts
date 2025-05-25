@@ -50,7 +50,10 @@ const swaggerSpec = swaggerJsdoc({
         "OpenAPI documentation for the PetSwipe API. This API allows users to swipe on pets, view matches, and manage their profiles.",
     },
     servers: [
-      { url: "https://petswipe-api.vercel.app/", description: "Production Server" },
+      {
+        url: "https://petswipe-api.vercel.app/",
+        description: "Production Server",
+      },
       { url: "http://localhost:5001", description: "Local development" },
     ],
   },

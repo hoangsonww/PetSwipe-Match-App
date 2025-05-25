@@ -7,7 +7,7 @@ services:
     environment:
       POSTGRES_USER: ${DB_USER:-postgres}
       POSTGRES_PASSWORD: ${DB_PASS:-postgres}
-      POSTGRES_DB: ${DB_NAME:-healthlab}
+      POSTGRES_DB: ${DB_NAME:-petswipe}
     volumes:
       - db-data:/var/lib/postgresql/data
     ports:
@@ -25,7 +25,7 @@ services:
       DB_PORT: 5432
       DB_USER: ${DB_USER:-postgres}
       DB_PASS: ${DB_PASS:-postgres}
-      DB_NAME: ${DB_NAME:-healthlab}
+      DB_NAME: ${DB_NAME:-petswipe}
       DB_SSL: "false"
       JWT_SECRET: ${JWT_SECRET}
       JWT_EXPIRES: ${JWT_EXPIRES:-1h}

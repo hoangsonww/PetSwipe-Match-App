@@ -30,7 +30,7 @@ export class AppUser {
   bio?: string;
 
   @Column({ type: "text", nullable: true })
-  avatarUrl?: string;
+  avatarUrl?: string | null;
 
   @OneToMany(() => Match, (m) => m.user)
   matches!: Match[];

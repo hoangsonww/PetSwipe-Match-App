@@ -10,7 +10,9 @@ import {
   Smile,
   Users,
   ShieldCheck,
-  Rocket, Github, FileText,
+  Rocket,
+  Github,
+  FileText,
 } from "lucide-react";
 import { motion, useScroll, useTransform } from "framer-motion";
 import { Button } from "@/components/ui/button";
@@ -486,18 +488,14 @@ const Landing: NextPage = () => {
             </Link>
 
             <Link href="/terms" legacyBehavior>
-              <a
-                className="flex items-center space-x-1 hover:text-gray-700 transition text-sm whitespace-nowrap"
-              >
+              <a className="flex items-center space-x-1 hover:text-gray-700 transition text-sm whitespace-nowrap">
                 <FileText className="h-4 w-4" />
                 <span>Terms of Service</span>
               </a>
             </Link>
 
             <Link href="/privacy" legacyBehavior>
-              <a
-                className="flex items-center space-x-1 hover:text-gray-700 transition text-sm whitespace-nowrap"
-              >
+              <a className="flex items-center space-x-1 hover:text-gray-700 transition text-sm whitespace-nowrap">
                 <ShieldCheck className="h-4 w-4" />
                 <span>Privacy Policy</span>
               </a>

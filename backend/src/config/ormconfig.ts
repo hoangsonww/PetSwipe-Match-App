@@ -1,5 +1,9 @@
 import { DataSourceOptions } from "typeorm";
 import config from "./index";
+import { AppUser } from "../entities/User";
+import { Match } from "../entities/Match";
+import { Swipe } from "../entities/Swipe";
+import { Pet } from "../entities/Pet";
 
 const ormconfig: DataSourceOptions = {
   type: "postgres",
@@ -9,7 +13,8 @@ const ormconfig: DataSourceOptions = {
   password: config.db.password,
   database: config.db.database,
   ssl: config.db.ssl ? { rejectUnauthorized: false } : false,
-  entities: [__dirname + "/../entities/*.{ts,js}"],
+  entities: [AppUser, Match, Swipe, Pet],
+
   synchronize: true,
   logging: config.nodeEnv === "development",
 };

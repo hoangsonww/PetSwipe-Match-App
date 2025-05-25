@@ -1,9 +1,9 @@
-import { User } from "../../entities/User";
+import { AppUser } from "../../entities/User";
 
 declare global {
   namespace Express {
     interface Request {
-      user?: User;
+      user?: AppUser;
     }
   }
 }
