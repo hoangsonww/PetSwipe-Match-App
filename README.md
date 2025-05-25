@@ -204,7 +204,7 @@ export class Swipe {
    npm run dev
    ```
 
-   API available at `http://localhost:5001/api`
+   API is now available at `http://localhost:5001/api`
 
 6. **Build & Production**
 

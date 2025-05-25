@@ -196,13 +196,13 @@ const Home: NextPage = () => {
 
     return (
       <div
-        className="relative w-full h-full cursor-grab active:cursor-grabbing"
+        className="relative w-full h-full max-h-screen cursor-grab active:cursor-grabbing"
         style={{ perspective: 1000 }}
         {...(isTop ? swipeHandlers : {})}
         onClick={isTop ? handleCardClick : undefined}
       >
         <div
-          className="relative w-full h-full rounded-2xl shadow-lg"
+          className="relative w-full h-full rounded-2xl shadow-lg max-h-screen"
           style={{
             transformStyle: "preserve-3d",
             transform: isTop && flipped ? "rotateY(180deg)" : "rotateY(0deg)",
@@ -211,23 +211,23 @@ const Home: NextPage = () => {
         >
           {/* ─── FRONT ─────────────────────────────────────────────────────────── */}
           <div
-            className="absolute inset-0 flex flex-col items-center p-6 bg-[#EDF6F3] rounded-2xl select-none"
+            className="absolute inset-0 flex flex-col p-6 bg-[#EDF6F3] rounded-2xl select-none overflow-hidden"
             style={{
               backfaceVisibility: "hidden",
               WebkitBackfaceVisibility: "hidden",
             }}
           >
-            {/* Header: pet number & name */}
-            <div className="text-center mb-4">
+            {/* Header */}
+            <div className="text-center mb-4 flex-shrink-0">
               <h3 className="flex items-center justify-center gap-2 text-gray-600">
                 <Award size={20} /> Pet #{i + 1}
               </h3>
               <p className="text-3xl font-bold text-gray-800">{p.name}</p>
             </div>
 
-            {/* Image: flex-grow to fill remaining space */}
+            {/* Image: fills remaining space, but container is capped */}
             {p.photoUrl && (
-              <div className="flex-1 w-full mb-4">
+              <div className="flex-1 w-full mb-4 overflow-hidden">
                 <img
                   src={p.photoUrl}
                   alt={p.name}
@@ -238,10 +238,10 @@ const Home: NextPage = () => {
               </div>
             )}
 
-            {/* Footer: flip hint */}
-            <p className="mt-2 text-sm text-gray-700 text-center">
+            {/* Footer */}
+            <div className="mt-2 text-sm text-gray-700 text-center flex-shrink-0">
               Click to flip
-            </p>
+            </div>
           </div>
 
           {/* ─── BACK ─────────────────────────────────────────────────────────── */}
@@ -253,6 +253,7 @@ const Home: NextPage = () => {
               WebkitBackfaceVisibility: "hidden",
             }}
           >
+            {/* Scrollable content */}
             <div className="p-6 space-y-4 overflow-y-auto flex-1">
               <div className="flex items-center gap-2 mb-2 text-gray-700">
                 <Award size={20} className="text-yellow-500" />
@@ -260,13 +261,15 @@ const Home: NextPage = () => {
               </div>
               <h2 className="text-2xl font-bold mb-2 text-black">{p.name}</h2>
               {p.photoUrl && (
-                <img
-                  src={p.photoUrl}
-                  alt={p.name}
-                  draggable={false}
-                  onDragStart={(e) => e.preventDefault()}
-                  className="w-full h-48 object-cover rounded-md mb-4"
-                />
+                <div className="overflow-hidden rounded-md mb-4">
+                  <img
+                    src={p.photoUrl}
+                    alt={p.name}
+                    draggable={false}
+                    onDragStart={(e) => e.preventDefault()}
+                    className="w-full object-cover h-48"
+                  />
+                </div>
               )}
               <div className="bg-[#CFE7F2] text-black rounded-lg p-4">
                 <h2 className="text-xl font-bold mb-2">Details</h2>
@@ -279,8 +282,8 @@ const Home: NextPage = () => {
               </div>
             </div>
 
-            {/* Action buttons */}
-            <div className="flex gap-4 p-6 bg-[#EDF6F3]">
+            {/* Actions */}
+            <div className="flex gap-4 p-6 bg-[#EDF6F3] flex-shrink-0">
               <Button
                 variant="default"
                 onClick={(e) => {
@@ -441,20 +444,24 @@ const Home: NextPage = () => {
 
       {/* BOTTOM TOOLBAR */}
       <TooltipProvider delayDuration={200}>
-        <div className="relative left-1/2 -translate-x-1/2 w-screen bg-[#7097A8] text-white flex justify-center">
+        <div
+          className="relative left-1/2 -translate-x-1/2 w-screen flex justify-center
+             shadow-[inset_0_4px_6px_-4px_rgba(0,0,0,0.3)]"
+        >
+          {/* TOOLBAR */}
           <div className="flex items-center gap-8 py-4">
             {/* ALL SWIPES */}
             <Tooltip>
               <TooltipTrigger asChild>
                 <Link href="/swipes" legacyBehavior>
-                  <a className="p-2 rounded-full hover:bg-white/10 focus:outline-none focus:ring-2 focus:ring-white">
+                  <a className="p-2 rounded-full hover:bg-white/10 focus:outline-none focus:ring-2 focus:ring-white hover:text-[#7097A8]">
                     <List size={22} />
                   </a>
                 </Link>
               </TooltipTrigger>
               <TooltipContent
                 side="top"
-                className="bg-white text-[#7097A8] rounded-md px-3 py-2 shadow-lg text-sm font-medium"
+                className="bg-white text-[#7097A8] rounded-md px-3 py-2 shadow-lg text-sm font-medium hover:text-[#7097A8]"
               >
                 View all swipes
               </TooltipContent>
@@ -464,14 +471,14 @@ const Home: NextPage = () => {
             <Tooltip>
               <TooltipTrigger asChild>
                 <Link href="/liked-swipes" legacyBehavior>
-                  <a className="p-2 rounded-full hover:bg-white/10 focus:outline-none focus:ring-2 focus:ring-white">
+                  <a className="p-2 rounded-full hover:bg-white/10 focus:outline-none focus:ring-2 focus:ring-white hover:text-[#7097A8]">
                     <Heart size={22} />
                   </a>
                 </Link>
               </TooltipTrigger>
               <TooltipContent
                 side="top"
-                className="bg-white text-[#7097A8] rounded-md px-3 py-2 shadow-lg text-sm font-medium"
+                className="bg-white text-[#7097A8] rounded-md px-3 py-2 shadow-lg text-sm font-medium hover:text-[#7097A8]"
               >
                 View adopted pets
               </TooltipContent>
@@ -482,7 +489,7 @@ const Home: NextPage = () => {
               <TooltipTrigger asChild>
                 <button
                   onClick={() => setTipOpen((o) => !o)}
-                  className="p-2 rounded-full hover:bg-white/10 focus:outline-none focus:ring-2 focus:ring-white"
+                  className="p-2 rounded-full hover:bg-white/10 focus:outline-none focus:ring-2 focus:ring-white hover:text-[#7097A8]"
                 >
                   <Lightbulb size={22} />
                 </button>
@@ -499,7 +506,7 @@ const Home: NextPage = () => {
             {/* ZOOM */}
             <Popover open={zoomOpen} onOpenChange={setZoomOpen}>
               <PopoverTrigger asChild>
-                <button className="p-2 rounded-full hover:bg-white/10 focus:outline-none focus:ring-2 focus:ring-white">
+                <button className="p-2 rounded-full hover:bg-white/10 focus:outline-none focus:ring-2 focus:ring-white hover:text-[#7097A8]">
                   <ZoomIn size={22} />
                 </button>
               </PopoverTrigger>
@@ -522,7 +529,7 @@ const Home: NextPage = () => {
               <TooltipTrigger asChild>
                 <button
                   onClick={() => router.replace("/faq")}
-                  className="p-2 rounded-full hover:bg-white/10 focus:outline-none focus:ring-2 focus:ring-white"
+                  className="p-2 rounded-full hover:bg-white/10 focus:outline-none focus:ring-2 focus:ring-white hover:text-[#7097A8]"
                 >
                   <HelpCircle size={22} />
                 </button>

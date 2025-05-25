@@ -15,3 +15,5 @@ AppDataSource.initialize()
   .catch((err) => {
     console.error("TypeORM init error:", err);
   });
+
+export default app;

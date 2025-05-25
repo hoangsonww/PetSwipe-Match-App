@@ -1,6 +1,3 @@
-/* -------------------------------------------------------------------------- */
-/* pages/index.tsx  -  🌟 Polished / Animated PetSwipe Landing Page             */
-/* -------------------------------------------------------------------------- */
 import { useEffect, useState } from "react";
 import Head from "next/head";
 import Link from "next/link";
@@ -13,13 +10,13 @@ import {
   Smile,
   Users,
   ShieldCheck,
-  Rocket,
+  Rocket, Github, FileText,
 } from "lucide-react";
 import { motion, useScroll, useTransform } from "framer-motion";
 import { Button } from "@/components/ui/button";
+import { Footer } from "@/components/Footer";
 
 /* ---------------------------------- data ---------------------------------- */
-
 const rotatingWords = ["Swipe", "Discover", "Adopt", "Love", "Rescue", "Share"];
 
 const features = [
@@ -46,7 +43,7 @@ const features = [
   {
     icon: <ShieldCheck size={42} />,
     title: "Verified Shelters",
-    desc: "Every listing comes straight from a partner shelter - 100 % trustworthy.",
+    desc: "Every listing comes straight from a partner shelter - 100% trustworthy.",
   },
   {
     icon: <Rocket size={42} />,
@@ -378,7 +375,7 @@ const Landing: NextPage = () => {
             },
             {
               quote:
-                "The swipe interface is genius. I adopted Whiskers in less than 48 hours.",
+                "The swipe interface is genius. I adopted Whiskers in less than 48 hours.",
               name: " -  Sandra K.",
             },
             {
@@ -455,6 +452,59 @@ const Landing: NextPage = () => {
           </div>
         </div>
       </section>
+
+      {/* ----------------------------- FOOTER ----------------------------- */}
+      <footer className="bg-[#fff] py-6 text-[#234851]">
+        <div className="max-w-4xl mx-auto text-center space-y-2">
+          {/* Tagline */}
+          <p className="text-sm">
+            From{" "}
+            <Link href="https://github.com/hoangsonww" legacyBehavior>
+              <a
+                className="font-semibold underline hover:text-gray-700 transition"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                Son Nguyen
+              </a>
+            </Link>{" "}
+            in 2025 with{" "}
+            <Heart className="inline-block h-4 w-4 text-red-400 align-middle" />
+          </p>
+
+          {/* Links */}
+          <div className="flex flex-wrap justify-center gap-x-6 gap-y-2">
+            <Link href="https://github.com/hoangsonww/petswipe" legacyBehavior>
+              <a
+                className="flex items-center space-x-1 hover:text-gray-700 transition text-sm whitespace-nowrap"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                <Github className="h-4 w-4" />
+                <span>GitHub Repository</span>
+              </a>
+            </Link>
+
+            <Link href="/terms" legacyBehavior>
+              <a
+                className="flex items-center space-x-1 hover:text-gray-700 transition text-sm whitespace-nowrap"
+              >
+                <FileText className="h-4 w-4" />
+                <span>Terms of Service</span>
+              </a>
+            </Link>
+
+            <Link href="/privacy" legacyBehavior>
+              <a
+                className="flex items-center space-x-1 hover:text-gray-700 transition text-sm whitespace-nowrap"
+              >
+                <ShieldCheck className="h-4 w-4" />
+                <span>Privacy Policy</span>
+              </a>
+            </Link>
+          </div>
+        </div>
+      </footer>
 
       {/* --------------- keyframe for animated gradient ----------------- */}
       <style jsx global>{`

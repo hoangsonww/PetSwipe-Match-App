@@ -26,10 +26,8 @@ export default {
     bucket: process.env.S3_BUCKET!,
   },
 
-  firebase: {
-    projectId: process.env.FIREBASE_PROJECT_ID!,
-    clientEmail: process.env.FIREBASE_CLIENT_EMAIL!,
-    privateKey: (process.env.FIREBASE_PRIVATE_KEY || "").replace(/\\n/g, "\n"),
-    storageBucket: process.env.FIREBASE_STORAGE_BUCKET!,
+  supabase: {
+    url: process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    key: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
   },
 };

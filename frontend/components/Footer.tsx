@@ -22,27 +22,27 @@ export function Footer() {
         </p>
 
         {/* Links */}
-        <div className="flex justify-center space-x-6">
+        <div className="flex flex-wrap justify-center gap-x-6 gap-y-2">
           <Link href="https://github.com/hoangsonww/petswipe" legacyBehavior>
             <a
-              className="flex items-center space-x-1 hover:text-gray-200 transition text-sm"
+              className="flex items-center space-x-1 hover:text-gray-200 transition text-sm whitespace-nowrap"
               target="_blank"
               rel="noopener noreferrer"
             >
               <Github className="h-4 w-4" />
-              <span>GitHub</span>
+              <span>GitHub Repository</span>
             </a>
           </Link>
 
           <Link href="/terms" legacyBehavior>
-            <a className="flex items-center space-x-1 hover:text-gray-200 transition text-sm">
+            <a className="flex items-center space-x-1 hover:text-gray-200 transition text-sm whitespace-nowrap">
               <FileText className="h-4 w-4" />
               <span>Terms of Service</span>
             </a>
           </Link>
 
           <Link href="/privacy" legacyBehavior>
-            <a className="flex items-center space-x-1 hover:text-gray-200 transition text-sm">
+            <a className="flex items-center space-x-1 hover:text-gray-200 transition text-sm whitespace-nowrap">
               <ShieldCheck className="h-4 w-4" />
               <span>Privacy Policy</span>
             </a>
