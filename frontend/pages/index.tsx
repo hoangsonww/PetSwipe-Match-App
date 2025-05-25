@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import Head from "next/head";
 import Link from "next/link";
 import type { NextPage } from "next";
@@ -19,6 +19,7 @@ import {
   useScroll,
   useTransform,
   useReducedMotion,
+  useInView,
 } from "framer-motion";
 import { Button } from "@/components/ui/button";
 
@@ -69,10 +70,15 @@ function CountUp({
   delay?: number;
 }) {
   const prefersReducedMotion = useReducedMotion();
+  const ref = useRef<HTMLDivElement>(null);
+  // useInView will observe the ref and flip to true the first time it's visible
+  const isInView = useInView(ref, { once: true, margin: "-100px" });
+
   const [count, setCount] = useState(prefersReducedMotion ? end : 0);
 
   useEffect(() => {
-    if (prefersReducedMotion) return;
+    // don’t run if user prefers reduced motion or not yet in view
+    if (prefersReducedMotion || !isInView) return;
 
     const start = 0;
     const range = end - start;
@@ -80,17 +86,21 @@ function CountUp({
     const stepTime = duration / steps;
     let current = start;
     let stepCount = 0;
+
     const timer = setTimeout(function tick() {
       stepCount++;
       current = Math.min(end, Math.floor((range * stepCount) / steps + start));
       setCount(current);
-      if (stepCount < steps) setTimeout(tick, stepTime);
+      if (stepCount < steps) {
+        setTimeout(tick, stepTime);
+      }
     }, delay);
+
     return () => clearTimeout(timer);
-  }, [end, duration, delay, prefersReducedMotion]);
+  }, [end, duration, delay, prefersReducedMotion, isInView]);
 
   return (
-    <div className="flex flex-col items-center">
+    <div ref={ref} className="flex flex-col items-center">
       <span className="text-4xl md:text-5xl font-extrabold text-[#234851]">
         {count.toLocaleString()}+
       </span>
