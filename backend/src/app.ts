@@ -15,7 +15,7 @@ const app = express();
 
 // ─── CORS ─────────────────────────────────────────────────────────────────────
 const corsOptions = {
-  origin: "http://localhost:3000",
+  origin: ["http://localhost:3000", "https://petswipe.vercel.app"],
   credentials: true,
   methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
   allowedHeaders: [
@@ -55,6 +55,20 @@ const swaggerSpec = swaggerJsdoc({
         description: "Production Server",
       },
       { url: "http://localhost:5001", description: "Local development" },
+    ],
+    components: {
+      securitySchemes: {
+        bearerAuth: {
+          type: "http",
+          scheme: "bearer",
+          bearerFormat: "JWT",
+        },
+      },
+    },
+    security: [
+      {
+        bearerAuth: [],
+      },
     ],
   },
   apis: [

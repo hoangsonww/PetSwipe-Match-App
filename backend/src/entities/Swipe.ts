@@ -1,5 +1,6 @@
 import {
   Entity,
+  Index,
   PrimaryGeneratedColumn,
   Column,
   ManyToOne,
@@ -9,6 +10,7 @@ import { AppUser } from "./User";
 import { Pet } from "./Pet";
 
 @Entity()
+@Index(["user", "pet"], { unique: true })
 export class Swipe {
   @PrimaryGeneratedColumn("uuid")
   id!: string;

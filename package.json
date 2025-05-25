@@ -1,8 +1,15 @@
 {
-  "name": "gil-dhep-app",
+  "name": "petswipe",
   "version": "1.0.0",
-  "description": "",
+  "description": "Adopt a pet with PetSwipe! Swipe right to match with your perfect furry friend. Discover, connect, and bring home your new companion today.",
   "main": "index.js",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/hoangsonww/PetSwipe-Match-App.git"
+  },
+  "bugs": {
+    "url": "https://github.com/hoangsonww/PetSwipe-Match-App/issues"
+  },
   "scripts": {
     "lint": "prettier --write \"**/*.{ts,tsx,js,jsx,json,css,scss,md,html}\"",
     "format": "npm run lint"
@@ -10,9 +17,29 @@
   "bin": {
     "petswipe": "bin/cli.js"
   },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
+  "keywords": [
+    "petswipe",
+    "adopt",
+    "pet",
+    "match",
+    "swipe",
+    "app",
+    "cli",
+    "command-line",
+    "javascript",
+    "typescript",
+    "nodejs",
+    "npm",
+    "prettier",
+    "nextjs",
+    "react",
+    "redux",
+    "tailwindcss",
+    "aws",
+    "postgresql"
+  ],
+  "author": "Son Nguyen",
+  "license": "MIT",
   "dependencies": {
     "commander": "^14.0.0",
     "prettier": "^3.5.3"

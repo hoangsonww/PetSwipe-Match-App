@@ -5,7 +5,6 @@ import { motion } from "framer-motion";
 import { toast, Toaster } from "sonner";
 import Head from "next/head";
 import { Loader2 } from "lucide-react";
-
 import { useUser } from "@/hooks/useUser";
 import { petApi } from "@/lib/api";
 import { Layout } from "@/components/Layout";
@@ -30,25 +29,30 @@ const AddPet: NextPage = () => {
   const [name, setName] = useState("");
   const [breed, setBreed] = useState("");
   const [description, setDescription] = useState("");
+  const [shelterName, setShelterName] = useState("");
+  const [shelterContact, setShelterContact] = useState("");
+  const [shelterAddress, setShelterAddress] = useState("");
   const [photoFile, setPhotoFile] = useState<File | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
   if (authLoading || !user) return null;
 
   const handleSubmit = async () => {
-    if (!name.trim() || !breed.trim() || !photoFile) {
-      toast.error("Name, breed/type and a photo are required");
+    if (!name.trim() || !breed.trim() || !photoFile || !shelterName.trim()) {
+      toast.error("Name, breed/type, shelter name, and a photo are required");
       return;
     }
+
     try {
       setSubmitting(true);
-      // 1) create pet
       const { pet } = await petApi.createPet({
         name: name.trim(),
         type: breed.trim(),
-        description: description.trim(),
+        description: description.trim() || undefined,
+        shelterName: shelterName.trim(),
+        shelterContact: shelterContact.trim() || undefined,
+        shelterAddress: shelterAddress.trim() || undefined,
       });
-      // 2) upload photo
       await petApi.uploadPetPhoto(pet.id, photoFile);
       toast.success("Pet added successfully");
       router.push("/home");
@@ -114,6 +118,39 @@ const AddPet: NextPage = () => {
             </div>
 
             <div>
+              <Label htmlFor="shelterName">
+                Shelter Name <span className="text-red-500">*</span>
+              </Label>
+              <Input
+                id="shelterName"
+                value={shelterName}
+                onChange={(e) => setShelterName(e.target.value)}
+                placeholder="e.g. Happy Tails Rescue"
+              />
+            </div>
+
+            <div>
+              <Label htmlFor="shelterContact">Shelter Contact</Label>
+              <Input
+                id="shelterContact"
+                value={shelterContact}
+                onChange={(e) => setShelterContact(e.target.value)}
+                placeholder="Phone or email"
+              />
+            </div>
+
+            <div>
+              <Label htmlFor="shelterAddress">Shelter Address</Label>
+              <Textarea
+                id="shelterAddress"
+                rows={2}
+                value={shelterAddress}
+                onChange={(e) => setShelterAddress(e.target.value)}
+                placeholder="Physical location"
+              />
+            </div>
+
+            <div>
               <Label>
                 Photo <span className="text-red-500">*</span>
               </Label>
@@ -148,7 +185,6 @@ const AddPet: NextPage = () => {
           </CardContent>
         </Card>
       </motion.div>
-
     </Layout>
   );
 };

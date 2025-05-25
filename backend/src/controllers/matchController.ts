@@ -3,6 +3,7 @@ import { AppDataSource } from "../index";
 import { Match } from "../entities/Match";
 import { AppUser } from "../entities/User";
 import { Pet } from "../entities/Pet";
+import { Swipe } from "../entities/Swipe";
 
 const matchRepo = () => AppDataSource.getRepository(Match);
 const userRepo = () => AppDataSource.getRepository(AppUser);
@@ -175,8 +176,6 @@ export const listMatches = async (
  *     summary: List all pet matches for the authenticated user
  *     tags:
  *       - Matches
- *     security:
- *       - cookieAuth: []
  *     responses:
  *       '200':
  *         description: Array of matches belonging to the current user
@@ -227,16 +226,29 @@ export const listMyMatches = async (
   res: Response,
   next: NextFunction,
 ): Promise<void> => {
+  if (!req.user) {
+    res.status(401).json({ message: "Unauthorized" });
+    return;
+  }
+
   try {
-    if (!req.user) {
-      res.status(401).json({ message: "Unauthorized" });
-      return;
-    }
-    const mine = await matchRepo().find({
-      where: { user: { id: req.user.id } },
-      relations: ["pet"],
-    });
-    res.json(mine);
+    // 1) find all pets the user has NOT swiped on:
+    const availablePets = await AppDataSource.getRepository(Pet)
+      .createQueryBuilder("pet")
+      .leftJoin(
+        Swipe,
+        "swipe",
+        "swipe.petId = pet.id AND swipe.userId = :uid",
+        { uid: (req.user as any).id },
+      )
+      .where("swipe.id IS NULL")
+      .orderBy("pet.createdAt", "DESC")
+      .getMany();
+
+    // 2) wrap each Pet in an object { pet } so frontend .map(m => m.pet) still works:
+    const payload = availablePets.map((pet) => ({ pet }));
+
+    res.json(payload);
   } catch (err) {
     next(err);
   }

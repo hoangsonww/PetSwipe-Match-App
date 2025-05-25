@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+
 /**
  * Petswipe CLI (CommonJS)
  *
@@ -6,6 +7,21 @@
  * It provides commands to build, test, and deploy the backend and frontend applications.
  * It uses the Commander.js library to define the CLI commands and options.
  * The script also uses the child_process module to execute shell commands.
+ *
+ * Usage:
+ *  - `petswipe dev`: Start backend & frontend in development mode.
+ *  - `petswipe build`: Build both backend & frontend applications.
+ *  - `petswipe docker:build`: Build & push Docker images to GitHub Container Registry.
+ *  - `petswipe up`: Pull Docker images and start the stack.
+ *  - `petswipe down`: Stop the Docker Compose stack.
+ *  - `petswipe clean`: Remove build artifacts.
+ *  - `petswipe lint`: Run linters in both projects.
+ *  - `petswipe test`: Run tests in both projects.
+ *
+ *  @author Son Nguyen
+ *  @license MIT
+ *  @version 1.0.0
+ *  @date 2025-05-25
  */
 
 const { program } = require("commander");

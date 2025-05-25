@@ -49,8 +49,7 @@ export function ModeToggle() {
             setTheme("light");
             toast.success("Theme changed to light ✨");
           }}
-          className="flex items-center space-x-2 rounded-md px-2 py-1 cursor-pointer
-               data-[highlighted]:bg-gray-100 dark:data-[highlighted]:bg-gray-700"
+          className="flex items-center space-x-2 rounded-md px-2 py-1 cursor-pointer data-[highlighted]:bg-gray-100 dark:data-[highlighted]:bg-gray-700"
         >
           <Sun className="h-4 w-4 text-yellow-500" />
           <span>Light</span>
@@ -61,8 +60,7 @@ export function ModeToggle() {
             setTheme("dark");
             toast.success("Theme changed to dark 🌙");
           }}
-          className="flex items-center space-x-2 rounded-md px-2 py-1 cursor-pointer
-               data-[highlighted]:bg-gray-100 dark:data-[highlighted]:bg-gray-700"
+          className="flex items-center space-x-2 rounded-md px-2 py-1 cursor-pointer data-[highlighted]:bg-gray-100 dark:data-[highlighted]:bg-gray-700"
         >
           <Moon className="h-4 w-4 text-gray-900 dark:text-gray-100" />
           <span>Dark</span>
@@ -73,8 +71,7 @@ export function ModeToggle() {
             setTheme("system");
             toast.success("Theme changed to system 🌈");
           }}
-          className="flex items-center space-x-2 rounded-md px-2 py-1 cursor-pointer
-               data-[highlighted]:bg-gray-100 dark:data-[highlighted]:bg-gray-700"
+          className="flex items-center space-x-2 rounded-md px-2 py-1 cursor-pointer data-[highlighted]:bg-gray-100 dark:data-[highlighted]:bg-gray-700"
         >
           <Laptop className="h-4 w-4 text-blue-500" />
           <span>System</span>
@@ -101,53 +98,53 @@ export function Navbar() {
 
       {/* Right side (never shrinks, always right‐aligned) */}
       <div className="flex-shrink-0 ml-auto flex items-center space-x-4 whitespace-nowrap">
+        {/* Add Pet (only when logged in) */}
         {user && (
-          <>
-            {/* Add Pet */}
-            <TooltipProvider>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Link href="/addPet" legacyBehavior>
-                    <a>
-                      <Button variant="ghost" className="p-2">
-                        <Plus className="h-8 w-8 text-gray-600 dark:text-gray-300" />
-                      </Button>
-                    </a>
-                  </Link>
-                </TooltipTrigger>
-                <TooltipContent side="bottom" align="center">
-                  <p>Add a pet</p>
-                </TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Link href="/addPet" legacyBehavior>
+                  <a>
+                    <Button variant="ghost" className="p-2">
+                      <Plus className="h-8 w-8 text-gray-600 dark:text-gray-300" />
+                    </Button>
+                  </a>
+                </Link>
+              </TooltipTrigger>
+              <TooltipContent side="bottom" align="center">
+                <p>Add a pet</p>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+        )}
 
-            {/* Dark-mode toggle */}
-            <ModeToggle />
+        {/* Dark-mode toggle (always visible, between Add Pet and Avatar) */}
+        <ModeToggle />
 
-            {/* Profile avatar */}
-            <TooltipProvider>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Link href="/profile" legacyBehavior>
-                    <a>
-                      <Avatar className="h-10 w-10 ring-2 ring-[#7097A8]">
-                        <AvatarImage
-                          src={user.avatarUrl || "/OIP.jpg"}
-                          alt="Profile"
-                        />
-                        <AvatarFallback className="text-[#234851] dark:text-gray-100">
-                          {user.name?.[0] ?? "U"}
-                        </AvatarFallback>
-                      </Avatar>
-                    </a>
-                  </Link>
-                </TooltipTrigger>
-                <TooltipContent side="bottom" align="center">
-                  <p>View profile</p>
-                </TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
-          </>
+        {/* Profile avatar (only when logged in) */}
+        {user && (
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Link href="/profile" legacyBehavior>
+                  <a>
+                    <Avatar className="h-10 w-10 ring-2 ring-[#7097A8]">
+                      <AvatarImage
+                        src={user.avatarUrl || "/OIP.jpg"}
+                        alt="Profile"
+                      />
+                      <AvatarFallback className="text-[#234851] dark:text-gray-100">
+                        {user.name?.[0] ?? "U"}
+                      </AvatarFallback>
+                    </Avatar>
+                  </a>
+                </Link>
+              </TooltipTrigger>
+              <TooltipContent side="bottom" align="center">
+                <p>View profile</p>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
         )}
 
         {/* Hamburger menu */}

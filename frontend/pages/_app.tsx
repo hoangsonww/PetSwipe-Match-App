@@ -3,6 +3,7 @@ import { AuthProvider } from "@/context/AuthContext";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { Toaster } from "sonner";
 import { ThemeProvider } from "@/components/theme-provider";
+import { Analytics } from "@vercel/analytics/next";
 import "@/styles/globals.css";
 
 export default function App({ Component, pageProps }: AppProps) {
@@ -30,6 +31,8 @@ export default function App({ Component, pageProps }: AppProps) {
           },
         }}
       />
+
+      <Analytics />
     </AuthProvider>
   );
 }

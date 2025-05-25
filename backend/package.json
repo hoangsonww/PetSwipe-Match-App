@@ -1,7 +1,7 @@
 {
-  "name": "pawswipe-backend",
+  "name": "petswipe-backend",
   "version": "1.0.0",
-  "description": "Express + TypeScript + PosgreSQL backend for PawSwipe",
+  "description": "Express + TypeScript + PostgreSQL backend for PetSwipe, a pet adoption app.",
   "main": "dist/index.js",
   "scripts": {
     "dev": "ts-node-dev --respawn --transpile-only src/index.ts",
@@ -22,7 +22,7 @@
     "bcrypt",
     "csv-parser",
     "json2csv",
-    "pawswipe",
+    "petswipe",
     "petfinder",
     "adoption",
     "animal",

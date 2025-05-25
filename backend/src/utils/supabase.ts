@@ -18,8 +18,6 @@ async function uploadBufferToBucket(
   contentType: string,
 ): Promise<string> {
   const uniquePath = `uploads/${Date.now()}_${uuidv4()}_${filename}`;
-
-  // 1) Upload the file
   const { error: uploadError } = await supabase.storage
     .from(bucketName)
     .upload(uniquePath, buffer, {
@@ -33,7 +31,6 @@ async function uploadBufferToBucket(
     );
   }
 
-  // 2) Build a public URL
   const { data } = supabase.storage.from(bucketName).getPublicUrl(uniquePath);
   if (!data?.publicUrl) {
     throw new Error(

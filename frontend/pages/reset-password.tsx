@@ -3,6 +3,7 @@ import type { NextPage } from "next";
 import Link from "next/link";
 import { motion } from "framer-motion";
 import { toast, Toaster } from "sonner";
+import { Eye, EyeOff } from "lucide-react";
 import { Layout } from "@/components/Layout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -17,6 +18,8 @@ const ResetPasswordPage: NextPage = () => {
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [loading, setLoading] = useState(false);
+  const [showNew, setShowNew] = useState(false);
+  const [showConfirm, setShowConfirm] = useState(false);
 
   const handleEmailSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -34,7 +37,6 @@ const ResetPasswordPage: NextPage = () => {
 
   const handleResetSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // complexity: min 8 chars, uppercase, special
     const complexity = /^(?=.*[A-Z])(?=.*[^A-Za-z0-9]).{8,}$/;
     if (!complexity.test(newPassword)) {
       toast.error(
@@ -70,7 +72,7 @@ const ResetPasswordPage: NextPage = () => {
         transition={{ duration: 0.5 }}
         className="flex min-h-[80vh] items-center justify-center py-12"
       >
-        <Card className="w-full max-w-md  rounded-2xl shadow-lg">
+        <Card className="w-full max-w-md rounded-2xl shadow-lg">
           <CardHeader className="pb-0">
             <CardTitle className="text-2xl font-bold text-center text-[#234851] dark:text-[#B6EBE9]">
               {step === "email"
@@ -116,25 +118,47 @@ const ResetPasswordPage: NextPage = () => {
               <form onSubmit={handleResetSubmit} className="space-y-6">
                 <div className="space-y-1">
                   <Label htmlFor="newPassword">New Password</Label>
-                  <Input
-                    id="newPassword"
-                    type="password"
-                    placeholder="••••••••"
-                    value={newPassword}
-                    onChange={(e) => setNewPassword(e.target.value)}
-                    required
-                  />
+                  <div className="relative">
+                    <Input
+                      id="newPassword"
+                      type={showNew ? "text" : "password"}
+                      placeholder="••••••••"
+                      value={newPassword}
+                      onChange={(e) => setNewPassword(e.target.value)}
+                      required
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowNew((prev) => !prev)}
+                      aria-label={showNew ? "Hide password" : "Show password"}
+                      className="absolute inset-y-0 right-2 flex items-center p-1 text-gray-500 hover:text-gray-700 focus:outline-none"
+                    >
+                      {showNew ? <EyeOff size={20} /> : <Eye size={20} />}
+                    </button>
+                  </div>
                 </div>
                 <div className="space-y-1">
                   <Label htmlFor="confirmPassword">Confirm Password</Label>
-                  <Input
-                    id="confirmPassword"
-                    type="password"
-                    placeholder="••••••••"
-                    value={confirmPassword}
-                    onChange={(e) => setConfirmPassword(e.target.value)}
-                    required
-                  />
+                  <div className="relative">
+                    <Input
+                      id="confirmPassword"
+                      type={showConfirm ? "text" : "password"}
+                      placeholder="••••••••"
+                      value={confirmPassword}
+                      onChange={(e) => setConfirmPassword(e.target.value)}
+                      required
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowConfirm((prev) => !prev)}
+                      aria-label={
+                        showConfirm ? "Hide password" : "Show password"
+                      }
+                      className="absolute inset-y-0 right-2 flex items-center p-1 text-gray-500 hover:text-gray-700 focus:outline-none"
+                    >
+                      {showConfirm ? <EyeOff size={20} /> : <Eye size={20} />}
+                    </button>
+                  </div>
                 </div>
                 <Button
                   type="submit"

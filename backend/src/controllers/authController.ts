@@ -12,10 +12,10 @@ function cookieOpts(req: Request) {
   const isSecure = req.secure || req.headers["x-forwarded-proto"] === "https";
   return {
     httpOnly: true,
-    secure:   isSecure,      // <— must be true if SameSite=None
+    secure: isSecure,
     sameSite: "none" as const,
-    path:     "/",
-    maxAge:   7 * 24 * 60 * 60 * 1000,
+    path: "/",
+    maxAge: 7 * 24 * 60 * 60 * 1000,
   };
 }
 
@@ -121,7 +121,7 @@ export const signup = async (
     }
 
     const { password: _, ...rest } = user;
-    res.status(201).json({ user: rest });
+    res.status(201).json({ user: rest, token });
   } catch (err) {
     next(err);
   }
@@ -213,7 +213,7 @@ export const login = async (
     }
 
     const { password: _, ...rest } = user;
-    res.json({ user: rest });
+    res.json({ user: rest, token });
   } catch (err) {
     next(err);
   }

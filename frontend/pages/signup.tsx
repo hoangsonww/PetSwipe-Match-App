@@ -1,11 +1,11 @@
-import React from "react";
+import React, { useState } from "react";
 import type { NextPage } from "next";
 import Link from "next/link";
 import { useRouter } from "next/router";
 import { useForm, FieldErrors } from "react-hook-form";
 import { toast, Toaster } from "sonner";
 import { motion } from "framer-motion";
-
+import { Eye, EyeOff } from "lucide-react";
 import { Layout } from "@/components/Layout";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -29,6 +29,12 @@ const SignupPage: NextPage = () => {
     handleSubmit,
     formState: { errors, isSubmitting },
   } = useForm<SignupForm>();
+
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirm, setShowConfirm] = useState(false);
+
+  const togglePassword = () => setShowPassword((prev) => !prev);
+  const toggleConfirm = () => setShowConfirm((prev) => !prev);
 
   const onError = (errs: FieldErrors<SignupForm>) => {
     const first = Object.values(errs)[0]?.message;
@@ -101,31 +107,72 @@ const SignupPage: NextPage = () => {
                   placeholder="you@example.com"
                   {...register("email", { required: "Email required" })}
                 />
+                {errors.email && (
+                  <p className="text-sm text-destructive">
+                    {errors.email.message}
+                  </p>
+                )}
               </div>
 
               <div className="space-y-1">
                 <Label htmlFor="password">Password</Label>
-                <Input
-                  id="password"
-                  type="password"
-                  placeholder="••••••••"
-                  {...register("password", {
-                    required: "Password required",
-                    minLength: { value: 8, message: "At least 8 characters" },
-                  })}
-                />
+                <div className="relative">
+                  <Input
+                    id="password"
+                    type={showPassword ? "text" : "password"}
+                    placeholder="••••••••"
+                    {...register("password", {
+                      required: "Password required",
+                      minLength: { value: 8, message: "At least 8 characters" },
+                    })}
+                  />
+                  <button
+                    type="button"
+                    onClick={togglePassword}
+                    aria-label={
+                      showPassword ? "Hide password" : "Show password"
+                    }
+                    className="absolute inset-y-0 right-2 flex items-center p-1 text-gray-500 hover:text-gray-700 focus:outline-none"
+                  >
+                    {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+                  </button>
+                </div>
+                {errors.password && (
+                  <p className="text-sm text-destructive">
+                    {errors.password.message}
+                  </p>
+                )}
               </div>
 
               <div className="space-y-1">
                 <Label htmlFor="confirmPassword">Confirm Password</Label>
-                <Input
-                  id="confirmPassword"
-                  type="password"
-                  placeholder="••••••••"
-                  {...register("confirmPassword", {
-                    required: "Please confirm your password",
-                  })}
-                />
+                <div className="relative">
+                  <Input
+                    id="confirmPassword"
+                    type={showConfirm ? "text" : "password"}
+                    placeholder="••••••••"
+                    {...register("confirmPassword", {
+                      required: "Please confirm your password",
+                    })}
+                  />
+                  <button
+                    type="button"
+                    onClick={toggleConfirm}
+                    aria-label={
+                      showConfirm
+                        ? "Hide confirm password"
+                        : "Show confirm password"
+                    }
+                    className="absolute inset-y-0 right-2 flex items-center p-1 text-gray-500 hover:text-gray-700 focus:outline-none"
+                  >
+                    {showConfirm ? <EyeOff size={20} /> : <Eye size={20} />}
+                  </button>
+                </div>
+                {errors.confirmPassword && (
+                  <p className="text-sm text-destructive">
+                    {errors.confirmPassword.message}
+                  </p>
+                )}
               </div>
 
               <Button

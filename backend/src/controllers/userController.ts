@@ -16,8 +16,6 @@ export const uploadAvatarMiddleware = upload.single("avatar");
  *     summary: Upload or replace the current user's avatar
  *     tags:
  *       - Users
- *     security:
- *       - cookieAuth: []
  *     requestBody:
  *       required: true
  *       content:
@@ -80,8 +78,6 @@ export const uploadAvatarHandler = async (
  *     summary: Retrieve the current user's profile
  *     tags:
  *       - Users
- *     security:
- *       - cookieAuth: []
  *     responses:
  *       200:
  *         description: The authenticated user's profile
@@ -149,8 +145,6 @@ export const getProfile = (
  *     summary: Update the current user's profile
  *     tags:
  *       - Users
- *     security:
- *       - cookieAuth: []
  *     requestBody:
  *       required: true
  *       content:
@@ -239,8 +233,6 @@ export const updateProfile = async (
  *     summary: Remove the current user's avatar (reset to default)
  *     tags:
  *       - Users
- *     security:
- *       - cookieAuth: []
  *     responses:
  *       200:
  *         description: Avatar removed

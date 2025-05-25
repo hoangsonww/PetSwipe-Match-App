@@ -4,8 +4,6 @@ import { useRouter } from "next/router";
 import { motion } from "framer-motion";
 import { ArrowLeft } from "lucide-react";
 import { Layout } from "@/components/Layout";
-
-/* ─── shadcn ui ─── */
 import {
   Accordion,
   AccordionContent,

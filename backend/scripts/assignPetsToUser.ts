@@ -5,7 +5,6 @@ import { assignPetsToUser } from "../src/utils/assignmentHelper";
 
 async function main() {
   const userId = process.argv[2];
-  // Optional: you can still pass a number if you only want that many
   const targetArg = process.argv[3];
 
   if (!userId) {
@@ -15,7 +14,6 @@ async function main() {
     process.exit(1);
   }
 
-  // parse targetCount if provided, otherwise undefined => assign all
   const targetCount = targetArg ? parseInt(targetArg, 10) : undefined;
 
   const ds = new DataSource(ormconfig);

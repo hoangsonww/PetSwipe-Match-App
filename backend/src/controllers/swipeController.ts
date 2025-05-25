@@ -13,8 +13,6 @@ const petRepo = () => AppDataSource.getRepository(Pet);
  *     summary: Record a swipe (like or dislike) on a pet
  *     tags:
  *       - Swipes
- *     security:
- *       - cookieAuth: []
  *     requestBody:
  *       required: true
  *       content:
@@ -74,22 +72,39 @@ export const recordSwipe = async (
 ): Promise<void> => {
   try {
     if (!req.user) {
-      res.status(401).end();
+      res.status(401).json({ message: "Not authenticated" });
       return;
     }
-    const { petId, liked } = req.body;
+
+    const { petId, liked } = req.body ?? {};
+    if (typeof petId !== "string" || typeof liked !== "boolean") {
+      res
+        .status(400)
+        .json({ message: "petId (uuid) and liked (boolean) required" });
+      return;
+    }
+
     const pet = await petRepo().findOne({ where: { id: petId } });
     if (!pet) {
       res.status(404).json({ message: "Pet not found" });
       return;
     }
 
+    const already = await swipeRepo().findOne({
+      where: { user: { id: req.user.id }, pet: { id: petId } },
+    });
+    if (already) {
+      res.status(409).json({ message: "You have already swiped on this pet." });
+      return;
+    }
+
     const swipe = swipeRepo().create({
       user: req.user,
       pet,
-      liked: Boolean(liked),
+      liked,
     });
     await swipeRepo().save(swipe);
+
     res.json(swipe);
   } catch (err) {
     next(err);
@@ -103,8 +118,6 @@ export const recordSwipe = async (
  *     summary: List all swipes by the current user
  *     tags:
  *       - Swipes
- *     security:
- *       - cookieAuth: []
  *     responses:
  *       '200':
  *         description: Array of swipe records (both likes and passes)
@@ -166,8 +179,6 @@ export const listMySwipes = async (
  *     summary: List only the pets the current user has liked
  *     tags:
  *       - Swipes
- *     security:
- *       - cookieAuth: []
  *     responses:
  *       '200':
  *         description: Array of liked swipe records

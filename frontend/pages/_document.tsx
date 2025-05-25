@@ -23,9 +23,21 @@ export default function Document() {
 
         {/* Performance Hints */}
         <link rel="preconnect" href="https://fonts.googleapis.com" />
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="" />
-        {/* (If you use any web fonts, uncomment the line below) */}
-        {/* <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet" /> */}
+        <link
+          rel="preconnect"
+          href="https://fonts.gstatic.com"
+          crossOrigin=""
+        />
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link
+          rel="preconnect"
+          href="https://fonts.gstatic.com"
+          crossOrigin="anonymous"
+        />
+        <link
+          href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap"
+          rel="stylesheet"
+        />
 
         {/* Open Graph / Facebook */}
         <meta property="og:type" content="website" />
@@ -74,15 +86,11 @@ export default function Document() {
         <link rel="manifest" href="/manifest.json" />
         <meta name="theme-color" content={themeColor} />
         <meta name="msapplication-TileColor" content={themeColor} />
-        <meta
-          name="msapplication-TileImage"
-          content="/mstile-150x150.png"
-        />
+        <meta name="msapplication-TileImage" content="/mstile-150x150.png" />
 
         {/* Structured Data (JSON-LD) */}
         <script
           type="application/ld+json"
-          // eslint-disable-next-line react/no-danger
           dangerouslySetInnerHTML={{
             __html: JSON.stringify({
               "@context": "https://schema.org",
@@ -99,8 +107,8 @@ export default function Document() {
         />
       </Head>
       <body className="antialiased bg-white text-gray-800">
-      <Main />
-      <NextScript />
+        <Main />
+        <NextScript />
       </body>
     </Html>
   );

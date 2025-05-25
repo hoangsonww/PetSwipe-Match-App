@@ -125,12 +125,31 @@ export const uploadPets = (
  *         description: Internal server error
  */
 export const listPets = async (
-  _req: Request,
+  req: Request,
   res: Response,
   next: NextFunction,
 ): Promise<void> => {
   try {
-    const all = await petRepo().find();
+    if (req.user) {
+      const pets = await AppDataSource.getRepository(Pet)
+        .createQueryBuilder("pet")
+        // join the swipes *relation* (Pet.swipes) and only that user's swipes
+        .leftJoin("pet.swipes", "swipe", "swipe.userId = :uid", {
+          uid: req.user.id,
+        })
+        // filter out any pet that *did* get a swipe
+        .where("swipe.id IS NULL")
+        .orderBy("pet.createdAt", "DESC")
+        .getMany();
+
+      res.json(pets);
+      return;
+    }
+
+    // unauthenticated — show everything
+    const all = await AppDataSource.getRepository(Pet).find({
+      order: { createdAt: "DESC" },
+    });
     res.json(all);
   } catch (err) {
     next(err);
@@ -175,8 +194,6 @@ export const exportPets = async (
  *     summary: Upload or replace a photo for a pet
  *     tags:
  *       - Pets
- *     security:
- *       - cookieAuth: []
  *     parameters:
  *       - in: path
  *         name: petId
@@ -256,8 +273,6 @@ export const uploadPetPhoto = [
  *     summary: Add a new pet for adoption
  *     tags:
  *       - Pets
- *     security:
- *       - cookieAuth: []
  *     requestBody:
  *       required: true
  *       content:

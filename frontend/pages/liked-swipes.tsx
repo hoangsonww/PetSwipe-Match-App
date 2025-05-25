@@ -4,12 +4,13 @@ import { useRouter } from "next/router";
 import useSWR from "swr";
 import { motion } from "framer-motion";
 import { toast, Toaster } from "sonner";
-import { Loader2 } from "lucide-react";
+import { ArrowLeft, Loader2 } from "lucide-react";
 import Head from "next/head";
 import { useUser } from "@/hooks/useUser";
 import { swipeApi, Swipe } from "@/lib/api";
 import { Layout } from "@/components/Layout";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 
 const fetchLikedSwipes = () => swipeApi.listMyLikedSwipes();
 
@@ -38,7 +39,7 @@ const LikedSwipesPage: NextPage = () => {
   }
 
   if (error) {
-    toast.error("Failed to load your liked pets");
+    toast.error("Failed to load your adopted pets");
   }
 
   return (
@@ -57,38 +58,73 @@ const LikedSwipesPage: NextPage = () => {
       </motion.h1>
 
       <div className="grid gap-6 px-6 pb-12 sm:grid-cols-2 md:grid-cols-3">
-        {swipes.map((swipe) => (
-          <Card key={swipe.id} className="shadow-lg">
-            <CardHeader>
-              <CardTitle className="text-lg text-[#234851] dark:text-[#B6EBE9]">
-                {swipe.pet.name}
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              {swipe.pet.photoUrl && (
-                <img
-                  src={swipe.pet.photoUrl}
-                  alt={swipe.pet.name}
-                  className="w-full h-40 object-cover rounded-lg"
-                  draggable={false}
-                  onDragStart={(e) => e.preventDefault()}
-                />
-              )}
-              <p>
-                <strong>Type:</strong> {swipe.pet.type}
-              </p>
-              <p>
-                <strong>Description:</strong> {swipe.pet.description}
-              </p>
-              <p className="text-sm text-gray-500">
-                Adopted on{" "}
-                {new Date(swipe.swipedAt).toLocaleDateString(undefined, {
-                  dateStyle: "medium",
-                })}
-              </p>
-            </CardContent>
-          </Card>
-        ))}
+        {swipes.map((swipe) => {
+          const { pet } = swipe;
+          return (
+            <Card key={swipe.id} className="shadow-lg">
+              <CardHeader>
+                <CardTitle className="text-lg text-[#234851] dark:text-[#B6EBE9]">
+                  {pet.name}
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                {pet.photoUrl && (
+                  <img
+                    src={pet.photoUrl}
+                    alt={pet.name}
+                    className="w-full h-40 object-cover rounded-lg"
+                    draggable={false}
+                    onDragStart={(e) => e.preventDefault()}
+                  />
+                )}
+
+                <p>
+                  <strong>Type:</strong> {pet.type}
+                </p>
+
+                {pet.description && (
+                  <p>
+                    <strong>Description:</strong> {pet.description}
+                  </p>
+                )}
+
+                {/* Shelter details */}
+                {pet.shelterName && (
+                  <p>
+                    <strong>Shelter:</strong> {pet.shelterName}
+                  </p>
+                )}
+                {pet.shelterContact && (
+                  <p>
+                    <strong>Contact:</strong> {pet.shelterContact}
+                  </p>
+                )}
+                {pet.shelterAddress && (
+                  <p>
+                    <strong>Address:</strong> {pet.shelterAddress}
+                  </p>
+                )}
+
+                <p className="text-sm text-gray-500">
+                  Adopted on{" "}
+                  {new Date(swipe.swipedAt).toLocaleDateString(undefined, {
+                    dateStyle: "medium",
+                  })}
+                </p>
+              </CardContent>
+            </Card>
+          );
+        })}
+      </div>
+
+      <div className="flex justify-center pb-12">
+        <Button
+          variant="outline"
+          onClick={() => router.push("/home")}
+          className="bg-[#7097A8] text-white hover:bg-[#5f868d] border-none"
+        >
+          <ArrowLeft size={18} /> Back to Home
+        </Button>
       </div>
     </Layout>
   );

@@ -33,6 +33,9 @@ export interface Pet {
   type: string;
   description?: string;
   photoUrl?: string;
+  shelterName: string;
+  shelterContact?: string;
+  shelterAddress?: string;
   matches: Match[];
   swipes: Swipe[];
   createdAt: string;
@@ -61,6 +64,53 @@ export interface Swipe {
 }
 
 /* -------------------------------------------------------------------------- */
+/* Helper: persist JWT to mitigate Safari cookie issues                       */
+/* -------------------------------------------------------------------------- */
+const TOKEN_KEY = "jwt";
+
+/** Safely read the JWT from localStorage (no SSR breakage). */
+const getToken = (): string | null =>
+  typeof window === "undefined" ? null : localStorage.getItem(TOKEN_KEY);
+
+/** Persist (or clear) the JWT in localStorage. */
+const setToken = (token?: string | null) => {
+  if (typeof window === "undefined") return;
+  if (token) {
+    localStorage.setItem(TOKEN_KEY, token);
+  } else {
+    localStorage.removeItem(TOKEN_KEY);
+  }
+};
+
+/** Inject JWT on every request if we have one. */
+api.interceptors.request.use((config) => {
+  const token = getToken();
+  if (token) {
+    config.headers = config.headers ?? {};
+    // Back‑end expects a Bearer token
+    config.headers.Authorization = `Bearer ${token}`;
+  }
+  return config;
+});
+
+/** Update stored JWT if the back‑end sends a fresh one. */
+api.interceptors.response.use((response) => {
+  // 1️⃣ look for `Authorization: Bearer <token>` header
+  const authHeader = response.headers["authorization"] as string | undefined;
+  if (authHeader?.startsWith("Bearer ")) {
+    setToken(authHeader.split(" ")[1]);
+  }
+
+  // 2️⃣ or look for `token` field in the response body (common on login / signup)
+  const maybeToken = (response.data as any)?.token;
+  if (typeof maybeToken === "string" && maybeToken.length > 0) {
+    setToken(maybeToken);
+  }
+
+  return response;
+});
+
+/* -------------------------------------------------------------------------- */
 /* Auth API                                                                   */
 /* -------------------------------------------------------------------------- */
 export const authApi = {
@@ -81,6 +131,8 @@ export const authApi = {
     bio?: string;
   }): Promise<{ user: AppUser }> => {
     const res = await api.post("/auth/signup", data);
+    const token = (res.data as any).token;
+    if (token) setToken(token);
     return res.data;
   },
 
@@ -95,6 +147,8 @@ export const authApi = {
     password: string;
   }): Promise<{ user: AppUser }> => {
     const res = await api.post("/auth/login", data);
+    const token = (res.data as any).token;
+    if (token) setToken(token);
     return res.data;
   },
 
@@ -103,6 +157,7 @@ export const authApi = {
    */
   logout: async (): Promise<void> => {
     await api.post("/auth/logout");
+    setToken(null);
   },
 
   /**
@@ -246,6 +301,9 @@ export const petApi = {
     name: string;
     type: string;
     description?: string;
+    shelterName: string;
+    shelterContact?: string;
+    shelterAddress?: string;
   }): Promise<{ pet: Pet }> => {
     const res = await api.post<{ pet: Pet }>("/pets", data);
     return res.data;

@@ -1,4 +1,3 @@
-// backend/scripts/seedPets.ts
 import "reflect-metadata";
 import { DataSource } from "typeorm";
 import ormconfig from "../src/config/ormconfig";
@@ -10,7 +9,11 @@ import { faker } from "@faker-js/faker";
 import { assignPetsToUser } from "../src/utils/assignmentHelper";
 
 async function main() {
-  const ds = new DataSource(ormconfig);
+  const ds = new DataSource({
+    ...ormconfig,
+    synchronize: true,
+    dropSchema: true,
+  });
   await ds.initialize();
 
   const userRepo = ds.getRepository(AppUser);
@@ -18,14 +21,16 @@ async function main() {
   const matchRepo = ds.getRepository(Match);
   const swipeRepo = ds.getRepository(Swipe);
 
-  console.log("🔄 Deleting all swipes, matches, and pets…");
-  // DELETE in dependency order to avoid FK errors
-  await ds.createQueryBuilder().delete().from(Swipe).execute();
-  await ds.createQueryBuilder().delete().from(Match).execute();
-  await ds.createQueryBuilder().delete().from(Pet).execute();
-  console.log("✅ All old data cleared.");
+  console.log("✅ Schema dropped & re-synchronized.");
 
-  console.log("🌱 Seeding 50 realistic pets…");
+  console.log("🔄 Deleting all swipes, matches, and pets…");
+
+  await swipeRepo.createQueryBuilder().delete().execute();
+  await matchRepo.createQueryBuilder().delete().execute();
+  await petRepo.createQueryBuilder().delete().execute();
+  console.log("✅ Old data cleared.");
+
+  console.log("🌱 Seeding 100 realistic pets…");
   const photoUrls = [
     // cats
     "https://www.operationkindness.org/wp-content/uploads/blog-june-adopt-shelter-cat-month-operation-kindness.jpg",
@@ -81,24 +86,44 @@ async function main() {
   ];
 
   const newPets: Pet[] = [];
-  for (let i = 0; i < 50; i++) {
+  for (let i = 0; i < 100; i++) {
     const type = faker.helpers.arrayElement(["Cat", "Dog"]);
     const breed =
       type === "Cat"
         ? faker.helpers.arrayElement(catBreeds)
         : faker.helpers.arrayElement(dogBreeds);
+
     const age = faker.number.int({ min: 1, max: 12 });
     const color = faker.helpers.arrayElement(coatColors);
     const action = faker.helpers.arrayElement(
       type === "Cat" ? catActions : dogActions,
     );
     const extra = faker.helpers.arrayElement(extras);
-    const name = faker.name.firstName();
+    const name = faker.person.firstName();
     const photoUrl = photoUrls[i % photoUrls.length];
 
     const description = `${age}-year-old ${breed} ${type.toLowerCase()} with a ${color} coat who ${action}. ${extra}`;
 
-    newPets.push(petRepo.create({ name, type, description, photoUrl }));
+    // shelter fields
+    const shelterName = faker.company.name();
+    const shelterContact = faker.helpers.replaceSymbols("(###) ###-####");
+    const shelterAddress = `${faker.location.streetAddress()}, ${faker.location.city()}, ${faker.location.state(
+      {
+        abbreviated: true,
+      },
+    )} ${faker.location.zipCode()}`;
+
+    newPets.push(
+      petRepo.create({
+        name,
+        type,
+        description,
+        photoUrl,
+        shelterName,
+        shelterContact,
+        shelterAddress,
+      }),
+    );
   }
 
   await petRepo.save(newPets);
@@ -109,7 +134,7 @@ async function main() {
     `👥 Found ${users.length} users — assigning every pet to each user…`,
   );
   for (const user of users) {
-    const added = await assignPetsToUser(user.id); // no limit, assigns all
+    const added = await assignPetsToUser(user.id);
     console.log(`   • ${user.email}: assigned ${added} pets`);
   }
 

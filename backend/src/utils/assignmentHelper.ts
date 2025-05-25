@@ -26,32 +26,26 @@ export async function assignPetsToUser(
     throw new Error("User not found");
   }
 
-  // Fetch existing matches so we don't double-assign
   const existing = await matchRepo().find({
     where: { user: { id: userId } },
     relations: ["pet"],
   });
   const assignedIds = new Set(existing.map((m) => m.pet.id));
 
-  // All pets in the system
   const allPets = await petRepo().find();
-  // Filter out those already assigned
   const available = allPets.filter((p) => !assignedIds.has(p.id));
   if (available.length === 0) {
     return 0;
   }
 
-  // Decide how many to assign
   let toAssign: Pet[];
   if (typeof targetCount === "number") {
     const need = targetCount - existing.length;
     if (need <= 0) {
       return 0;
     }
-    // take first `need` available (could also randomize if desired)
     toAssign = available.slice(0, need);
   } else {
-    // no limit: assign all available
     toAssign = available;
   }
 

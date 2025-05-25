@@ -33,7 +33,6 @@ import { useUser } from "@/hooks/useUser";
 
 const defaultAvatar = "/OIP.jpg";
 
-/** fetcher */
 const fetchProfile = () => userApi.getProfile().then((r) => r.user);
 
 const Profile: NextPage = () => {
@@ -45,20 +44,17 @@ const Profile: NextPage = () => {
     isValidating,
   } = useSWR<AppUser>("profile", fetchProfile);
 
-  // protect route
   useEffect(() => {
     if (!authLoading && !authUser) {
       router.replace("/login");
     }
   }, [authLoading, authUser, router]);
 
-  // local form state
   const [open, setOpen] = useState(false);
   const [form, setForm] = useState<Partial<AppUser>>({});
   const [saving, setSaving] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
 
-  // sync form when user loads
   useEffect(() => {
     if (user) {
       setForm({
@@ -69,7 +65,6 @@ const Profile: NextPage = () => {
     }
   }, [user]);
 
-  // save edits
   const handleSave = async () => {
     try {
       setSaving(true);
@@ -88,7 +83,6 @@ const Profile: NextPage = () => {
     }
   };
 
-  // upload avatar
   const handleAvatarChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -105,7 +99,6 @@ const Profile: NextPage = () => {
     }
   };
 
-  // remove avatar
   const handleRemoveAvatar = async () => {
     if (!confirm("Remove your avatar?")) return;
     try {
@@ -120,7 +113,6 @@ const Profile: NextPage = () => {
     }
   };
 
-  // loading
   if (authLoading || isValidating || !user) {
     return (
       <Layout>
@@ -168,7 +160,6 @@ const Profile: NextPage = () => {
             </CardHeader>
 
             <CardContent className="space-y-8">
-              {/* Avatar & actions */}
               <div className="flex items-center gap-6">
                 <div className="relative">
                   <img
@@ -198,7 +189,6 @@ const Profile: NextPage = () => {
                   />
                 </div>
 
-                {/* email + joined */}
                 <div className="text-sm">
                   <p className="font-medium text-[#234851]">{user.email}</p>
                   <p className="text-gray-600">
@@ -207,7 +197,6 @@ const Profile: NextPage = () => {
                 </div>
               </div>
 
-              {/* Info rows */}
               <div className="space-y-4">
                 {infoRow("Full Name", user.name)}
                 {infoRow(
@@ -217,7 +206,6 @@ const Profile: NextPage = () => {
                 {infoRow("Bio", user.bio)}
               </div>
 
-              {/* Edit button */}
               <div className="flex justify-end">
                 <Button
                   variant="outline"
@@ -232,7 +220,6 @@ const Profile: NextPage = () => {
         </motion.div>
       </div>
 
-      {/* Edit Dialog */}
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogPortal>
           <DialogOverlay className="fixed inset-0 bg-black/50 backdrop-blur-sm" />

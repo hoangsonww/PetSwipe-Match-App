@@ -19,7 +19,6 @@ export async function uploadAvatar(
 ): Promise<string> {
   const key = `avatars/${Date.now()}_${filename}`;
 
-  // Do NOT set ACL here if your bucket blocks ACLs
   await s3
     .putObject({
       Bucket: config.aws.bucket,
