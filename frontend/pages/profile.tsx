@@ -1,4 +1,3 @@
-// frontend/pages/profile.tsx
 import React, { useRef, useState, useEffect } from "react";
 import type { NextPage } from "next";
 import { useRouter } from "next/router";
@@ -303,8 +302,6 @@ const Profile: NextPage = () => {
           </DialogContent>
         </DialogPortal>
       </Dialog>
-
-      <Toaster position="bottom-right" />
     </Layout>
   );
 };

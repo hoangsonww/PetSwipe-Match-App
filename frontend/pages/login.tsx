@@ -119,8 +119,6 @@ const LoginPage: NextPage = () => {
           </CardContent>
         </Card>
       </motion.div>
-
-      <Toaster position="bottom-right" />
     </Layout>
   );
 };

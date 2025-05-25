@@ -90,8 +90,6 @@ const LikedSwipesPage: NextPage = () => {
           </Card>
         ))}
       </div>
-
-      <Toaster position="bottom-right" />
     </Layout>
   );
 };

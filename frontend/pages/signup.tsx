@@ -148,8 +148,6 @@ const SignupPage: NextPage = () => {
           </CardContent>
         </Card>
       </motion.div>
-
-      <Toaster position="bottom-right" />
     </Layout>
   );
 };

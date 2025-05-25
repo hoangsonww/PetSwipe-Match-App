@@ -177,7 +177,10 @@ const Home: NextPage = () => {
         <p>Complete all to finish browsing pets.</p>
       </div>
       <Button
-        onClick={goNext}
+        onClick={(e) => {
+          e.stopPropagation();
+          goNext();
+        }}
         className="mt-4 self-center bg-[#7097A8] hover:bg-[#5f868d] text-white flex items-center gap-2 px-6 py-2"
       >
         Start
@@ -544,8 +547,6 @@ const Home: NextPage = () => {
           </div>
         </div>
       </TooltipProvider>
-
-      <Toaster />
     </Layout>
   );
 };

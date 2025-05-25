@@ -110,8 +110,6 @@ const SwipesPage: NextPage = () => {
           Back to Home
         </Button>
       </div>
-
-      <Toaster position="bottom-right" />
     </Layout>
   );
 };

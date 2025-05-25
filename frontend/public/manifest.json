@@ -1,0 +1,24 @@
+{
+  "short_name": "PetSwipe",
+  "name": "PetSwipe - Swipe, Match, Adopt",
+  "description": "Adopt a pet with PetSwipe! Swipe right to match with your perfect furry friend. Discover, connect, and bring home your new companion today.",
+  "icons": [
+    {
+      "src": "/android-chrome-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/android-chrome-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "start_url": "/",
+  "background_color": "#ffffff",
+  "theme_color": "#7097A8",
+  "display": "standalone",
+  "orientation": "portrait-primary"
+}

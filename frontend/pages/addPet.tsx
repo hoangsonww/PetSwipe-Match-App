@@ -149,7 +149,6 @@ const AddPet: NextPage = () => {
         </Card>
       </motion.div>
 
-      <Toaster position="bottom-right" />
     </Layout>
   );
 };
