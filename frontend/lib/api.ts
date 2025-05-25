@@ -1,0 +1,335 @@
+import axios, { AxiosInstance } from "axios";
+
+/**
+ * Dedicated axios instance for PetSwipe backend.
+ */
+export const api: AxiosInstance = axios.create({
+  baseURL: process.env.NEXT_PUBLIC_API_URL, // e.g. "http://localhost:5001/api"
+  withCredentials: true,
+});
+
+/**
+ * Represents a user in PetSwipe.
+ */
+export interface AppUser {
+  id: string;
+  email: string;
+  name?: string;
+  dob?: string;
+  bio?: string;
+  avatarUrl?: string | null;
+  matches: Match[];
+  swipes: Swipe[];
+  createdAt: string;
+  updatedAt: string;
+}
+
+/**
+ * Represents an adoptable pet.
+ */
+export interface Pet {
+  id: string;
+  name: string;
+  type: string;
+  description?: string;
+  photoUrl?: string;
+  matches: Match[];
+  swipes: Swipe[];
+  createdAt: string;
+  updatedAt: string;
+}
+
+/**
+ * A "match" is when the system assigns a pet into a user's deck.
+ */
+export interface Match {
+  id: string;
+  user: AppUser;
+  pet: Pet;
+  matchedAt: string;
+}
+
+/**
+ * A "swipe" is when a user likes or dislikes a pet.
+ */
+export interface Swipe {
+  id: string;
+  user: AppUser;
+  pet: Pet;
+  liked: boolean;
+  swipedAt: string;
+}
+
+/* -------------------------------------------------------------------------- */
+/* Auth API                                                                   */
+/* -------------------------------------------------------------------------- */
+export const authApi = {
+  /**
+   * Create a new user account and sign them in.
+   * @param data.email user's email
+   * @param data.password user's password
+   * @param data.name optional full name
+   * @param data.dob optional date of birth
+   * @param data.bio optional biography
+   * @returns the created user
+   */
+  signup: async (data: {
+    email: string;
+    password: string;
+    name?: string;
+    dob?: string;
+    bio?: string;
+  }): Promise<{ user: AppUser }> => {
+    const res = await api.post("/auth/signup", data);
+    return res.data;
+  },
+
+  /**
+   * Log in an existing user.
+   * @param data.email user's email
+   * @param data.password user's password
+   * @returns the authenticated user
+   */
+  login: async (data: {
+    email: string;
+    password: string;
+  }): Promise<{ user: AppUser }> => {
+    const res = await api.post("/auth/login", data);
+    return res.data;
+  },
+
+  /**
+   * Log out the current user.
+   */
+  logout: async (): Promise<void> => {
+    await api.post("/auth/logout");
+  },
+
+  /**
+   * Check if an email is already registered.
+   * @param email email address to verify
+   * @returns a message indicating existence
+   */
+  verifyEmail: async (email: string): Promise<{ message: string }> => {
+    const res = await api.post("/auth/verify-email", { email });
+    return res.data;
+  },
+
+  /**
+   * Reset a user's password.
+   * @param email user's email
+   * @param newPassword new password to set
+   * @returns a confirmation message
+   */
+  resetPassword: async (
+    email: string,
+    newPassword: string,
+  ): Promise<{ message: string }> => {
+    const res = await api.post("/auth/reset-password", { email, newPassword });
+    return res.data;
+  },
+};
+
+/* -------------------------------------------------------------------------- */
+/* User API                                                                   */
+/* -------------------------------------------------------------------------- */
+export const userApi = {
+  /**
+   * Fetch the current user's profile.
+   * @returns the authenticated user's data
+   */
+  getProfile: async (): Promise<{ user: AppUser }> => {
+    const res = await api.get("/users/me");
+    return res.data;
+  },
+
+  /**
+   * Update the current user's profile.
+   * @param data fields to update
+   * @returns the updated user
+   */
+  updateProfile: async (data: {
+    name?: string;
+    dob?: string;
+    bio?: string;
+  }): Promise<{ user: AppUser }> => {
+    const res = await api.put("/users/me", data);
+    return res.data;
+  },
+
+  /**
+   * Upload or replace the current user's avatar.
+   * @param file image file to upload
+   * @returns the new avatar URL
+   */
+  uploadAvatar: async (file: File): Promise<{ avatarUrl: string }> => {
+    const fd = new FormData();
+    fd.append("avatar", file);
+    const res = await api.post("/users/me/avatar", fd, {
+      headers: { "Content-Type": "multipart/form-data" },
+    });
+    return res.data;
+  },
+
+  /**
+   * Remove the current user's avatar (reset to default).
+   * @returns avatarUrl null
+   */
+  deleteAvatar: async (): Promise<{ avatarUrl: null }> => {
+    const res = await api.delete("/users/me/avatar");
+    return res.data;
+  },
+};
+
+/* -------------------------------------------------------------------------- */
+/* Pet API                                                                    */
+/* -------------------------------------------------------------------------- */
+export const petApi = {
+  /**
+   * Upload a CSV to batch-create pets.
+   * @param file CSV file (headers: name,breed,description)
+   * @returns number of pets created
+   */
+  uploadPets: async (file: File): Promise<{ imported: number }> => {
+    const fd = new FormData();
+    fd.append("file", file);
+    const res = await api.post("/pets/upload", fd, {
+      headers: { "Content-Type": "multipart/form-data" },
+    });
+    return res.data;
+  },
+
+  /**
+   * List all pets.
+   * @returns an array of Pet objects
+   */
+  listPets: async (): Promise<Pet[]> => {
+    const res = await api.get<Pet[]>("/pets");
+    return res.data;
+  },
+
+  /**
+   * Export all pets as a CSV file.
+   * @returns binary blob of CSV
+   */
+  exportPets: async (): Promise<Blob> => {
+    const res = await api.get("/pets/export", { responseType: "blob" });
+    return res.data;
+  },
+
+  /**
+   * Upload or replace a photo for a single pet.
+   * @param petId the pet's UUID
+   * @param file image file to upload
+   * @returns the new photoUrl
+   */
+  uploadPetPhoto: async (
+    petId: string,
+    file: File,
+  ): Promise<{ photoUrl: string }> => {
+    const fd = new FormData();
+    fd.append("photo", file);
+    const res = await api.post(`/pets/${petId}/photo`, fd, {
+      headers: { "Content-Type": "multipart/form-data" },
+    });
+    return res.data;
+  },
+
+  /**
+   * Add a new pet for adoption.
+   * @param data.name Pet's name
+   * @param data.type Pet's type or breed (e.g. "Labrador")
+   * @param data.description optional notes
+   * @returns the created Pet
+   */
+  createPet: async (data: {
+    name: string;
+    type: string;
+    description?: string;
+  }): Promise<{ pet: Pet }> => {
+    const res = await api.post<{ pet: Pet }>("/pets", data);
+    return res.data;
+  },
+};
+
+/* -------------------------------------------------------------------------- */
+/* Match API                                                                  */
+/* -------------------------------------------------------------------------- */
+export const matchApi = {
+  /**
+   * Manually assign specific pets to a user.
+   * @param userId target user's UUID
+   * @param petIds array of pet UUIDs
+   * @returns number of matches created
+   */
+  assignPets: async (
+    userId: string,
+    petIds: string[],
+  ): Promise<{ assigned: number }> => {
+    const res = await api.post("/matches", { userId, petIds });
+    return res.data;
+  },
+
+  /**
+   * List all matches (admin only).
+   * @returns array of Match objects
+   */
+  listMatches: async (): Promise<Match[]> => {
+    const res = await api.get<Match[]>("/matches");
+    return res.data;
+  },
+
+  /**
+   * List matches for the authenticated user.
+   * @returns array of Match objects
+   */
+  listMyMatches: async (): Promise<Match[]> => {
+    const res = await api.get<Match[]>("/matches/me");
+    return res.data;
+  },
+};
+
+/* -------------------------------------------------------------------------- */
+/* Swipe API                                                                  */
+/* -------------------------------------------------------------------------- */
+export const swipeApi = {
+  /**
+   * Record a user's like or dislike on a pet.
+   * @param petId the pet's UUID
+   * @param liked true = like/adopt, false = pass
+   * @returns the created Swipe
+   */
+  recordSwipe: async (petId: string, liked: boolean): Promise<Swipe> => {
+    const res = await api.post<Swipe>("/swipes", { petId, liked });
+    return res.data;
+  },
+
+  /**
+   * List all swipes by the authenticated user.
+   * @returns array of Swipe objects
+   */
+  listMySwipes: async (): Promise<Swipe[]> => {
+    const res = await api.get<Swipe[]>("/swipes/me");
+    return res.data;
+  },
+
+  /**
+   * List only the pets the user has liked (adopted).
+   * @returns array of Swipe objects where liked === true
+   */
+  listMyLikedSwipes: async (): Promise<Swipe[]> => {
+    const res = await api.get<Swipe[]>("/swipes/me/liked");
+    return res.data;
+  },
+
+  /**
+   * (Admin) List all swipes in the system.
+   * @returns array of all Swipe objects
+   */
+  listAllSwipes: async (): Promise<Swipe[]> => {
+    const res = await api.get<Swipe[]>("/swipes");
+    return res.data;
+  },
+};
+
+export default api;
