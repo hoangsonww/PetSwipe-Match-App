@@ -393,6 +393,8 @@ The app is designed to be easily deployable to AWS using services like:
 - **ECR**: Container registry for Docker images
 - **GHCR**: Backup container registry for Docker images
 - **CloudWatch**: For logging and monitoring
+- **IAM**: For managing permissions
+- **Terraform**: Infrastructure as Code (IaC) for managing AWS resources
 - **GitHub Actions** for CI/CD
 - **Vercel** for frontend
 
