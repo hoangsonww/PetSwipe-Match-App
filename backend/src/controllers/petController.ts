@@ -20,7 +20,7 @@ const upload = multer(); // in-memory
  * @openapi
  * /api/pets/upload:
  *   post:
- *     summary: Upload a CSV of pets
+ *     summary: Upload a CSV of pets for bulk import
  *     tags:
  *       - Pets
  *     requestBody:
@@ -35,10 +35,10 @@ const upload = multer(); // in-memory
  *               file:
  *                 type: string
  *                 format: binary
- *                 description: "CSV with headers: name,breed,description"
+ *                 description: CSV file with headers `name,breed,description`
  *     responses:
  *       '200':
- *         description: Number of imported pets
+ *         description: Number of pets successfully imported
  *         content:
  *           application/json:
  *             schema:
@@ -46,9 +46,16 @@ const upload = multer(); // in-memory
  *               properties:
  *                 imported:
  *                   type: integer
- *                   description: How many rows were saved
+ *                   description: Count of imported rows
  *       '400':
- *         description: CSV file missing
+ *         description: CSV file missing or invalid
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
  *       '500':
  *         description: Internal server error
  */
@@ -69,7 +76,6 @@ export const uploadPets = (
     .on("data", (row: RawPetRow) => rows.push(row))
     .on("end", async () => {
       try {
-        // map CSV rows into Partial<Pet>
         const partials: Partial<Pet>[] = rows.map((r) => ({
           name: r.name,
           type: r.breed,
@@ -88,7 +94,7 @@ export const uploadPets = (
  * @openapi
  * /api/pets:
  *   get:
- *     summary: List all pets
+ *     summary: List all pets, filtering out those swiped by the current user
  *     tags:
  *       - Pets
  *     responses:
@@ -115,6 +121,15 @@ export const uploadPets = (
  *                     type: string
  *                     format: uri
  *                     nullable: true
+ *                   shelterName:
+ *                     type: string
+ *                     nullable: true
+ *                   shelterContact:
+ *                     type: string
+ *                     nullable: true
+ *                   shelterAddress:
+ *                     type: string
+ *                     nullable: true
  *                   createdAt:
  *                     type: string
  *                     format: date-time
@@ -131,25 +146,18 @@ export const listPets = async (
 ): Promise<void> => {
   try {
     if (req.user) {
-      const pets = await AppDataSource.getRepository(Pet)
+      const pets = await petRepo()
         .createQueryBuilder("pet")
-        // join the swipes *relation* (Pet.swipes) and only that user's swipes
         .leftJoin("pet.swipes", "swipe", "swipe.userId = :uid", {
-          uid: req.user.id,
+          uid: (req.user as any).id,
         })
-        // filter out any pet that *did* get a swipe
         .where("swipe.id IS NULL")
         .orderBy("pet.createdAt", "DESC")
         .getMany();
-
       res.json(pets);
       return;
     }
-
-    // unauthenticated — show everything
-    const all = await AppDataSource.getRepository(Pet).find({
-      order: { createdAt: "DESC" },
-    });
+    const all = await petRepo().find({ order: { createdAt: "DESC" } });
     res.json(all);
   } catch (err) {
     next(err);
@@ -165,7 +173,7 @@ export const listPets = async (
  *       - Pets
  *     responses:
  *       '200':
- *         description: CSV file download
+ *         description: CSV file download containing all pets
  *         content:
  *           text/csv:
  *             schema:
@@ -191,7 +199,7 @@ export const exportPets = async (
  * @openapi
  * /api/pets/{petId}/photo:
  *   post:
- *     summary: Upload or replace a photo for a pet
+ *     summary: Upload or replace a pet's photo
  *     tags:
  *       - Pets
  *     parameters:
@@ -201,7 +209,7 @@ export const exportPets = async (
  *         schema:
  *           type: string
  *           format: uuid
- *         description: The ID of the pet to update
+ *         description: ID of the pet
  *     requestBody:
  *       required: true
  *       content:
@@ -228,8 +236,22 @@ export const exportPets = async (
  *                   format: uri
  *       '400':
  *         description: Missing file
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
  *       '404':
  *         description: Pet not found
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
  *       '500':
  *         description: Internal server error
  */
@@ -269,7 +291,7 @@ export const uploadPetPhoto = [
  * @openapi
  * /api/pets:
  *   post:
- *     summary: Add a new pet for adoption
+ *     summary: Create a new pet listing
  *     tags:
  *       - Pets
  *     requestBody:
@@ -290,9 +312,21 @@ export const uploadPetPhoto = [
  *               description:
  *                 type: string
  *                 nullable: true
+ *               shelterName:
+ *                 type: string
+ *                 nullable: true
+ *                 description: Name of the shelter
+ *               shelterContact:
+ *                 type: string
+ *                 nullable: true
+ *                 description: Contact info for the shelter
+ *               shelterAddress:
+ *                 type: string
+ *                 nullable: true
+ *                 description: Physical address of the shelter
  *     responses:
  *       '201':
- *         description: Created pet
+ *         description: Newly created pet object
  *         content:
  *           application/json:
  *             schema:
@@ -315,6 +349,15 @@ export const uploadPetPhoto = [
  *                       type: string
  *                       format: uri
  *                       nullable: true
+ *                     shelterName:
+ *                       type: string
+ *                       nullable: true
+ *                     shelterContact:
+ *                       type: string
+ *                       nullable: true
+ *                     shelterAddress:
+ *                       type: string
+ *                       nullable: true
  *                     createdAt:
  *                       type: string
  *                       format: date-time
@@ -323,6 +366,13 @@ export const uploadPetPhoto = [
  *                       format: date-time
  *       '400':
  *         description: Missing required fields
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
  *       '500':
  *         description: Internal server error
  */
@@ -332,12 +382,26 @@ export const createPet = async (
   next: NextFunction,
 ): Promise<void> => {
   try {
-    const { name, type, description } = req.body;
+    const {
+      name,
+      type,
+      description,
+      shelterName,
+      shelterContact,
+      shelterAddress,
+    } = req.body;
     if (!name || !type) {
       res.status(400).json({ message: "name and type required" });
       return;
     }
-    const pet = petRepo().create({ name, type, description });
+    const pet = petRepo().create({
+      name,
+      type,
+      description,
+      shelterName,
+      shelterContact,
+      shelterAddress,
+    });
     await petRepo().save(pet);
     res.status(201).json({ pet });
   } catch (err) {

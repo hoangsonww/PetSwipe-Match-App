@@ -23,7 +23,7 @@ function cookieOpts(req: Request) {
  * @openapi
  * /api/auth/signup:
  *   post:
- *     summary: Create a new user and sign them in
+ *     summary: Create a new user, assign initial pets, and sign them in
  *     tags:
  *       - Auth
  *     requestBody:
@@ -52,7 +52,7 @@ function cookieOpts(req: Request) {
  *                 type: string
  *     responses:
  *       '201':
- *         description: User created successfully
+ *         description: User created and signed in successfully
  *         content:
  *           application/json:
  *             schema:
@@ -69,11 +69,14 @@ function cookieOpts(req: Request) {
  *                       format: email
  *                     name:
  *                       type: string
+ *                       nullable: true
  *                     dob:
  *                       type: string
  *                       format: date
+ *                       nullable: true
  *                     bio:
  *                       type: string
+ *                       nullable: true
  *                     avatarUrl:
  *                       type: string
  *                       format: uri
@@ -84,8 +87,18 @@ function cookieOpts(req: Request) {
  *                     updatedAt:
  *                       type: string
  *                       format: date-time
+ *                 token:
+ *                   type: string
+ *                   description: JWT authentication token
  *       '400':
- *         description: Missing or invalid parameters / email in use
+ *         description: Missing or invalid parameters, or email already in use
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
  *       '500':
  *         description: Internal server error
  */
@@ -114,6 +127,7 @@ export const signup = async (
     const token = generateToken(user.id);
     res.cookie("token", token, cookieOpts(req));
 
+    // Assign default batch of pets (handled internally)
     try {
       await assignPetsToUser(user.id);
     } catch (e) {
@@ -131,11 +145,11 @@ export const signup = async (
  * @openapi
  * /api/auth/login:
  *   post:
- *     summary: Log a user in
+ *     summary: Authenticate a user and return a JWT
  *     tags:
  *       - Auth
  *     requestBody:
- *       description: Login payload
+ *       description: Login credentials
  *       required: true
  *       content:
  *         application/json:
@@ -170,11 +184,14 @@ export const signup = async (
  *                       format: email
  *                     name:
  *                       type: string
+ *                       nullable: true
  *                     dob:
  *                       type: string
  *                       format: date
+ *                       nullable: true
  *                     bio:
  *                       type: string
+ *                       nullable: true
  *                     avatarUrl:
  *                       type: string
  *                       format: uri
@@ -185,8 +202,18 @@ export const signup = async (
  *                     updatedAt:
  *                       type: string
  *                       format: date-time
+ *                 token:
+ *                   type: string
+ *                   description: JWT authentication token
  *       '400':
  *         description: Invalid credentials
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
  *       '500':
  *         description: Internal server error
  */
@@ -206,6 +233,7 @@ export const login = async (
     const token = generateToken(user.id);
     res.cookie("token", token, cookieOpts(req));
 
+    // On each login, assign up to 20 new pet matches
     try {
       await assignPetsToUser(user.id, 20);
     } catch (e) {
@@ -223,12 +251,19 @@ export const login = async (
  * @openapi
  * /api/auth/logout:
  *   post:
- *     summary: Log out the current user
+ *     summary: Clear authentication cookie to log the user out
  *     tags:
  *       - Auth
  *     responses:
  *       '200':
  *         description: Successfully logged out
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
  *       '500':
  *         description: Internal server error
  */
@@ -249,7 +284,7 @@ export const logout = (
  * @openapi
  * /api/auth/verify-email:
  *   post:
- *     summary: Check if an email is already registered
+ *     summary: Check whether an email address is already registered
  *     tags:
  *       - Auth
  *     requestBody:
@@ -277,8 +312,22 @@ export const logout = (
  *                   type: string
  *       '400':
  *         description: Missing email parameter
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
  *       '404':
  *         description: Email not found
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
  *       '500':
  *         description: Internal server error
  */
@@ -308,11 +357,11 @@ export const verifyEmail = async (
  * @openapi
  * /api/auth/reset-password:
  *   post:
- *     summary: Reset a user's password
+ *     summary: Reset a user's password given their email and a new password
  *     tags:
  *       - Auth
  *     requestBody:
- *       description: Payload to reset password
+ *       description: Password reset payload
  *       required: true
  *       content:
  *         application/json:
@@ -330,7 +379,7 @@ export const verifyEmail = async (
  *                 format: password
  *     responses:
  *       '200':
- *         description: Password updated
+ *         description: Password updated successfully
  *         content:
  *           application/json:
  *             schema:
@@ -339,9 +388,23 @@ export const verifyEmail = async (
  *                 message:
  *                   type: string
  *       '400':
- *         description: Missing parameters
+ *         description: Missing email or newPassword
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
  *       '404':
  *         description: Email not found
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
  *       '500':
  *         description: Internal server error
  */

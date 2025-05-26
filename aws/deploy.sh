@@ -29,6 +29,12 @@ ECS_CLUSTER=${PROJECT}-cluster
 ECS_SERVICE_BACKEND=${PROJECT}-backend-svc
 TASK_ROLE_ARN="arn:aws:iam::${AWS_ACCOUNT_ID}:role/ecsTaskExecutionRole"  # ### FILL THIS IN if different
 
+# ALB
+ALB_NAME=${PROJECT}-alb
+ALB_SG_ID=${ALB_SG_ID:-### YOUR_ALB_SECURITY_GROUP_ID ###}
+SUBNET_IDS=${SUBNET_IDS:-"subnet-aaa,subnet-bbb"}  # comma-separated list
+TG_NAME=${PROJECT}-tg
+
 # CloudFront (optional)
 CF_DISTRIBUTION_ID=${CF_DISTRIBUTION_ID:-}  # leave blank first time
 
@@ -93,10 +99,57 @@ echo "🐳 Building & pushing frontend image..."
 docker build -t $ECR_URI_FRONTEND:latest ./frontend
 docker push $ECR_URI_FRONTEND:latest
 
-#### 4) ECS & Fargate: deploy backend ####
+#### 4) ALB & Target Group (for backend) ####
 
+# Create ALB if missing
+if ! aws elbv2 describe-load-balancers --names $ALB_NAME >/dev/null 2>&1; then
+  echo "⚖️  Creating Application Load Balancer $ALB_NAME..."
+  aws elbv2 create-load-balancer \
+    --name $ALB_NAME \
+    --subnets $(echo $SUBNET_IDS | tr ',' ' ') \
+    --security-groups $ALB_SG_ID \
+    --scheme internet-facing \
+    --type application \
+    --region $AWS_REGION >/dev/null
+fi
+
+# Fetch ARNs
+LB_ARN=$(aws elbv2 describe-load-balancers --names $ALB_NAME --query "LoadBalancers[0].LoadBalancerArn" --output text)
+VPC_ID=$(aws ec2 describe-subnets --subnet-ids $(echo $SUBNET_IDS | cut -d',' -f1) --query "Subnets[0].VpcId" --output text)
+
+# Create Target Group if missing
+if ! aws elbv2 describe-target-groups --names $TG_NAME >/dev/null 2>&1; then
+  echo "🛡️  Creating Target Group $TG_NAME..."
+  aws elbv2 create-target-group \
+    --name $TG_NAME \
+    --protocol HTTP \
+    --port 5001 \
+    --vpc-id $VPC_ID \
+    --health-check-protocol HTTP \
+    --health-check-path "/" \
+    --matcher HttpCode=200 \
+    --region $AWS_REGION >/dev/null
+fi
+
+TG_ARN=$(aws elbv2 describe-target-groups --names $TG_NAME --query "TargetGroups[0].TargetGroupArn" --output text)
+
+# Create listener on port 80 if missing
+if ! aws elbv2 describe-listeners --load-balancer-arn $LB_ARN --query "Listeners[?Port==\`80\`]" >/dev/null 2>&1; then
+  echo "🔊 Creating ALB listener on port 80..."
+  aws elbv2 create-listener \
+    --load-balancer-arn $LB_ARN \
+    --protocol HTTP \
+    --port 80 \
+    --default-actions Type=forward,TargetGroupArn=$TG_ARN \
+    --region $AWS_REGION >/dev/null
+fi
+
+#### 5) ECS & Fargate: deploy backend ####
+
+# Ensure cluster exists
 if ! aws ecs describe-clusters --clusters $ECS_CLUSTER --query "clusters[0].status" --output text 2>/dev/null; then
-  aws ecs create-cluster --cluster-name $ECS_CLUSTER
+  echo "🆕 Creating ECS cluster $ECS_CLUSTER..."
+  aws ecs create-cluster --cluster-name $ECS_CLUSTER --region $AWS_REGION >/dev/null
 fi
 
 # Register task definition
@@ -126,35 +179,43 @@ cat > task-def.json <<EOF
 EOF
 
 echo "🚚 Registering ECS task definition..."
-aws ecs register-task-definition --cli-input-json file://task-def.json
+aws ecs register-task-definition --cli-input-json file://task-def.json --region $AWS_REGION >/dev/null
 
-# Create or update service
+# Create or update service behind the ALB
 if ! aws ecs describe-services --cluster $ECS_CLUSTER --services $ECS_SERVICE_BACKEND \
-   --query "services[0].status" --output text 2>/dev/null; then
-  echo "🚀 Creating ECS service..."
+     --query "services[0].status" --output text 2>/dev/null; then
+  echo "🚀 Creating ECS service with ALB integration..."
   aws ecs create-service \
     --cluster $ECS_CLUSTER \
     --service-name $ECS_SERVICE_BACKEND \
     --task-definition ${PROJECT}-backend \
     --desired-count 1 \
     --launch-type FARGATE \
-    --network-configuration "awsvpcConfiguration={subnets=[### YOUR_SUBNET_IDS ###],securityGroups=[### YOUR_SG_ID ###],assignPublicIp=ENABLED}"
+    --network-configuration "awsvpcConfiguration={subnets=[${SUBNET_IDS}],securityGroups=[${ALB_SG_ID}],assignPublicIp=DISABLED}" \
+    --load-balancers "[{\"targetGroupArn\":\"${TG_ARN}\",\"containerName\":\"backend\",\"containerPort\":5001}]" \
+    --region $AWS_REGION
 else
-  echo "🔄 Updating ECS service..."
-  aws ecs update-service --cluster $ECS_CLUSTER --service $ECS_SERVICE_BACKEND \
-    --force-new-deployment
+  echo "🔄 Updating ECS service (force new deployment)..."
+  aws ecs update-service \
+    --cluster $ECS_CLUSTER \
+    --service $ECS_SERVICE_BACKEND \
+    --force-new-deployment \
+    --load-balancers "[{\"targetGroupArn\":\"${TG_ARN}\",\"containerName\":\"backend\",\"containerPort\":5001}]" \
+    --region $AWS_REGION
 fi
 
-#### 5) Frontend: sync to S3 + invalidate CloudFront ####
+#### 6) Frontend: sync to S3 + invalidate CloudFront ####
 
 echo "📤 Uploading frontend static build to S3..."
 npm --prefix ./frontend run build
-aws s3 sync ./frontend/out s3://$STATIC_BUCKET --delete
+aws s3 sync ./frontend/out s3://$STATIC_BUCKET --delete --region $AWS_REGION
 
 if [ -n "$CF_DISTRIBUTION_ID" ]; then
   echo "🌐 Invalidating CloudFront distribution $CF_DISTRIBUTION_ID..."
-  aws cloudfront create-invalidation --distribution-id $CF_DISTRIBUTION_ID \
-    --paths "/*"
+  aws cloudfront create-invalidation \
+    --distribution-id $CF_DISTRIBUTION_ID \
+    --paths "/*" \
+    --region $AWS_REGION >/dev/null
 fi
 
 echo "✅ Deployment complete!"

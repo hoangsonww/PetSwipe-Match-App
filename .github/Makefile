@@ -1,9 +1,10 @@
-# Project-wide Makefile
+# Project-wide Makefile for PetSwipe App
 #
 # This Makefile is used to define common tasks for the project.
 # It provides a convenient way to run commands and manage the project.
 # It is not intended to be used as a build system, but rather as a helper for common tasks.
 # The Makefile is designed to be used with GNU Make.
+#
 # Prerequisites:
 # - Make (https://www.gnu.org/software/make/)
 # - Node.js (https://nodejs.org/)
@@ -27,6 +28,11 @@
 #   make deploy            # run AWS deploy script
 #   make help             # show this help message
 #
+# Copyright (c) 2025 Son Nguyen
+# Licensed under the MIT License (MIT).
+# See LICENSE file in the project root for full license information.
+#
+# -------------------------------------------------------------------------------------------
 
 .DEFAULT_GOAL := help
 .PHONY: help dev build-backend build-frontend docker-build docker-pull up down clean lint test deploy

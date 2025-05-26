@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 /**
- * Petswipe CLI (CommonJS)
+ * Petswipe CLI
  *
  * This script is a command-line interface for managing the PetSwipe project.
  * It provides commands to build, test, and deploy the backend and frontend applications.

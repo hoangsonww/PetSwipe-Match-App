@@ -56,6 +56,8 @@ Users can browse pets, swipe to adopt or pass, and manage their profile. They ca
    - [Users](#users)
    - [Swagger UI](#swagger-ui)
 9. [AWS Deployment](#-aws-deployment)
+   - [Our Stack](#our-stack)
+   - [Terraform](#terraform)
 10. [Scripts & Utilities](#-scripts--utilities)
 11. [Command Line Interface](#-command-line-interface)
 12. [Contributing](#-contributing)
@@ -416,12 +418,43 @@ Currently, our stack is fully deployed on AWS using the following services:
 3. **AWS ECS**: Hosts our backend API using Docker containers.
    - Backup service: **Vercel** (currently, due to AWS pricing issues, we have switched to Vercel for hosting the backend).
 4. **AWS ECR**: Container registry for our Docker images.
-5. **AWS IAM**: Manages permissions for accessing AWS resources.
+5. **AWS ELB**: Elastic Load Balancer for routing traffic to our ECS services.
+   - Backup service: **GitHub Actions** for CI/CD to build and deploy our Docker images.
+6. **AWS IAM**: Manages permissions for accessing AWS resources.
    - Backup service: **GitHub Container Registry (GHCR)**.
-6. **AWS CloudWatch**: For logging and monitoring.
-7. **GitHub Actions**: For CI/CD to build and deploy our Docker images to ECR.
-8. **Vercel**: Hosts our frontend application.
-9. **Terraform**: Infrastructure as Code (IaC) for managing AWS resources.
+7. **AWS CloudWatch**: For logging and monitoring.
+8. **GitHub Actions**: For CI/CD to build and deploy our Docker images to ECR.
+9. **Vercel**: Hosts our frontend application.
+10. **Terraform**: Infrastructure as Code (IaC) for managing AWS resources.
+
+### Terraform
+
+To deploy the app to AWS, we use **Terraform** for Infrastructure as Code (IaC). This allows us to define our AWS resources in code and deploy them easily.
+
+To get started with Terraform:
+
+1. Install Terraform on your machine.
+2. Navigate to the `infrastructure` directory:
+
+   ```bash
+   cd terraform
+   ```
+
+3. Initialize Terraform:
+
+   ```bash
+    terraform init
+   ```
+
+4. Configure your AWS credentials in `~/.aws/credentials` or set them as environment variables.
+5. Run the following commands to deploy:
+
+   ```bash
+   terraform plan    # Preview the changes
+   terraform apply   # Apply the changes
+   ```
+
+This will create all the necessary AWS resources for the app, including RDS, S3, ECS, ECR, IAM roles, and more.
 
 ---
 

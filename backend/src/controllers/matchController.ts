@@ -17,7 +17,7 @@ const petRepo = () => AppDataSource.getRepository(Pet);
  *     tags:
  *       - Matches
  *     requestBody:
- *       description: User ID and list of Pet IDs to match
+ *       description: The user to match and the list of pet IDs
  *       required: true
  *       content:
  *         application/json:
@@ -30,14 +30,16 @@ const petRepo = () => AppDataSource.getRepository(Pet);
  *               userId:
  *                 type: string
  *                 format: uuid
+ *                 description: UUID of the user to receive matches
  *               petIds:
  *                 type: array
+ *                 description: List of pet UUIDs to assign
  *                 items:
  *                   type: string
  *                   format: uuid
  *     responses:
  *       '200':
- *         description: Number of matches created
+ *         description: Matches successfully created
  *         content:
  *           application/json:
  *             schema:
@@ -45,11 +47,25 @@ const petRepo = () => AppDataSource.getRepository(Pet);
  *               properties:
  *                 assigned:
  *                   type: integer
- *                   description: How many new pet–user matches were created
+ *                   description: Number of new pet–user matches created
  *       '400':
  *         description: Bad request (missing or invalid parameters)
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
  *       '404':
- *         description: User or pet not found
+ *         description: User or one of the pets not found
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
  *       '500':
  *         description: Internal server error
  */
@@ -72,6 +88,11 @@ export const assignPets = async (
     }
 
     const pets = await petRepo().findByIds(petIds);
+    if (pets.length !== petIds.length) {
+      res.status(404).json({ message: "One or more pets not found" });
+      return;
+    }
+
     const matches = pets.map((pet) => matchRepo().create({ user, pet }));
     await matchRepo().save(matches);
     res.json({ assigned: matches.length });
@@ -84,12 +105,12 @@ export const assignPets = async (
  * @openapi
  * /api/matches:
  *   get:
- *     summary: List all user–pet matches (admin use)
+ *     summary: List all user–pet matches (for admin)
  *     tags:
  *       - Matches
  *     responses:
  *       '200':
- *         description: Array of all matches
+ *         description: Array of all matches with user and pet data
  *         content:
  *           application/json:
  *             schema:
@@ -111,11 +132,14 @@ export const assignPets = async (
  *                         format: email
  *                       name:
  *                         type: string
+ *                         nullable: true
  *                       dob:
  *                         type: string
  *                         format: date
+ *                         nullable: true
  *                       bio:
  *                         type: string
+ *                         nullable: true
  *                       avatarUrl:
  *                         type: string
  *                         format: uri
@@ -173,12 +197,12 @@ export const listMatches = async (
  * @openapi
  * /api/matches/me:
  *   get:
- *     summary: List all pet matches for the authenticated user
+ *     summary: List available pet matches for the current user
  *     tags:
  *       - Matches
  *     responses:
  *       '200':
- *         description: Array of matches belonging to the current user
+ *         description: Array of available pets wrapped in match-like objects
  *         content:
  *           application/json:
  *             schema:
@@ -186,9 +210,6 @@ export const listMatches = async (
  *               items:
  *                 type: object
  *                 properties:
- *                   id:
- *                     type: string
- *                     format: uuid
  *                   pet:
  *                     type: object
  *                     properties:
@@ -215,9 +236,16 @@ export const listMatches = async (
  *                   matchedAt:
  *                     type: string
  *                     format: date-time
- *                     description: Timestamp when this match was created
+ *                     description: When this match payload was generated
  *       '401':
  *         description: Unauthorized (no valid session)
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
  *       '500':
  *         description: Internal server error
  */
@@ -232,7 +260,6 @@ export const listMyMatches = async (
   }
 
   try {
-    // 1) find all pets the user has NOT swiped on:
     const availablePets = await AppDataSource.getRepository(Pet)
       .createQueryBuilder("pet")
       .leftJoin(
@@ -245,9 +272,7 @@ export const listMyMatches = async (
       .orderBy("pet.createdAt", "DESC")
       .getMany();
 
-    // 2) wrap each Pet in an object { pet } so frontend .map(m => m.pet) still works:
     const payload = availablePets.map((pet) => ({ pet }));
-
     res.json(payload);
   } catch (err) {
     next(err);

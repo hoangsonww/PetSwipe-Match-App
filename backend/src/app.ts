@@ -11,6 +11,7 @@ import matchesRoutes from "./routes/matches";
 import swipesRoutes from "./routes/swipes";
 import { errorHandler } from "./middlewares/errorHandler";
 import { ensureInitialized } from "./index";
+import { components as schemaComponents } from "./swagger/schemas";
 
 const app = express();
 
@@ -72,6 +73,7 @@ const swaggerSpec = swaggerJsdoc({
       { url: "http://localhost:5001", description: "Local development" },
     ],
     components: {
+      ...schemaComponents,
       securitySchemes: {
         bearerAuth: {
           type: "http",
@@ -90,11 +92,9 @@ const swaggerSpec = swaggerJsdoc({
     "./src/routes/*.ts",
     "./src/entities/*.ts",
     "./src/controllers/*.ts",
-    "./src/swagger/*.ts",
     "./src/routes/*.js",
     "./src/entities/*.js",
     "./src/controllers/*.js",
-    "./src/swagger/*.js",
   ],
 });
 

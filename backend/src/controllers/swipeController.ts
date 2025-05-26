@@ -14,6 +14,7 @@ const petRepo = () => AppDataSource.getRepository(Pet);
  *     tags:
  *       - Swipes
  *     requestBody:
+ *       description: The pet to swipe on and whether it's liked
  *       required: true
  *       content:
  *         application/json:
@@ -29,10 +30,10 @@ const petRepo = () => AppDataSource.getRepository(Pet);
  *                 description: ID of the pet being swiped
  *               liked:
  *                 type: boolean
- *                 description: True if liked (adopt), false if disliked (pass)
+ *                 description: True if user likes (adopt), false if passes
  *     responses:
  *       '200':
- *         description: The recorded swipe
+ *         description: The recorded swipe object
  *         content:
  *           application/json:
  *             schema:
@@ -58,10 +59,42 @@ const petRepo = () => AppDataSource.getRepository(Pet);
  *                 swipedAt:
  *                   type: string
  *                   format: date-time
+ *       '400':
+ *         description: Bad request (missing or invalid parameters)
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
  *       '401':
  *         description: Unauthorized (user not logged in)
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
  *       '404':
  *         description: Pet not found
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *       '409':
+ *         description: Conflict (user already swiped this pet)
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
  *       '500':
  *         description: Internal server error
  */
@@ -90,10 +123,10 @@ export const recordSwipe = async (
       return;
     }
 
-    const already = await swipeRepo().findOne({
+    const existing = await swipeRepo().findOne({
       where: { user: { id: req.user.id }, pet: { id: petId } },
     });
-    if (already) {
+    if (existing) {
       res.status(409).json({ message: "You have already swiped on this pet." });
       return;
     }
@@ -120,7 +153,7 @@ export const recordSwipe = async (
  *       - Swipes
  *     responses:
  *       '200':
- *         description: Array of swipe records (both likes and passes)
+ *         description: Array of swipe records (likes and passes)
  *         content:
  *           application/json:
  *             schema:
@@ -148,6 +181,13 @@ export const recordSwipe = async (
  *                     format: date-time
  *       '401':
  *         description: Unauthorized (user not logged in)
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
  *       '500':
  *         description: Internal server error
  */
@@ -158,9 +198,10 @@ export const listMySwipes = async (
 ): Promise<void> => {
   try {
     if (!req.user) {
-      res.status(401).end();
+      res.status(401).json({ message: "Not authenticated" });
       return;
     }
+
     const all = await swipeRepo().find({
       where: { user: { id: req.user.id } },
       relations: ["pet"],
@@ -212,6 +253,13 @@ export const listMySwipes = async (
  *                     format: date-time
  *       '401':
  *         description: Unauthorized (user not logged in)
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
  *       '500':
  *         description: Internal server error
  */
@@ -222,9 +270,10 @@ export const listMyLikedSwipes = async (
 ): Promise<void> => {
   try {
     if (!req.user) {
-      res.status(401).end();
+      res.status(401).json({ message: "Not authenticated" });
       return;
     }
+
     const liked = await swipeRepo().find({
       where: { user: { id: req.user.id }, liked: true },
       relations: ["pet"],
