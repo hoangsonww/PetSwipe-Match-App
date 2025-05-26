@@ -162,7 +162,7 @@ Below is a high-level Mermaid diagram of our architecture:
   <img src="docs/img/home-2.png" alt="Home Page" width="100%">
 </p>
 
-### Home Page Overview
+#### Home Page Overview
 
 <p align="center">
   <img src="docs/img/record.gif" alt="Home Page Record" width="100%">
