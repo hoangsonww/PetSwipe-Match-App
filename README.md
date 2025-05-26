@@ -152,11 +152,13 @@ Below is a high-level Mermaid diagram of our architecture:
   <img src="docs/img/landing.png" alt="Landing Page" width="100%">
 </p>
 
-### Home Page
+### Home Page Record
 
 <p align="center">
   <img src="docs/img/record.gif" alt="Home Page Record" width="100%">
 </p>
+
+
 
 <p align="center">
   <img src="docs/img/home-1.png" alt="Home Page" width="100%">
