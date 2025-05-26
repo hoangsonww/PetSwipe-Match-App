@@ -155,6 +155,10 @@ Below is a high-level Mermaid diagram of our architecture:
 ### Home Page
 
 <p align="center">
+  <img src="docs/img/record.gif" alt="Home Page Record" width="100%">
+</p>
+
+<p align="center">
   <img src="docs/img/home-1.png" alt="Home Page" width="100%">
 </p>
 
