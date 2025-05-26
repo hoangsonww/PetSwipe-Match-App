@@ -5,7 +5,7 @@ import { Pet } from "../entities/Pet";
 import { sendCsv } from "../utils/csv";
 import stream from "stream";
 import multer from "multer";
-import { uploadToS3 } from "../utils/s3";
+import { uploadPetPic } from "../utils/supabase";
 
 interface RawPetRow {
   name: string;
@@ -35,7 +35,7 @@ const upload = multer(); // in-memory
  *               file:
  *                 type: string
  *                 format: binary
- *                 description: CSV with headers: name,breed,description
+ *                 description: "CSV with headers: name,breed,description"
  *     responses:
  *       '200':
  *         description: Number of imported pets
@@ -251,11 +251,10 @@ export const uploadPetPhoto = [
         res.status(404).json({ message: "Pet not found" });
         return;
       }
-      const url = await uploadToS3(
+      const url = await uploadPetPic(
         req.file.buffer,
         req.file.originalname,
         req.file.mimetype,
-        "pet-photos",
       );
       pet.photoUrl = url;
       await petRepo().save(pet);

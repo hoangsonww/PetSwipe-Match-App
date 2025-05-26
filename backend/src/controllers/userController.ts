@@ -1,6 +1,6 @@
 import { Request, Response, NextFunction } from "express";
 import multer from "multer";
-import { uploadAvatar } from "../utils/s3";
+import { uploadAvatar } from "../utils/supabase";
 import { AppDataSource } from "../index";
 import { AppUser } from "../entities/User";
 

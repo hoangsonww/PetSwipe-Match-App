@@ -1,4 +1,5 @@
-# Project-wide Makefile
+# Project-wide Makefile for PetSwipe App
+#
 # This Makefile is used to define common tasks for the project.
 # It provides a convenient way to run commands and manage the project.
 # It is not intended to be used as a build system, but rather as a helper for common tasks.
@@ -11,6 +12,21 @@
 # - AWS CLI (https://aws.amazon.com/cli/)
 # - GitHub CLI (https://cli.github.com/)
 # - Concurrently
+#
+# Usage:
+#   make dev               # start backend & frontend in dev mode
+#   make build-backend     # install & build the backend
+#   make build-frontend    # install & build the frontend
+#   make docker-build      # build & push images to GHCR
+#   make docker-pull       # pull images & start stack via Docker Compose
+#   make up                # alias for docker-pull
+#   make down              # docker-compose down
+#   make clean             # remove build artifacts
+#   make lint              # run linters
+#   make test              # run tests
+#   make deploy            # run AWS deploy script
+#   make help             # show this help message
+#
 
 .DEFAULT_GOAL := help
 .PHONY: help dev build-backend build-frontend docker-build docker-push docker-pull up down clean lint test

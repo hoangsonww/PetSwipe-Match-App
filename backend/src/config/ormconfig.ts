@@ -12,10 +12,27 @@ const ormconfig: DataSourceOptions = {
   username: config.db.username,
   password: config.db.password,
   database: config.db.database,
-  ssl: config.db.ssl ? { rejectUnauthorized: false } : false,
+
+  // TLS for Aiven
+  ssl: config.db.ssl,
+  extra: {
+    // pg SSL options
+    ...(config.db.ssl
+      ? {
+          ssl: {
+            rejectUnauthorized: false,
+          },
+        }
+      : {}),
+    // connection pool options
+    max: 1, // max open connections
+    idleTimeoutMillis: 30000, // close idle clients after 30s
+  },
+
   entities: [AppUser, Match, Swipe, Pet],
 
-  synchronize: true,
+  // only auto‐sync schema in dev
+  synchronize: config.nodeEnv === "development",
   logging: config.nodeEnv === "development",
 };
 

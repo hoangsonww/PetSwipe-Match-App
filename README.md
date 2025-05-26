@@ -18,9 +18,10 @@ Users can browse pets, swipe to adopt or pass, and manage their profile. They ca
 ![AWS](https://img.shields.io/badge/AWS-232F3E?style=flat-square&logo=amazonwebservices&logoColor=white)
 ![AWS S3](https://img.shields.io/badge/AWS_S3-569A31?style=flat-square&logo=amazons3&logoColor=white)
 ![AWS RDS](https://img.shields.io/badge/AWS_RDS-527FFF?style=flat-square&logo=amazonrds&logoColor=white)
-![AWS Elastic Beanstalk](https://img.shields.io/badge/AWS_Elastic_Beanstalk-123456?style=flat-square&logo=amazonecs&logoColor=white)
 ![AWS ECS](https://img.shields.io/badge/AWS_ECS-FF0022?style=flat-square&logo=amazonecs&logoColor=white)
 ![AWS ECR](https://img.shields.io/badge/AWS_ECR-456789?style=flat-square&logo=amazonec2&logoColor=white)
+![AWS IAM](https://img.shields.io/badge/AWS_IAM-F05900?style=flat-square&logo=amazoniam&logoColor=white)
+![AWS CloudWatch](https://img.shields.io/badge/AWS_CloudWatch-232F3E?style=flat-square&logo=amazoncloudwatch&logoColor=white)
 ![Supabase](https://img.shields.io/badge/Supabase-3ECF8E?style=flat-square&logo=supabase&logoColor=white)
 ![Terraform](https://img.shields.io/badge/Terraform-7B42BC?style=flat-square&logo=terraform&logoColor=white)
 ![Shell](https://img.shields.io/badge/Shell-4EAA25?style=flat-square&logo=gnubash&logoColor=white)
@@ -68,11 +69,11 @@ PetSwipe is a full-stack application that allows users to swipe through pets ava
 
 The app is built using modern technologies, including **TypeScript**, **Next.js**, **Express**, and **PostgreSQL**. It leverages the power of **AWS** for storage and deployment, ensuring scalability and reliability.
 
-The app is designed to be modular and easy to extend, with a focus on clean code and best practices. It includes features such as user authentication, a swipe interface, personalized pet decks, and admin tools for managing pets and users.
+The app is also designed to be modular and easy to extend, with a focus on clean code and best practices. It includes features such as user authentication, a swipe interface, personalized pet decks, and admin tools for managing pets and users.
 
-And most importantly, it is built with the goal of helping shelter animals find their forever homes. By providing a fun and engaging way for users to browse pets, PetSwipe aims to increase adoption rates and raise awareness about the importance of pet adoption.
+And most importantly, it is built with the goal of helping shelter animals find their forever homes. By providing a fun and engaging way for users to browse pets, PetSwipe aims to increase adoption rates and raise awareness about the importance of pet adoption. 🐾
 
-I hope you enjoy using PetSwipe as much as I enjoyed building it!
+I hope you enjoy using PetSwipe as much as I enjoyed building it! 🐱
 
 ---
 
@@ -124,25 +125,49 @@ PetSwipe is a full-stack application with the following features:
 
 PetSwipe is built using a modern tech stack, ensuring scalability, maintainability, and performance. The architecture is designed to be modular and easy to extend.
 
-| Layer           | Technology                                                              |
-| --------------- | ----------------------------------------------------------------------- |
-| Frontend        | Next.js, TypeScript, React, Tailwind CSS, shadcn/ui, framer-motion, SWR |
-| Backend         | Node.js, Express, TypeScript, TypeORM, PostgreSQL                       |
-| Storage         | AWS RDS (PostgreSQL), AWS S3                                            |
-| Auth & Security | JSON Web Tokens, bcryptjs, cookie-parser                                |
-| Docs & API      | Swagger (OpenAPI v3)                                                    |
-| DevOps          | AWS Elastic Beanstalk / ECS / ECR, Docker (optional), Vercel            |
+| Layer                   | Technology                                                               |
+| ----------------------- | ------------------------------------------------------------------------ |
+| **Frontend**            | Next.js, React, TypeScript, Tailwind CSS, shadcn/ui, Framer Motion, SWR  |
+| **Backend & API**       | Node.js, Express, TypeScript, TypeORM, PostgreSQL, OpenAPI (via Swagger) |
+| **Data & Storage**      | AWS RDS (PostgreSQL), AWS S3                                             |
+| **Security & Auth**     | JSON Web Tokens, bcryptjs, cookie-parser                                 |
+| **DevOps & Deployment** | Docker, AWS ECR & ECS (Fargate), Vercel, GitHub Actions                  |
+
+Below is a high-level diagram of our architecture:
 
 ```
-[User's Browser]
-        │
-        ▼
- [Next.js Frontend] ←→ [Express API Backend] ←→ [PostgreSQL on AWS RDS]
-        │                                                   ↕
-        │                                         → AWS S3 (pet photos)
-        ▼                                                   &
-     Vercel (Frontend)                       Elastic Beanstalk / ECS (Backend)
+flowchart LR
+  subgraph CI/CD
+    GH["GitHub Actions"]
+  end
+
+  subgraph Frontend
+    Browser["User’s Browser"]
+    Next["Next.js & Vercel"]
+  end
+
+  subgraph Backend
+    ECR["AWS ECR"]
+    ECS["AWS ECS (Fargate) & Express API"]
+  end
+
+  subgraph Data
+    RDS["PostgreSQL & AWS RDS"]
+    S3["AWS S3 (Avatars & Pet Photos)"]
+  end
+
+  Browser --> Next
+  Next -->|API calls| ECS
+  ECS -->|Reads/Writes| RDS
+  ECS -->|Uploads/Serves| S3
+  ECR -->|Docker images| ECS
+
+  GH -->|Build & Deploy Frontend| Next
+  GH -->|Build & Push Images| ECR
+  GH -->|Deploy Backend| ECS
 ```
+
+> Diagram not working? Copy and paste the code into a Mermaid live editor: [Mermaid Live Editor](https://mermaid-js.github.io/mermaid-live-editor).
 
 ---
 
@@ -387,15 +412,34 @@ Swagger UI is available at `https://petswipe-backend-api.vercel.app/`.
 
 ## ☁️ AWS Deployment
 
+The app is designed to be easily deployable to AWS using services like:
+
 - **RDS**: PostgreSQL instance for data
 - **S3**: Bucket for pet photo storage
 - **Elastic Beanstalk** or **ECS** for backend
 - **ECR**: Container registry for Docker images
 - **GHCR**: Backup container registry for Docker images
+- **CloudWatch**: For logging and monitoring
 - **GitHub Actions** for CI/CD
 - **Vercel** for frontend
 
 **Tip**: Use IAM roles for EC2/ECS to grant S3 & RDS access securely!
+
+### Our Stack
+
+Currently, our stack is fully deployed on AWS using the following services:
+
+1. **AWS RDS**: Manages our PostgreSQL database.
+2. **AWS S3**: Stores pet photos and user avatars.
+   - Backup service: **Supabase Storage**.
+3. **AWS ECS**: Hosts our backend API using Docker containers.
+   - Backup service: **Vercel** (currently, due to AWS pricing issues, we have switched to Vercel for hosting the backend).
+4. **AWS ECR**: Container registry for our Docker images.
+5. **AWS IAM**: Manages permissions for accessing AWS resources.
+   - Backup service: **GitHub Container Registry (GHCR)**.
+6. **AWS CloudWatch**: For logging and monitoring.
+7. **GitHub Actions**: For CI/CD to build and deploy our Docker images to ECR.
+8. **Vercel**: Hosts our frontend application.
 
 ---
 
@@ -477,19 +521,21 @@ This CLI is designed to make it easier to manage the application and perform com
 
 ## 📝 License
 
-© 2025 **[Son Nguyen](https://sonnguyenhoang.com)**.
+© 2025 **[Son Nguyen](https://sonnguyenhoang.com)**. I hope this code is useful for you and your projects. Feel free to use it, modify it, and share it with others.
 
 Licensed under the **MIT License**. See [LICENSE](LICENSE) for details.
+
+> In short, you may use this code for personal or educational purposes, but please do not use it for commercial purposes without permission. If you do use this code, please give proper credit to the original author.
 
 ---
 
 ## 💁🏻‍♂️ Author
 
-This application is built with ❤️ by: **[Son Nguyen](https://sonnguyenhoang.com)**
+This application is built with ❤️ by **[Son Nguyen](https://sonnguyenhoang.com)** in 2025:
 
-- [GitHub](https://github.com/hoangsonww)
-- [LinkedIn](https://www.linkedin.com/in/hoangsonw/)
-- [Email](mailto:hoangson091104@gmail.com)
+- [My GitHub](https://github.com/hoangsonww)
+- [My LinkedIn](https://www.linkedin.com/in/hoangsonw/)
+- [Email Me](mailto:hoangson091104@gmail.com)
 
 Feel free to reach out for any questions, suggestions, or even collaborations!
 

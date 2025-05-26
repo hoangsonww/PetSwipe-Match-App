@@ -23,7 +23,10 @@ export function Footer() {
 
         {/* Links */}
         <div className="flex flex-wrap justify-center gap-x-6 gap-y-2">
-          <Link href="https://github.com/hoangsonww/petswipe" legacyBehavior>
+          <Link
+            href="https://github.com/hoangsonww/PetSwipe-Match-App"
+            legacyBehavior
+          >
             <a
               className="flex items-center space-x-1 hover:text-gray-200 transition text-sm whitespace-nowrap"
               target="_blank"

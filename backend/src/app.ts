@@ -1,4 +1,4 @@
-import express from "express";
+import express, { Request, Response, NextFunction } from "express";
 import cookieParser from "cookie-parser";
 import morgan from "morgan";
 import cors from "cors";
@@ -10,12 +10,27 @@ import petsRoutes from "./routes/pets";
 import matchesRoutes from "./routes/matches";
 import swipesRoutes from "./routes/swipes";
 import { errorHandler } from "./middlewares/errorHandler";
+import { ensureInitialized } from "./index";
 
 const app = express();
 
+// ─── WAIT FOR DB INIT ───────────────────────────────────────────────────────────
+app.use(async (_req: Request, _res: Response, next: NextFunction) => {
+  try {
+    await ensureInitialized();
+  } catch {
+    // init failure already logged
+  }
+  next();
+});
+
 // ─── CORS ─────────────────────────────────────────────────────────────────────
-const corsOptions = {
-  origin: ["http://localhost:3000", "https://petswipe.vercel.app"],
+// allow any origin, echoing back the request Origin header when credentials are used
+const corsOptions: cors.CorsOptions = {
+  origin: (origin, callback) => {
+    // allow requests with no origin (like mobile apps or curl)
+    callback(null, true);
+  },
   credentials: true,
   methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
   allowedHeaders: [
