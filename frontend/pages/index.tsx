@@ -7,12 +7,12 @@ import {
   Heart,
   MoveRight,
   Search,
-  Smile,
   Users,
   ShieldCheck,
   Rocket,
   Github,
   FileText,
+  ChevronDown,
 } from "lucide-react";
 import {
   motion,
@@ -20,11 +20,11 @@ import {
   useTransform,
   useReducedMotion,
   useInView,
+  AnimatePresence,
 } from "framer-motion";
 import { Button } from "@/components/ui/button";
 
 const rotatingWords = ["Swipe", "Discover", "Adopt", "Love", "Rescue", "Share"];
-
 const features = [
   {
     icon: <MoveRight size={42} />,
@@ -71,22 +71,17 @@ function CountUp({
 }) {
   const prefersReducedMotion = useReducedMotion();
   const ref = useRef<HTMLDivElement>(null);
-  // useInView will observe the ref and flip to true the first time it's visible
   const isInView = useInView(ref, { once: true, margin: "-100px" });
-
   const [count, setCount] = useState(prefersReducedMotion ? end : 0);
 
   useEffect(() => {
-    // don’t run if user prefers reduced motion or not yet in view
     if (prefersReducedMotion || !isInView) return;
-
     const start = 0;
     const range = end - start;
     const steps = Math.max(1, Math.ceil(duration / 16));
     const stepTime = duration / steps;
     let current = start;
     let stepCount = 0;
-
     const timer = setTimeout(function tick() {
       stepCount++;
       current = Math.min(end, Math.floor((range * stepCount) / steps + start));
@@ -95,7 +90,6 @@ function CountUp({
         setTimeout(tick, stepTime);
       }
     }, delay);
-
     return () => clearTimeout(timer);
   }, [end, duration, delay, prefersReducedMotion, isInView]);
 
@@ -143,25 +137,11 @@ const Landing: NextPage = () => {
           name="description"
           content="Swipe through adoptable pets near you, match instantly, and bring home your new best friend."
         />
-
-        {/* Inter font */}
-        <link rel="preconnect" href="https://fonts.googleapis.com" />
-        <link
-          rel="preconnect"
-          href="https://fonts.gstatic.com"
-          crossOrigin="anonymous"
-        />
-        <link
-          href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap"
-          rel="stylesheet"
-        />
       </Head>
-
       <section className="relative flex items-center justify-center min-h-screen overflow-hidden font-inter">
         <div className="absolute inset-0 -z-10">
           <div className="h-full w-full animate-gradientMove bg-[length:400%_400%] bg-[linear-gradient(120deg,#e8f8ff,#f5fdff,#ffe9f3,#f6fcff,#e8f8ff)]" />
         </div>
-
         <motion.div
           style={{ y: blobY, transform: "translate3d(0,0,0)" }}
           className="pointer-events-none absolute -left-32 -top-32 h-96 w-96 rounded-full bg-[#90cdf4] opacity-20 blur-3xl will-change-transform"
@@ -170,7 +150,6 @@ const Landing: NextPage = () => {
           style={{ y: blobY, transform: "translate3d(0,0,0)" }}
           className="pointer-events-none absolute right-0 top-1/3 h-[500px] w-[500px] rounded-full bg-[#f687b3] opacity-20 blur-3xl will-change-transform"
         />
-
         <div className="mx-auto max-w-5xl px-6 pt-24 pb-32 relative z-10 text-center">
           <motion.span
             variants={fadeUp}
@@ -181,7 +160,6 @@ const Landing: NextPage = () => {
             <PawPrint size={20} className="text-[#7097A8]" />
             Adopt, don’t shop!
           </motion.span>
-
           <motion.h1
             variants={fadeUp}
             initial="hidden"
@@ -195,7 +173,6 @@ const Landing: NextPage = () => {
             </span>
             &nbsp;today
           </motion.h1>
-
           <motion.p
             variants={fadeUp}
             initial="hidden"
@@ -206,30 +183,41 @@ const Landing: NextPage = () => {
             Swipe. Match. <span className="font-semibold">Adopt.</span> Pet
             adoption made joyful.
           </motion.p>
-
           <motion.p
             variants={fadeUp}
             initial="hidden"
             animate="visible"
             custom={0.45}
-            className="mt-4 text-2xl md:text-3xl font-medium text-[#234851] text-center leading-snug"
+            className="mt-4 text-2xl md:text-3xl font-medium text-[#234851] leading-snug flex justify-center items-baseline"
           >
-            <span className="relative inline-block min-w-[8rem] ml-0 mr-2 mb-[5px] align-middle font-extrabold">
-              {rotatingWords.map((w, i) => (
-                <span
-                  key={w}
-                  className={`absolute inset-0 flex items-center justify-end pr-1 transition-opacity duration-500 will-change-opacity ${
-                    i === wordIndex ? "opacity-100" : "opacity-0"
-                  }`}
+            <span className="inline-block mr-2 mb-[2px] align-baseline">
+              <AnimatePresence mode="wait">
+                <motion.span
+                  key={wordIndex}
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -10 }}
+                  transition={{ duration: 0.5 }}
+                  className="
+                    inline-block
+                    bg-[#E1F4FB]
+                    text-[#234851]
+                    font-extrabold
+                    px-3
+                    py-1
+                    rounded-lg
+                    align-baseline
+                    text-3xl
+                  "
                 >
-                  {w}
-                </span>
-              ))}
+                  {rotatingWords[wordIndex]}
+                </motion.span>
+              </AnimatePresence>
             </span>
-            pets near you – in real time.
+            <span className="align-baseline">
+              pets near you – in real time.
+            </span>
           </motion.p>
-
-          {/* CTA buttons */}
           <motion.div
             variants={fadeUp}
             initial="hidden"
@@ -253,16 +241,45 @@ const Landing: NextPage = () => {
             <Link href="/faq" passHref>
               <Button
                 variant="ghost"
-                className="px-8 py-3 text-lg hover:bg-[#f0fdfa] text-[#234851]"
+                className="
+                  px-8 py-3 text-lg text-[#234851]
+                  border-2 border-dashed border-[#234851]
+                  rounded-lg
+                  hover:bg-[#f0fdfa]
+                  transition-colors duration-200 ease-in-out
+                  focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#234851]
+                "
               >
-                Learn More
+                FAQs
               </Button>
             </Link>
+            <div className="w-full flex justify-center">
+              <Button
+                variant="outline"
+                onClick={(e) => {
+                  e.preventDefault();
+                  document
+                    .getElementById("features")
+                    ?.scrollIntoView({ behavior: "smooth" });
+                }}
+                className={`
+                  px-8 py-3 text-lg
+                  text-[#234851]
+                  border-2 border-transparent hover:border-[#7097A8]
+                  flex items-center
+                  rounded-lg
+                  transition-all duration-200 ease-in-out transform
+                  hover:translate-y-1
+                `}
+              >
+                Learn More
+                <ChevronDown className="ml-2" size={20} />
+              </Button>
+            </div>
           </motion.div>
         </div>
       </section>
-
-      <section className="py-24 bg-[#f8fcff] font-inter">
+      <section className="py-24 bg-[#f8fcff] font-inter" id="features">
         <motion.h2
           variants={fadeUp}
           initial="hidden"
@@ -282,7 +299,6 @@ const Landing: NextPage = () => {
         >
           We make pet adoption effortless, delightful, and&nbsp;successful.
         </motion.p>
-
         <div className="mt-16 grid gap-10 px-6 sm:grid-cols-2 lg:grid-cols-3 max-w-6xl mx-auto">
           {features.map((f, idx) => (
             <motion.div
@@ -292,7 +308,16 @@ const Landing: NextPage = () => {
               whileInView="visible"
               custom={0.2 + idx * 0.1}
               viewport={{ once: true }}
-              className="relative overflow-hidden p-6 bg-white rounded-2xl shadow-md transition-all group will-change-transform"
+              className="
+                relative overflow-hidden p-6 bg-white rounded-2xl shadow-md
+                transition-opacity transition-transform duration-500 ease-out
+                group
+                transform-gpu will-change-[opacity,transform]
+              "
+              style={{
+                WebkitBackfaceVisibility: "hidden",
+                backfaceVisibility: "hidden",
+              }}
             >
               <div className="flex items-center justify-center h-16 w-16 rounded-full bg-[#e2f0ff] text-[#7097A8] mb-4">
                 {f.icon}
@@ -320,7 +345,6 @@ const Landing: NextPage = () => {
           </h2>
           <p className="mt-4 text-lg text-gray-600">Numbers that wag tails.</p>
         </motion.div>
-
         <motion.div
           variants={fadeUp}
           initial="hidden"
@@ -477,14 +501,12 @@ const Landing: NextPage = () => {
                 <span>GitHub&nbsp;Repository</span>
               </a>
             </Link>
-
             <Link href="/terms" legacyBehavior>
               <a className="flex items-center space-x-1 hover:text-gray-700 transition text-sm whitespace-nowrap">
                 <FileText className="h-4 w-4" />
                 <span>Terms&nbsp;of&nbsp;Service</span>
               </a>
             </Link>
-
             <Link href="/privacy" legacyBehavior>
               <a className="flex items-center space-x-1 hover:text-gray-700 transition text-sm whitespace-nowrap">
                 <ShieldCheck className="h-4 w-4" />
