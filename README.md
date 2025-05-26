@@ -133,41 +133,13 @@ PetSwipe is built using a modern tech stack, ensuring scalability, maintainabili
 | **Security & Auth**     | JSON Web Tokens, bcryptjs, cookie-parser                                 |
 | **DevOps & Deployment** | Docker, AWS ECR & ECS (Fargate), Vercel, GitHub Actions                  |
 
-Below is a high-level diagram of our architecture:
+Below is a high-level Mermaid diagram of our architecture:
 
-```
-flowchart LR
-  subgraph CI/CD
-    GH["GitHub Actions"]
-  end
+<p align="center">
+  <img src="docs/img/mermaid.png" alt="Architecture Diagram" width="100%">
+</p>
 
-  subgraph Frontend
-    Browser["User’s Browser"]
-    Next["Next.js & Vercel"]
-  end
-
-  subgraph Backend
-    ECR["AWS ECR"]
-    ECS["AWS ECS (Fargate) & Express API"]
-  end
-
-  subgraph Data
-    RDS["PostgreSQL & AWS RDS"]
-    S3["AWS S3 (Avatars & Pet Photos)"]
-  end
-
-  Browser --> Next
-  Next -->|API calls| ECS
-  ECS -->|Reads/Writes| RDS
-  ECS -->|Uploads/Serves| S3
-  ECR -->|Docker images| ECS
-
-  GH -->|Build & Deploy Frontend| Next
-  GH -->|Build & Push Images| ECR
-  GH -->|Deploy Backend| ECS
-```
-
-> Diagram not working? Copy and paste the code into a Mermaid live editor: [Mermaid Live Editor](https://mermaid-js.github.io/mermaid-live-editor).
+> Link to the diagram: [Mermaid Live Diagram](https://www.mermaidchart.com/raw/3c7480d2-191d-4d09-a8f1-6678de344fa4?theme=light&version=v0.1&format=svg)
 
 ---
 
