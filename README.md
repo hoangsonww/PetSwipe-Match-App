@@ -82,7 +82,7 @@ I hope you enjoy using PetSwipe as much as I enjoyed building it! 🐱
 
 **[PetSwipe](https://petswipe.vercel.app)** is live on Vercel! You can try it out and see how it works.
 
-> Link not working? Copy and paste the URL into your browser: [https://petswipe.vercel.app](https://petswipe.vercel.app).
+> Link not working? Copy and paste this URL into your browser: [https://petswipe.vercel.app](https://petswipe.vercel.app).
 
 Also, checkout the backend API at **[PetSwipe API](https://petswipe-backend-api.vercel.app/)**. You can use tools like Postman or Swagger UI to explore the API endpoints.
 
