@@ -413,6 +413,7 @@ Currently, our stack is fully deployed on AWS using the following services:
 6. **AWS CloudWatch**: For logging and monitoring.
 7. **GitHub Actions**: For CI/CD to build and deploy our Docker images to ECR.
 8. **Vercel**: Hosts our frontend application.
+9. **Terraform**: Infrastructure as Code (IaC) for managing AWS resources.
 
 ---
 
