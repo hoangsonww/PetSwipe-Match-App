@@ -36,7 +36,6 @@ import { Slider } from "@/components/ui/slider";
 import Link from "next/link";
 
 const fetchMatches = () => matchApi.listMyMatches();
-
 const pageVariants = {
   enter: (d: number) => ({ x: d > 0 ? 300 : -300, opacity: 0 }),
   center: { x: 0, opacity: 1 },
@@ -57,7 +56,6 @@ const deckCardVariants = {
 const Home: NextPage = () => {
   const router = useRouter();
   const { user, loading: authLoading } = useUser();
-
   const { data: matches, error } = useSWR<Match[]>(
     user ? "matches" : null,
     fetchMatches,
@@ -175,7 +173,6 @@ const Home: NextPage = () => {
     );
   }
 
-  /* ---------- instruction card ---------- */
   const renderInstructionCard = (isTop: boolean) => (
     <div
       className="
@@ -252,7 +249,13 @@ const Home: NextPage = () => {
 
     return (
       <div
-        className="relative w-full h-full max-h-screen cursor-grab active:cursor-grabbing"
+        className="
+          relative
+          w-full max-w-[95vw] sm:max-w-none mx-auto
+          h-full max-h-screen
+          cursor-grab active:cursor-grabbing
+          z-40
+        "
         style={{ perspective: 1000 }}
         {...(isTop ? swipeHandlers : {})}
         onClick={isTop ? handleCardClick : undefined}
@@ -406,7 +409,7 @@ const Home: NextPage = () => {
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.45 }}
-        className="relative flex items-center justify-center h-full py-8 mb-8"
+        className="relative flex items-center justify-center h-full py-8 mb-8 z-20"
       >
         <button
           onClick={goPrev}
@@ -418,7 +421,7 @@ const Home: NextPage = () => {
         </button>
 
         <div
-          className="w-full max-w-md h-[75vh] relative"
+          className="relative w-[95vw] max-w-md mx-auto h-[75vh] z-20"
           style={{
             transform: `scale(${scale / 100})`,
             transition: "transform 0.25s ease",
@@ -521,7 +524,7 @@ const Home: NextPage = () => {
 
       <TooltipProvider delayDuration={200}>
         <div
-          className="relative left-1/2 -translate-x-1/2 w-screen flex justify-center
+          className="relative left-1/2 -translate-x-1/2 w-screen flex justify-center z-10
              shadow-[inset_0_4px_6px_-4px_rgba(0,0,0,0.3)]"
         >
           <div className="flex items-center gap-8 py-4">
@@ -568,10 +571,16 @@ const Home: NextPage = () => {
               </TooltipTrigger>
               <TooltipContent
                 side="top"
-                className="bg-white text-[#7097A8] rounded-md px-3 py-2 shadow-lg text-sm font-medium"
+                className="
+                  bg-white text-[#7097A8] rounded-md px-3 py-2 shadow-lg
+                  text-sm font-medium
+                  max-w-[75vw] whitespace-normal break-words
+                "
               >
-                Tap to flip for more info, swipe or arrow-click to navigate,
-                then carefully make your choice: adopt or pass.
+                Tap the card to flip it over and view full pet details. Swipe
+                left or right - or use the ◀️/▶️ arrows - to move between cards.
+                On the back, click “Adopt” or “Pass” to record your choice. Once
+                you select, your decision is final, so choose thoughtfully!
               </TooltipContent>
             </Tooltip>
 
