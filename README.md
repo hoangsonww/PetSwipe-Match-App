@@ -3,7 +3,7 @@
 Built with an aim to help shelter animals find loving homes, **PetSwipe** is a swipe-to-adopt platform connecting prospective pet parents with shelter animals.
 Users can browse pets, swipe to adopt or pass, and manage their profile. They can also view their matches and history of swipes.
 
-> Inspired by Tinder, but for pets to find their loving humans! 🐶🐱
+> Inspired by Tinder UX, but for pets to find their loving humans! 🐶🐱
 
 ![TypeScript](https://img.shields.io/badge/TypeScript-3178C6?style=flat-square&logo=typescript&logoColor=white)
 ![Node.js](https://img.shields.io/badge/Node.js-339933?style=flat-square&logo=nodedotjs&logoColor=white)
@@ -89,7 +89,7 @@ I hope you enjoy using PetSwipe as much as I enjoyed building it! 🐱
 
 Also, checkout the backend API at **[PetSwipe API](https://petswipe-backend-api.vercel.app/)**. You can use tools like Postman or Swagger UI to explore the API endpoints.
 
-> **Note**: Currently, most of the data is seeded with dummy data. We hope the app will be used by more real users and pets in the future. If you are a shelter or a pet adoption organization, please reach out to us to get your data integrated into the app!
+> **Note**: Currently, most of the data is seeded with dummy data. We hope the app will be used by more real users and pet adoption shelters in the future. If you are a shelter or a pet adoption organization, please reach out to us to get **all** your data integrated into the app in seconds! Or you can also use the in-app manual add pet features to further enrich our pets database (only works for authenticated users).  
 
 ---
 
@@ -103,6 +103,7 @@ PetSwipe is a full-stack application with the following features:
 - **Swipe Interface**:
   - Swipe left/right or press arrow keys/buttons to navigate through the deck of pets cards
   - For each card, users can view pet details, photos, and decide to adopt or pass
+  - Each user is randomly assigned a sample selection of pet cards (around 90-110 cards) to review. As the app gathers more real, user-added pet data, it will improve in matching users with the most relevant pets.
 - **Personalized Deck**:
   - Deck is generated based on user preferences and past swipes
   - Users will only see pets that they haven't swiped on before, and pets that are most relevant to them
@@ -148,7 +149,7 @@ Below is a high-level Mermaid diagram of our architecture/infrastructure:
   <img src="docs/img/mermaid.png" alt="Architecture Diagram" width="100%">
 </p>
 
-> Link to the diagram: [Mermaid Live Diagram](https://www.mermaidchart.com/raw/3c7480d2-191d-4d09-a8f1-6678de344fa4?theme=light&version=v0.1&format=svg)
+> Image not showing? Here's the link to the diagram: [Mermaid Live Diagram](https://www.mermaidchart.com/raw/3c7480d2-191d-4d09-a8f1-6678de344fa4?theme=light&version=v0.1&format=svg)
 
 ---
 
@@ -573,4 +574,4 @@ Feel free to reach out for any questions, suggestions, or even collaborations!
 
 ---
 
-❤️ _Thank you for helping pets find their forever homes!_
+❤️ _Thank you for helping pets find their forever homes!_ 🐶🐱
