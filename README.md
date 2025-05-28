@@ -22,6 +22,7 @@ Users can browse pets, swipe to adopt or pass, and manage their profile. They ca
 ![AWS ECR](https://img.shields.io/badge/AWS_ECR-456789?style=flat-square&logo=amazonec2&logoColor=white)
 ![AWS IAM](https://img.shields.io/badge/AWS_IAM-F05900?style=flat-square&logo=amazoniam&logoColor=white)
 ![AWS CloudWatch](https://img.shields.io/badge/AWS_CloudWatch-232F3E?style=flat-square&logo=amazoncloudwatch&logoColor=white)
+![Google AI](https://img.shields.io/badge/Google_AI-4285F4?style=flat-square&logo=google&logoColor=white)
 ![Supabase](https://img.shields.io/badge/Supabase-3ECF8E?style=flat-square&logo=supabase&logoColor=white)
 ![Terraform](https://img.shields.io/badge/Terraform-7B42BC?style=flat-square&logo=terraform&logoColor=white)
 ![Shell](https://img.shields.io/badge/Shell-4EAA25?style=flat-square&logo=gnubash&logoColor=white)
@@ -106,6 +107,9 @@ PetSwipe is a full-stack application with the following features:
   - Deck is generated based on user preferences and past swipes
   - Users will only see pets that they haven't swiped on before, and pets that are most relevant to them
 - **History**: View all swipes & liked (adopted) pets
+- **Chatbot**:
+  - A simple chatbot to answer common questions about the app and pets (e.g. breeds, adoption process, pet care tips, etc.)
+  - Powered by **Google AI** and **Retrieval-Augmented Generation (RAG)** for personalized responses
 - **Admin Tools**:
   - Bulk upload pets via CSV
   - Export pets data
@@ -135,8 +139,10 @@ PetSwipe is built using a modern tech stack, ensuring scalability, maintainabili
 | **Data & Storage**      | AWS RDS (PostgreSQL), AWS S3                                             |
 | **Security & Auth**     | JSON Web Tokens, bcryptjs, cookie-parser                                 |
 | **DevOps & Deployment** | Docker, AWS ECR & ECS (Fargate), Vercel, GitHub Actions                  |
+| **Infrastructure**      | Terraform, AWS IAM, AWS CloudWatch                                       |
+| **AI**                  | Google AI, Retrieval-Augmented Generation (RAG)                          |
 
-Below is a high-level Mermaid diagram of our architecture:
+Below is a high-level Mermaid diagram of our architecture/infrastructure:
 
 <p align="center">
   <img src="docs/img/mermaid.png" alt="Architecture Diagram" width="100%">
@@ -180,6 +186,12 @@ Below is a high-level Mermaid diagram of our architecture:
 
 <p align="center">
   <img src="docs/img/adopted.png" alt="Adopted Pets" width="100%">
+</p>
+
+### Chatbot
+
+<p align="center">
+  <img src="docs/img/chatbot.png" alt="Chatbot" width="100%">
 </p>
 
 ### Profile
@@ -257,6 +269,7 @@ _and more..._
 - **PostgreSQL** (AWS RDS recommended)
 - **AWS CLI** & IAM credentials for S3, RDS
 - **Docker** (optional, for local Postgres container)
+- **Google AI** API key (for chatbot feature)
 
 > ⚠️ **Note**: Due to `shadcn/ui` peerDeps, install frontend dependencies with:
 >
@@ -378,6 +391,10 @@ Swagger docs at `http://localhost:5001/api-docs.json`.
 - **PUT** `/api/users/me`
 - **POST** `/api/users/me/avatar`
 - **DELETE** `/api/users/me/avatar`
+
+### Chatbot
+
+- **POST** `/api/chat`
 
 More endpoints may be added as the app evolves. Refer to the Swagger docs for the most up-to-date information!
 
