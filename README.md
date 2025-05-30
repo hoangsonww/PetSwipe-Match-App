@@ -416,6 +416,8 @@ The app is designed to be easily deployable to AWS using services like:
 - **S3**: Bucket for pet photo storage
 - **Elastic Beanstalk** or **ECS** for backend
 - **ECR**: Container registry for Docker images
+- **ECS**: For hosting the backend API using Docker containers
+  - **Fargate**: Serverless compute engine for containers
 - **GHCR**: Backup container registry for Docker images
 - **CloudWatch**: For logging and monitoring
 - **IAM**: For managing permissions
@@ -434,6 +436,7 @@ Currently, our stack is fully deployed on AWS using the following services:
    - Backup service: **Supabase Storage**.
 3. **AWS ECS**: Hosts our backend API using Docker containers.
    - Backup service: **Vercel** (currently, due to AWS pricing issues, we have switched to Vercel for hosting the backend).
+   - **AWS Fargate**: Serverless compute engine for running containers.
 4. **AWS ECR**: Container registry for our Docker images.
 5. **AWS ELB**: Elastic Load Balancer for routing traffic to our ECS services.
    - Backup service: **GitHub Actions** for CI/CD to build and deploy our Docker images.
