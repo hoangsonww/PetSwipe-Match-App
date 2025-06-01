@@ -1,7 +1,9 @@
+# ----------------------------------------------------------------------------------------------------
+#
 # Makefile for AWS deployment of PetSwipe project
 #
-# This Makefile automates the deployment process to AWS, including creating an Application Load Balancer (ALB),
-# building and pushing Docker images, and deploying the application using AWS services.
+# This Makefile automates the deployment process to AWS, including creating an Application Load
+# Balancer (ALB), building and pushing Docker images, and deploying the application using AWS services.
 #
 # Usage:
 #   make all              # run all steps: ALB, images, deploy
@@ -15,10 +17,12 @@
 # Note:
 #   - Ensure AWS CLI is configured with the necessary permissions.
 #   - The script assumes Docker is installed and configured to push to AWS ECR.
-#   - The AWS region, project name, and account ID can be overridden via environment variables or command line.
-#   - The script uses a custom shell script `aws-alb.sh` for ALB provisioning and `aws/deploy.sh` for full deployment.
+#   - The AWS region, project name, and account ID can be overridden via environment
+#   variables or command line.
+#   - The script uses a custom shell script `aws-alb.sh` for ALB provisioning and `aws/deploy.sh`
+#   for full deployment.
 #
-# --------------------------------------------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------------------------------
 
 # overrideable via env or command line
 AWS_REGION   ?= us-east-1
@@ -43,11 +47,13 @@ alb:
 # 2️⃣ Build & push both Docker images
 images: backend-image frontend-image
 
+# Build and push Docker images for backend and frontend
 backend-image:
 	@echo "→ building & pushing backend image..."
 	@docker build -t $(ECR_URI_BACKEND):latest ./backend
 	@docker push $(ECR_URI_BACKEND):latest
 
+# Build and push Docker image for frontend
 frontend-image:
 	@echo "→ building & pushing frontend image..."
 	@docker build -t $(ECR_URI_FRONTEND):latest ./frontend

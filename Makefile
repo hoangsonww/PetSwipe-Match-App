@@ -1,4 +1,11 @@
+# --------------------------------------------------------------------------------------------
+#
 # Project-wide Makefile for PetSwipe App
+#
+# PetSwipe is a web application that allows users to swipe through pets available for adoption.
+# It is built with a Node.js backend and a React frontend, using Docker for containerization.
+# The project is designed to be easily deployable to AWS and includes CI/CD pipelines for automated
+# testing and deployment.
 #
 # This Makefile is used to define common tasks for the project.
 # It provides a convenient way to run commands and manage the project.
@@ -28,7 +35,7 @@
 #   make deploy            # run AWS deploy script
 #   make help             # show this help message
 #
-# Copyright (c) 2025 Son Nguyen
+# Copyright (c) 2025 Son Nguyen.
 # Licensed under the MIT License (MIT).
 # See LICENSE file in the project root for full license information.
 #

@@ -1,0 +1,17 @@
+version: "3.8"
+
+services:
+  compute:
+    build:
+      context: .
+      dockerfile: Dockerfile.compute
+    container_name: petswipe-compute
+    volumes:
+      - .:/workspace
+    working_dir: /workspace
+    tty: true          # allocate a TTY so we can exec interactive shells
+    stdin_open: true   # keep STDIN open
+    environment:
+      - SHELL=/bin/zsh
+      - TERM=xterm-256color
+      -
