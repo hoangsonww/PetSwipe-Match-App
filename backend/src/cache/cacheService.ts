@@ -16,7 +16,7 @@ export async function cacheGet<T = any>(key: string): Promise<T | null> {
 export async function cacheSet(
   key: string,
   value: any,
-  ttlSeconds?: number
+  ttlSeconds?: number,
 ): Promise<void> {
   const fullKey = KEY_PREFIX + key;
   const serialized = JSON.stringify(value);

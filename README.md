@@ -35,6 +35,8 @@ Users can browse pets, swipe to adopt or pass, and manage their profile. They ca
 ![Shell](https://img.shields.io/badge/Shell-4EAA25?style=flat-square&logo=gnubash&logoColor=white)
 ![Make](https://img.shields.io/badge/Make-777777?style=flat-square&logo=gnu&logoColor=white)
 ![Framer Motion](https://img.shields.io/badge/Framer_Motion-000000?style=flat-square&logo=framer&logoColor=white)
+![Playwright](https://img.shields.io/badge/Playwright-2B2D42?style=flat-square&logo=nestjs&logoColor=white)
+![Jest](https://img.shields.io/badge/Jest-C21325?style=flat-square&logo=jest&logoColor=white)
 ![Docker](https://img.shields.io/badge/Docker-2496ED?style=flat-square&logo=docker&logoColor=white)
 ![Vercel](https://img.shields.io/badge/Vercel-000000?style=flat-square&logo=vercel&logoColor=white)
 ![GitHub Actions](https://img.shields.io/badge/GitHub_Actions-2088FF?style=flat-square&logo=githubactions&logoColor=white)
@@ -141,7 +143,7 @@ PetSwipe is a full-stack application with the following features:
 PetSwipe is built using a modern tech stack, ensuring scalability, maintainability, and performance. The architecture is designed to be modular and easy to extend.
 
 | Layer                   | Technology                                                                                |
-|-------------------------|-------------------------------------------------------------------------------------------|
+| ----------------------- | ----------------------------------------------------------------------------------------- |
 | **Frontend**            | Next.js, React, TypeScript, Tailwind CSS, shadcn/ui, Framer Motion, SWR                   |
 | **Backend & API**       | Node.js, Express, TypeScript, TypeORM, PostgreSQL, OpenAPI (via Swagger), RabbitMQ, Redis |
 | **Data & Storage**      | AWS RDS (PostgreSQL), AWS S3                                                              |
@@ -149,6 +151,7 @@ PetSwipe is built using a modern tech stack, ensuring scalability, maintainabili
 | **DevOps & Deployment** | Docker, AWS ECR & ECS (Fargate), Vercel, GitHub Actions                                   |
 | **Infrastructure**      | Terraform, Consul, Vault, Nomad, AWS IAM, AWS CloudWatch, AWS ALB                         |
 | **AI**                  | Google AI, Retrieval-Augmented Generation (RAG)                                           |
+| **Testing**             | Playwright (frontend), Jest (backend)                                                     |
 
 Below is a high-level Mermaid diagram of our architecture/infrastructure:
 

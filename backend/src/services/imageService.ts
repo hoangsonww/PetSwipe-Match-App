@@ -1,5 +1,8 @@
 import path from "path";
-import { enqueueImageResizeJob, ImageJobPayload } from "../messaging/producers/imageProducer";
+import {
+  enqueueImageResizeJob,
+  ImageJobPayload,
+} from "../messaging/producers/imageProducer";
 import { getRepository } from "typeorm";
 import { Pet } from "../entities/Pet"; // adjust the path according to your entity structure
 
@@ -12,7 +15,10 @@ import { Pet } from "../entities/Pet"; // adjust the path according to your enti
  *   2) Then enqueues a resize job via RabbitMQ
  *   3) Updates the Pet entity in Postgres to include a “thumbnailPending = true” flag
  */
-export async function handlePetPhotoUpload(petId: string, s3Key: string): Promise<void> {
+export async function handlePetPhotoUpload(
+  petId: string,
+  s3Key: string,
+): Promise<void> {
   // 1) Optionally: update Pet record to show a new photo is pending
   const petRepo = getRepository(Pet);
   const pet = await petRepo.findOne({ where: { id: petId } });

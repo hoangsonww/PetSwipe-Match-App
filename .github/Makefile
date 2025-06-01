@@ -1,4 +1,11 @@
+# --------------------------------------------------------------------------------------------
+#
 # Project-wide Makefile for PetSwipe App
+#
+# PetSwipe is a web application that allows users to swipe through pets available for adoption.
+# It is built with a Node.js backend and a React frontend, using Docker for containerization.
+# The project is designed to be easily deployable to AWS and includes CI/CD pipelines for automated
+# testing and deployment.
 #
 # This Makefile is used to define common tasks for the project.
 # It provides a convenient way to run commands and manage the project.
@@ -28,7 +35,7 @@
 #   make deploy            # run AWS deploy script
 #   make help             # show this help message
 #
-# Copyright (c) 2025 Son Nguyen
+# Copyright (c) 2025 Son Nguyen.
 # Licensed under the MIT License (MIT).
 # See LICENSE file in the project root for full license information.
 #
@@ -37,6 +44,7 @@
 .DEFAULT_GOAL := help
 .PHONY: help dev build-backend build-frontend docker-build docker-pull up down clean lint test deploy
 
+# Show help message
 help:
 	@echo "PetSwipe Makefile (in subdir):"
 	@echo ""
@@ -52,39 +60,50 @@ help:
 	@echo "  make test              → run tests"
 	@echo "  make deploy            → run AWS deploy script"
 
+# Start backend & frontend in development mode
 dev:
 	cd .. && concurrently \
 		"cd backend && npm run dev" \
 		"cd frontend && npm run dev"
 
+# Install dependencies and build backend and frontend
 build-backend:
 	cd .. && cd backend && npm ci --legacy-peer-deps && npm run build
 
+# Install dependencies and build frontend
 build-frontend:
 	cd .. && cd frontend && npm ci --legacy-peer-deps && npm run build
 
+# Build and push Docker images to GitHub Container Registry
 docker-build:
 	cd .. && ./upload_to_ghcr.sh
 
+# Pull Docker images and start the stack using Docker Compose
 docker-pull:
 	cd .. && ./pull_and_run.sh
 
+# Alias for docker-pull
 up: docker-pull
 
+# Stop and remove the Docker Compose stack
 down:
 	cd .. && docker-compose down
 
+# Clean up build artifacts
 clean:
 	cd .. && rm -rf backend/dist frontend/.next
 
+# Run linters for both backend and frontend
 lint:
 	cd .. && cd backend && npm run lint
 	cd .. && cd frontend && npm run lint
 
+# Run tests for both backend and frontend
 test:
 	cd .. && cd backend && npm test
 	cd .. && cd frontend && npm test
 
+# Deploy the application to AWS
 deploy:
 	@echo "Deploying to production..."
 	cd .. && cd aws && ./deploy.sh

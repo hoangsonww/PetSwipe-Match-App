@@ -36,7 +36,10 @@ export async function getUserById(userId: string): Promise<AppUser | null> {
 /**
  * Updates a user’s profile and invalidates the cache.
  */
-export async function updateUserProfile(userId: string, updates: Partial<AppUser>): Promise<AppUser> {
+export async function updateUserProfile(
+  userId: string,
+  updates: Partial<AppUser>,
+): Promise<AppUser> {
   const userRepo = getRepository(AppUser);
   let user = await userRepo.findOne({ where: { id: userId } });
   if (!user) throw new Error(`User ${userId} not found`);

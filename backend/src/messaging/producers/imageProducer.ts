@@ -11,7 +11,9 @@ export interface ImageJobPayload {
  * Publishes an “image resize” job to RabbitMQ.
  * The consumer (e.g. Image Processor) will pick it up.
  */
-export async function enqueueImageResizeJob(payload: ImageJobPayload): Promise<void> {
+export async function enqueueImageResizeJob(
+  payload: ImageJobPayload,
+): Promise<void> {
   const channel = await getRabbitChannel();
   // Ensure the queue exists (durable)
   await channel.assertQueue(IMAGE_QUEUE_NAME, { durable: true });

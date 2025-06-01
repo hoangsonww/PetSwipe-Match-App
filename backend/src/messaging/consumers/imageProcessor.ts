@@ -19,7 +19,9 @@ export async function startImageProcessor(): Promise<void> {
   // Prefetch 1 at a time
   channel.prefetch(1);
 
-  console.log(`[ImageProcessor] Waiting for messages in ${IMAGE_QUEUE_NAME}...`);
+  console.log(
+    `[ImageProcessor] Waiting for messages in ${IMAGE_QUEUE_NAME}...`,
+  );
   channel.consume(
     IMAGE_QUEUE_NAME,
     async (msg) => {
@@ -69,6 +71,6 @@ export async function startImageProcessor(): Promise<void> {
         channel.nack(msg, false, false); // dead-letter or drop
       }
     },
-    { noAck: false }
+    { noAck: false },
   );
 }
