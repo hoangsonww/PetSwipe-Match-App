@@ -20,18 +20,26 @@ Users can browse pets, swipe to adopt or pass, and manage their profile. They ca
 ![AWS RDS](https://img.shields.io/badge/AWS_RDS-527FFF?style=flat-square&logo=amazonrds&logoColor=white)
 ![AWS ECS](https://img.shields.io/badge/AWS_ECS-FF0022?style=flat-square&logo=amazonecs&logoColor=white)
 ![AWS ECR](https://img.shields.io/badge/AWS_ECR-456789?style=flat-square&logo=amazonec2&logoColor=white)
+![AWS ALB](https://img.shields.io/badge/AWS_ALB-FF9900?style=flat-square&logo=awesomewm&logoColor=white)
 ![AWS IAM](https://img.shields.io/badge/AWS_IAM-F05900?style=flat-square&logo=amazoniam&logoColor=white)
+![AWS KMS](https://img.shields.io/badge/AWS_KMS-FF9900?style=flat-square&logo=amazon&logoColor=white)
 ![AWS CloudWatch](https://img.shields.io/badge/AWS_CloudWatch-232F3E?style=flat-square&logo=amazoncloudwatch&logoColor=white)
 ![Google AI](https://img.shields.io/badge/Google_AI-4285F4?style=flat-square&logo=google&logoColor=white)
 ![Supabase](https://img.shields.io/badge/Supabase-3ECF8E?style=flat-square&logo=supabase&logoColor=white)
+![RabbitMQ](https://img.shields.io/badge/RabbitMQ-FF6600?style=flat-square&logo=rabbitmq&logoColor=white)
+![Redis](https://img.shields.io/badge/Redis-DC382D?style=flat-square&logo=redis&logoColor=white)
 ![Terraform](https://img.shields.io/badge/Terraform-7B42BC?style=flat-square&logo=terraform&logoColor=white)
+![Consul](https://img.shields.io/badge/Consul-DC322F?style=flat-square&logo=consul&logoColor=white)
+![Vault](https://img.shields.io/badge/Vault-121F31?style=flat-square&logo=vault&logoColor=white)
+![Nomad](https://img.shields.io/badge/Nomad-00A8E8?style=flat-square&logo=nomad&logoColor=white)
 ![Shell](https://img.shields.io/badge/Shell-4EAA25?style=flat-square&logo=gnubash&logoColor=white)
 ![Make](https://img.shields.io/badge/Make-777777?style=flat-square&logo=gnu&logoColor=white)
 ![Framer Motion](https://img.shields.io/badge/Framer_Motion-000000?style=flat-square&logo=framer&logoColor=white)
+![Playwright](https://img.shields.io/badge/Playwright-2B2D42?style=flat-square&logo=nestjs&logoColor=white)
+![Jest](https://img.shields.io/badge/Jest-C21325?style=flat-square&logo=jest&logoColor=white)
 ![Docker](https://img.shields.io/badge/Docker-2496ED?style=flat-square&logo=docker&logoColor=white)
 ![Vercel](https://img.shields.io/badge/Vercel-000000?style=flat-square&logo=vercel&logoColor=white)
 ![GitHub Actions](https://img.shields.io/badge/GitHub_Actions-2088FF?style=flat-square&logo=githubactions&logoColor=white)
-![GitHub](https://img.shields.io/badge/GitHub-181717?style=flat-square&logo=github&logoColor=white)
 ![Git](https://img.shields.io/badge/Git-F05032?style=flat-square&logo=git&logoColor=white)
 ![Prettier](https://img.shields.io/badge/Prettier-F7B93E?style=flat-square&logo=prettier&logoColor=black)
 ![ESLint](https://img.shields.io/badge/ESLint-4B3263?style=flat-square&logo=eslint&logoColor=white)
@@ -60,6 +68,7 @@ Users can browse pets, swipe to adopt or pass, and manage their profile. They ca
    - [Our Stack](#our-stack)
    - [Terraform](#terraform)
 10. [Scripts & Utilities](#-scripts--utilities)
+    - [Docker](#docker)
 11. [Command Line Interface](#-command-line-interface)
 12. [Contributing](#-contributing)
 13. [License](#-license)
@@ -89,7 +98,7 @@ I hope you enjoy using PetSwipe as much as I enjoyed building it! 🐱
 
 Also, checkout the backend API at **[PetSwipe API](https://petswipe-backend-api.vercel.app/)**. You can use tools like Postman or Swagger UI to explore the API endpoints.
 
-> **Note**: Currently, most of the data is seeded with dummy data. We hope the app will be used by more real users and pet adoption shelters in the future. If you are a shelter or a pet adoption organization, please reach out to us to get **all** your data integrated into the app in seconds! Or you can also use the in-app manual add pet features to further enrich our pets database (only works for authenticated users).  
+> **Note**: Currently, most of the data is seeded with dummy data. We hope the app will be used by more real users and pet adoption shelters in the future. If you are a shelter or a pet adoption organization, please reach out to us to get **all** your data integrated into the app in seconds! Or you can also use the in-app manual add pet features to further enrich our pets database (only works for authenticated users).
 
 ---
 
@@ -133,15 +142,16 @@ PetSwipe is a full-stack application with the following features:
 
 PetSwipe is built using a modern tech stack, ensuring scalability, maintainability, and performance. The architecture is designed to be modular and easy to extend.
 
-| Layer                   | Technology                                                               |
-| ----------------------- | ------------------------------------------------------------------------ |
-| **Frontend**            | Next.js, React, TypeScript, Tailwind CSS, shadcn/ui, Framer Motion, SWR  |
-| **Backend & API**       | Node.js, Express, TypeScript, TypeORM, PostgreSQL, OpenAPI (via Swagger) |
-| **Data & Storage**      | AWS RDS (PostgreSQL), AWS S3                                             |
-| **Security & Auth**     | JSON Web Tokens, bcryptjs, cookie-parser                                 |
-| **DevOps & Deployment** | Docker, AWS ECR & ECS (Fargate), Vercel, GitHub Actions                  |
-| **Infrastructure**      | Terraform, AWS IAM, AWS CloudWatch                                       |
-| **AI**                  | Google AI, Retrieval-Augmented Generation (RAG)                          |
+| Layer                   | Technology                                                                                |
+| ----------------------- | ----------------------------------------------------------------------------------------- |
+| **Frontend**            | Next.js, React, TypeScript, Tailwind CSS, shadcn/ui, Framer Motion, SWR                   |
+| **Backend & API**       | Node.js, Express, TypeScript, TypeORM, PostgreSQL, OpenAPI (via Swagger), RabbitMQ, Redis |
+| **Data & Storage**      | AWS RDS (PostgreSQL), AWS S3                                                              |
+| **Security & Auth**     | JSON Web Tokens, bcryptjs, cookie-parser                                                  |
+| **DevOps & Deployment** | Docker, AWS ECR & ECS (Fargate), Vercel, GitHub Actions                                   |
+| **Infrastructure**      | Terraform, Consul, Vault, Nomad, AWS IAM, AWS CloudWatch, AWS ALB                         |
+| **AI**                  | Google AI, Retrieval-Augmented Generation (RAG)                                           |
+| **Testing**             | Playwright (frontend), Jest (backend)                                                     |
 
 Below is a high-level Mermaid diagram of our architecture/infrastructure:
 
@@ -423,6 +433,7 @@ The app is designed to be easily deployable to AWS using services like:
 - **CloudWatch**: For logging and monitoring
 - **IAM**: For managing permissions
 - **Terraform**: Infrastructure as Code (IaC) for managing AWS resources
+  - _Optional:_ **Consul** for service discovery, **Vault** for secrets management, and **Nomad** for orchestration
 - **GitHub Actions** for CI/CD
 - **Vercel** for frontend
 
@@ -439,14 +450,17 @@ Currently, our stack is fully deployed on AWS using the following services:
    - Backup service: **Vercel** (currently, due to AWS pricing issues, we have switched to Vercel for hosting the backend).
    - **AWS Fargate**: Serverless compute engine for running containers.
 4. **AWS ECR**: Container registry for our Docker images.
-5. **AWS ELB**: Elastic Load Balancer for routing traffic to our ECS services.
-   - Backup service: **GitHub Actions** for CI/CD to build and deploy our Docker images.
-6. **AWS IAM**: Manages permissions for accessing AWS resources.
    - Backup service: **GitHub Container Registry (GHCR)**.
+5. **AWS ALB**: Application Load Balancer for routing traffic to our ECS services.
+6. **AWS IAM**: Manages permissions for accessing AWS resources.
 7. **AWS CloudWatch**: For logging and monitoring.
 8. **GitHub Actions**: For CI/CD to build and deploy our Docker images to ECR.
 9. **Vercel**: Hosts our frontend application.
-10. **Terraform**: Infrastructure as Code (IaC) for managing AWS resources.
+10. **HashiCorp Stack**: For managing infrastructure and secrets:
+    - **Terraform**: Infrastructure as Code (IaC) for managing AWS resources.
+    - **Consul**: Service discovery and configuration management.
+    - **Vault**: Secrets management for securely storing sensitive information.
+    - **Nomad**: Orchestration for deploying and managing applications across a cluster of machines.
 
 ### Terraform
 
@@ -517,6 +531,18 @@ Additionally, there are also Shell scripts that help you run Docker commands eas
 
 1. `pull_and_run.sh`: Pulls the latest Docker image from ECR and runs it.
 2. `upload_to_ghcr.sh`: Builds the Docker image and uploads it to GitHub Container Registry (remember to set up your GitHub PAT and username in the script/export them in your shell).
+
+#### Docker Compute Terminal
+
+PetSwipe also includes a Docker Compute Terminal for running commands inside the Docker container. You can use it to run database migrations, seed data, or any other commands you need.
+
+To hop into the Docker Compute Terminal, run:
+
+```bash
+docker-compose exec compute /bin/zsh
+```
+
+This will give you a shell inside the Docker container where you can run commands as if you were on a regular terminal, plus you can access all the installed dependencies and tools of the application.
 
 ---
 

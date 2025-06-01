@@ -1,0 +1,48 @@
+FROM ubuntu:22.04
+
+# 1) Install deps
+RUN apt-get update && \
+    DEBIAN_FRONTEND=noninteractive apt-get install -y \
+      zsh \
+      curl \
+      unzip \
+      git \
+      awscli && \
+    rm -rf /var/lib/apt/lists/*
+
+# 2) Install Terraform CLI (v1.5.6)
+RUN TF_VERSION="1.5.6" && \
+    curl -fsSL "https://releases.hashicorp.com/terraform/${TF_VERSION}/terraform_${TF_VERSION}_linux_amd64.zip" -o /tmp/terraform.zip && \
+    unzip /tmp/terraform.zip -d /usr/local/bin && \
+    chmod +x /usr/local/bin/terraform && \
+    rm /tmp/terraform.zip
+
+# 3) Install Vault CLI (v1.14.0)
+RUN VAULT_VERSION="1.14.0" && \
+    curl -fsSL "https://releases.hashicorp.com/vault/${VAULT_VERSION}/vault_${VAULT_VERSION}_linux_amd64.zip" -o /tmp/vault.zip && \
+    unzip /tmp/vault.zip -d /usr/local/bin && \
+    chmod +x /usr/local/bin/vault && \
+    rm /tmp/vault.zip
+
+# 4) Install Consul CLI (v1.14.3)
+RUN CONSUL_VERSION="1.14.3" && \
+    curl -fsSL "https://releases.hashicorp.com/consul/${CONSUL_VERSION}/consul_${CONSUL_VERSION}_linux_amd64.zip" -o /tmp/consul.zip && \
+    unzip /tmp/consul.zip -d /usr/local/bin && \
+    chmod +x /usr/local/bin/consul && \
+    rm /tmp/consul.zip
+
+# 5) Install Nomad CLI (v1.4.2)
+RUN NOMAD_VERSION="1.4.2" && \
+    curl -fsSL "https://releases.hashicorp.com/nomad/${NOMAD_VERSION}/nomad_${NOMAD_VERSION}_linux_amd64.zip" -o /tmp/nomad.zip && \
+    unzip /tmp/nomad.zip -d /usr/local/bin && \
+    chmod +x /usr/local/bin/nomad && \
+    rm /tmp/nomad.zip
+
+# 6) Make zsh the default shell for root
+RUN chsh -s /bin/zsh root
+
+# 7) Create and switch to /workspace (mount point)
+WORKDIR /workspace
+
+# 8) When container starts, drop into Zsh
+CMD ["zsh"]
