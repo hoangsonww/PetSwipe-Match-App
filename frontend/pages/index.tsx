@@ -123,10 +123,19 @@ const Landing: NextPage = () => {
     return () => clearInterval(iv);
   }, []);
   const prefersReducedMotion = useReducedMotion();
+  const [windowSize, setWindowSize] = useState({ width: 0, height: 0 });
+  useEffect(() => {
+    function handleResize() {
+      setWindowSize({ width: window.innerWidth, height: window.innerHeight });
+    }
+    handleResize();
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
   const mouseX = useMotionValue(0);
   const mouseY = useMotionValue(0);
-  const blobX = useTransform(mouseX, [0, window.innerWidth], [-50, 50]);
-  const blobY2 = useTransform(mouseY, [0, window.innerHeight], [-50, 50]);
+  const blobX = useTransform(mouseX, [0, windowSize.width], [-50, 50]);
+  const blobY2 = useTransform(mouseY, [0, windowSize.height], [-50, 50]);
   const { scrollY } = useScroll();
   const blobY = useTransform(
     scrollY,
@@ -159,7 +168,6 @@ const Landing: NextPage = () => {
             ease: "linear",
           }}
         />
-
         {/* Blob #1: larger, drifting with scroll + mouse */}
         <motion.div
           style={{
@@ -169,7 +177,6 @@ const Landing: NextPage = () => {
           }}
           className="pointer-events-none absolute -left-40 -top-40 h-96 w-96 rounded-full bg-[#90cdf4] opacity-20 blur-3xl will-change-transform"
         />
-
         {/* Blob #2: medium circle drifting opposite scroll direction + inverse mouse X */}
         <motion.div
           style={{
@@ -179,12 +186,11 @@ const Landing: NextPage = () => {
           }}
           className="pointer-events-none absolute right-0 top-1/4 h-[500px] w-[500px] rounded-full bg-[#f687b3] opacity-20 blur-3xl will-change-transform"
         />
-
         {/* Blob #3: small, gently pulsating & following mouseY */}
         <motion.div
           style={{
-            y: useTransform(mouseY, [0, window.innerHeight], [-75, 75]),
-            scale: useTransform(mouseY, [0, window.innerHeight], [1, 1.15]),
+            y: useTransform(blobY2, [0, windowSize.height], [-75, 75]),
+            scale: useTransform(blobY2, [0, windowSize.height], [1, 1.15]),
           }}
           className="pointer-events-none absolute left-1/2 top-1/2 h-60 w-60 rounded-full bg-[#f6b3c7] opacity-15 blur-3xl will-change-transform"
         />
