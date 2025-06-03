@@ -122,9 +122,28 @@ const DraggableChatbot: React.FC = () => {
     typeof window !== "undefined" && !!localStorage.getItem("jwt"),
   );
   useEffect(() => {
-    const sync = () => setAuthed(!!localStorage.getItem("jwt"));
-    window.addEventListener("storage", sync);
-    return () => window.removeEventListener("storage", sync);
+    const interval = setInterval(
+      async () => {
+        const raw = localStorage.getItem("jwt");
+        if (!raw) {
+          setAuthed(false);
+          return;
+        }
+        const token = raw.replace(/^Bearer\s+/i, "");
+        try {
+          const res = await fetch(API_URL, {
+            method: "GET",
+            headers: { Authorization: `Bearer ${token}` },
+          });
+          if (res.status === 401) {
+            setAuthed(false);
+            localStorage.removeItem("jwt");
+          }
+        } catch {}
+      },
+      5 * 60 * 1000,
+    ); // 5 minutes
+    return () => clearInterval(interval);
   }, []);
   if (!authed) return null;
 
@@ -177,7 +196,6 @@ const DraggableChatbot: React.FC = () => {
     localStorage.setItem("chatPos", JSON.stringify(snapped));
   };
 
-  // keep button inside & re-snap on resize (including right edge re-snap)
   useEffect(() => {
     const handleResize = () => {
       const btn = 56;
@@ -216,8 +234,9 @@ const DraggableChatbot: React.FC = () => {
 
   const send = async () => {
     if (!input.trim() || pending) return;
-    const token = localStorage.getItem("jwt")?.replace(/^Bearer\s+/i, "");
-    if (!token) return;
+    const raw = localStorage.getItem("jwt");
+    if (!raw) return;
+    const token = raw.replace(/^Bearer\s+/i, "");
 
     const userText = input.trim();
     setMsgs((m) => [...m, { sender: "user", text: userText }]);
@@ -247,6 +266,11 @@ const DraggableChatbot: React.FC = () => {
           userContext: "",
         }),
       });
+      if (res.status === 401 || res.status === 404) {
+        setAuthed(false);
+        localStorage.removeItem("jwt");
+        return;
+      }
       const data = await res.json();
       setMsgs((m) => [
         ...m,

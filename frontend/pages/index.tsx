@@ -21,6 +21,7 @@ import {
   useReducedMotion,
   useInView,
   AnimatePresence,
+  useMotionValue,
 } from "framer-motion";
 import { Button } from "@/components/ui/button";
 
@@ -122,6 +123,19 @@ const Landing: NextPage = () => {
     return () => clearInterval(iv);
   }, []);
   const prefersReducedMotion = useReducedMotion();
+  const [windowSize, setWindowSize] = useState({ width: 0, height: 0 });
+  useEffect(() => {
+    function handleResize() {
+      setWindowSize({ width: window.innerWidth, height: window.innerHeight });
+    }
+    handleResize();
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
+  const mouseX = useMotionValue(0);
+  const mouseY = useMotionValue(0);
+  const blobX = useTransform(mouseX, [0, windowSize.width], [-50, 50]);
+  const blobY2 = useTransform(mouseY, [0, windowSize.height], [-50, 50]);
   const { scrollY } = useScroll();
   const blobY = useTransform(
     scrollY,
@@ -138,17 +152,47 @@ const Landing: NextPage = () => {
           content="Swipe through adoptable pets near you, match instantly, and bring home your new best friend."
         />
       </Head>
-      <section className="relative flex items-center justify-center min-h-screen overflow-hidden font-inter">
-        <div className="absolute inset-0 -z-10">
-          <div className="h-full w-full animate-gradientMove bg-[length:400%_400%] bg-[linear-gradient(120deg,#e8f8ff,#f5fdff,#ffe9f3,#f6fcff,#e8f8ff)]" />
-        </div>
+      <section
+        className="relative flex items-center justify-center min-h-screen overflow-hidden font-inter"
+        onMouseMove={(e) => {
+          mouseX.set(e.clientX);
+          mouseY.set(e.clientY);
+        }}
+      >
         <motion.div
-          style={{ y: blobY, transform: "translate3d(0,0,0)" }}
-          className="pointer-events-none absolute -left-32 -top-32 h-96 w-96 rounded-full bg-[#90cdf4] opacity-20 blur-3xl will-change-transform"
+          className="absolute inset-0 -z-10 bg-[length:400%_400%] bg-[linear-gradient(120deg,#e8f8ff,#f5fdff,#ffe9f3,#f6fcff,#e8f8ff)]"
+          animate={{ backgroundPosition: ["0% 50%", "100% 50%"] }}
+          transition={{
+            repeat: Infinity,
+            duration: 20,
+            ease: "linear",
+          }}
         />
+        {/* Blob #1: larger, drifting with scroll + mouse */}
         <motion.div
-          style={{ y: blobY, transform: "translate3d(0,0,0)" }}
-          className="pointer-events-none absolute right-0 top-1/3 h-[500px] w-[500px] rounded-full bg-[#f687b3] opacity-20 blur-3xl will-change-transform"
+          style={{
+            y: blobY,
+            x: blobX,
+            transform: "translate3d(0,0,0)",
+          }}
+          className="pointer-events-none absolute -left-40 -top-40 h-96 w-96 rounded-full bg-[#90cdf4] opacity-20 blur-3xl will-change-transform"
+        />
+        {/* Blob #2: medium circle drifting opposite scroll direction + inverse mouse X */}
+        <motion.div
+          style={{
+            y: useTransform(scrollY, [0, 500], [0, -100]),
+            x: useTransform(blobX, [-50, 50], [50, -50]),
+            transform: "translate3d(0,0,0)",
+          }}
+          className="pointer-events-none absolute right-0 top-1/4 h-[500px] w-[500px] rounded-full bg-[#f687b3] opacity-20 blur-3xl will-change-transform"
+        />
+        {/* Blob #3: small, gently pulsating & following mouseY */}
+        <motion.div
+          style={{
+            y: useTransform(blobY2, [0, windowSize.height], [-75, 75]),
+            scale: useTransform(blobY2, [0, windowSize.height], [1, 1.15]),
+          }}
+          className="pointer-events-none absolute left-1/2 top-1/2 h-60 w-60 rounded-full bg-[#f6b3c7] opacity-15 blur-3xl will-change-transform"
         />
         <div className="mx-auto max-w-5xl px-6 pt-24 pb-32 relative z-10 text-center">
           <motion.span
