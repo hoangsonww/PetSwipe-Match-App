@@ -21,7 +21,7 @@ import {
   useReducedMotion,
   useInView,
   AnimatePresence,
-  useMotionValue
+  useMotionValue,
 } from "framer-motion";
 import { Button } from "@/components/ui/button";
 
@@ -156,7 +156,7 @@ const Landing: NextPage = () => {
           transition={{
             repeat: Infinity,
             duration: 20,
-            ease: "linear"
+            ease: "linear",
           }}
         />
 
@@ -165,7 +165,7 @@ const Landing: NextPage = () => {
           style={{
             y: blobY,
             x: blobX,
-            transform: "translate3d(0,0,0)"
+            transform: "translate3d(0,0,0)",
           }}
           className="pointer-events-none absolute -left-40 -top-40 h-96 w-96 rounded-full bg-[#90cdf4] opacity-20 blur-3xl will-change-transform"
         />
@@ -184,7 +184,7 @@ const Landing: NextPage = () => {
         <motion.div
           style={{
             y: useTransform(mouseY, [0, window.innerHeight], [-75, 75]),
-            scale: useTransform(mouseY, [0, window.innerHeight], [1, 1.15])
+            scale: useTransform(mouseY, [0, window.innerHeight], [1, 1.15]),
           }}
           className="pointer-events-none absolute left-1/2 top-1/2 h-60 w-60 rounded-full bg-[#f6b3c7] opacity-15 blur-3xl will-change-transform"
         />

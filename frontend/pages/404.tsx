@@ -25,7 +25,7 @@ const NotFoundPage = () => {
   const blobY = useTransform(
     scrollY,
     [0, 500],
-    prefersReducedMotion ? [0, 0] : [0, 150]
+    prefersReducedMotion ? [0, 0] : [0, 150],
   );
 
   return (
@@ -101,9 +101,10 @@ const NotFoundPage = () => {
             custom={0.45}
             className="mt-2 text-gray-600 max-w-lg mx-auto leading-relaxed"
           >
-            Whether you were chasing a missing paw print or exploring new features,
-            we can’t seem to find that page. Don’t worry - we’ll help you get back on track so you can continue finding
-            your forever friend.
+            Whether you were chasing a missing paw print or exploring new
+            features, we can’t seem to find that page. Don’t worry - we’ll help
+            you get back on track so you can continue finding your forever
+            friend.
           </motion.p>
 
           <motion.div
@@ -177,14 +178,14 @@ const NotFoundPage = () => {
       <style jsx global>{`
         html {
           font-family:
-              "Inter",
-              -apple-system,
-              BlinkMacSystemFont,
-              "Segoe UI",
-              Roboto,
-              "Helvetica Neue",
-              Arial,
-              sans-serif;
+            "Inter",
+            -apple-system,
+            BlinkMacSystemFont,
+            "Segoe UI",
+            Roboto,
+            "Helvetica Neue",
+            Arial,
+            sans-serif;
         }
         @keyframes blob {
           0%,
