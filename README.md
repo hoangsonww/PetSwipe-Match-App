@@ -3,6 +3,7 @@
 Built with an aim to help shelter animals find loving homes, **PetSwipe** is a swipe-to-adopt platform connecting prospective pet parents with shelter animals.
 Users can browse pets, swipe to adopt or pass, and manage their profile. They can also view their matches and history of swipes.
 
+> [!NOTE]
 > Inspired by Tinder UX, but for pets to find their loving humans! 🐶🐱
 
 ![TypeScript](https://img.shields.io/badge/TypeScript-3178C6?style=flat-square&logo=typescript&logoColor=white)
