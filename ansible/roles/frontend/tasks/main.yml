@@ -1,0 +1,21 @@
+---
+- name: Build frontend static site
+  npm:
+    path: "{{ playbook_dir }}/../frontend"
+    executable: npm
+    args: run build
+
+- name: Sync built assets to S3
+  community.aws.aws_s3:
+    bucket: "{{ static_bucket }}"
+    mode: sync
+    local_path: "{{ playbook_dir }}/../frontend/out"
+    delete: yes
+    region: "{{ aws_region }}"
+
+- name: Invalidate CloudFront (if configured)
+  shell: >
+    aws cloudfront create-invalidation
+    --distribution-id {{ cf_distribution_id }}
+    --paths "/*"
+  when: cf_distribution_id != ''

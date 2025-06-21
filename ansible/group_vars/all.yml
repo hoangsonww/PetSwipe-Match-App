@@ -1,0 +1,34 @@
+# Fill in the actual values or export via env vars where noted
+aws_region: us-east-1
+aws_account_id: YOUR_AWS_ACCOUNT_ID
+project: petswipe
+
+# RDS
+db_name: petswipe
+db_username: admin
+db_password: "{{ lookup('env','DB_PASSWORD') }}"   # set in env before running
+default_sg_id: YOUR_DEFAULT_SECURITY_GROUP_ID      # used for RDS VPC SG - replace with your actual SG ID
+
+# S3
+static_bucket: "{{ project }}-frontend-{{ aws_account_id }}"
+uploads_bucket: "{{ project }}-uploads-{{ aws_account_id }}"
+
+# ECR
+ecr_backend: "{{ project }}-backend"
+ecr_frontend: "{{ project }}-frontend"
+ecr_uri_backend: "{{ aws_account_id }}.dkr.ecr.{{ aws_region }}.amazonaws.com/{{ ecr_backend }}"
+ecr_uri_frontend: "{{ aws_account_id }}.dkr.ecr.{{ aws_region }}.amazonaws.com/{{ ecr_frontend }}"
+
+# ECS / ALB
+ecs_cluster: "{{ project }}-cluster"
+ecs_service_backend: "{{ project }}-backend-svc"
+task_role_arn: "arn:aws:iam::{{ aws_account_id }}:role/ecsTaskExecutionRole"
+alb_name: "{{ project }}-alb"
+alb_sg_id: YOUR_ALB_SECURITY_GROUP_ID   # replace with your actual SG ID - mine is created by Terraform
+subnet_ids:
+  - subnet-aaa
+  - subnet-bbb
+tg_name: "{{ project }}-tg"
+
+# CloudFront (optional)
+cf_distribution_id: ''   # leave blank to skip invalidation

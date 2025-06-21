@@ -6,44 +6,7 @@ Users can browse pets, swipe to adopt or pass, and manage their profile. They ca
 > [!NOTE]
 > Inspired by Tinder UX, but for pets to find their loving humans! 🐶🐱
 
-![TypeScript](https://img.shields.io/badge/TypeScript-3178C6?style=flat-square&logo=typescript&logoColor=white)
-![Node.js](https://img.shields.io/badge/Node.js-339933?style=flat-square&logo=nodedotjs&logoColor=white)
-![Express](https://img.shields.io/badge/Express-000000?style=flat-square&logo=express&logoColor=white)
-![Next.js](https://img.shields.io/badge/Next.js-000000?style=flat-square&logo=nextdotjs&logoColor=white)
-![Shadcn UI](https://img.shields.io/badge/Shadcn/UI-889889?style=flat-square&logo=shadcnui&logoColor=white)
-![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-38B2AC?style=flat-square&logo=tailwindcss&logoColor=white)
-![PostgreSQL](https://img.shields.io/badge/PostgreSQL-316192?style=flat-square&logo=postgresql&logoColor=white)
-![TypeORM](https://img.shields.io/badge/TypeORM-336791?style=flat-square&logo=typeorm&logoColor=white)
-![Swagger](https://img.shields.io/badge/Swagger-85EA2D?style=flat-square&logo=swagger&logoColor=black)
-![JWT](https://img.shields.io/badge/JWT-000000?style=flat-square&logo=jsonwebtokens&logoColor=white)
-![AWS](https://img.shields.io/badge/AWS-232F3E?style=flat-square&logo=amazonwebservices&logoColor=white)
-![AWS S3](https://img.shields.io/badge/AWS_S3-569A31?style=flat-square&logo=amazons3&logoColor=white)
-![AWS RDS](https://img.shields.io/badge/AWS_RDS-527FFF?style=flat-square&logo=amazonrds&logoColor=white)
-![AWS ECS](https://img.shields.io/badge/AWS_ECS-FF0022?style=flat-square&logo=amazonecs&logoColor=white)
-![AWS ECR](https://img.shields.io/badge/AWS_ECR-456789?style=flat-square&logo=amazonec2&logoColor=white)
-![AWS ALB](https://img.shields.io/badge/AWS_ALB-FF9900?style=flat-square&logo=awesomewm&logoColor=white)
-![AWS IAM](https://img.shields.io/badge/AWS_IAM-F05900?style=flat-square&logo=amazoniam&logoColor=white)
-![AWS KMS](https://img.shields.io/badge/AWS_KMS-FF9900?style=flat-square&logo=amazon&logoColor=white)
-![AWS CloudWatch](https://img.shields.io/badge/AWS_CloudWatch-232F3E?style=flat-square&logo=amazoncloudwatch&logoColor=white)
-![Google AI](https://img.shields.io/badge/Google_AI-4285F4?style=flat-square&logo=google&logoColor=white)
-![Supabase](https://img.shields.io/badge/Supabase-3ECF8E?style=flat-square&logo=supabase&logoColor=white)
-![RabbitMQ](https://img.shields.io/badge/RabbitMQ-FF6600?style=flat-square&logo=rabbitmq&logoColor=white)
-![Redis](https://img.shields.io/badge/Redis-DC382D?style=flat-square&logo=redis&logoColor=white)
-![Terraform](https://img.shields.io/badge/Terraform-7B42BC?style=flat-square&logo=terraform&logoColor=white)
-![Consul](https://img.shields.io/badge/Consul-DC322F?style=flat-square&logo=consul&logoColor=white)
-![Vault](https://img.shields.io/badge/Vault-121F31?style=flat-square&logo=vault&logoColor=white)
-![Nomad](https://img.shields.io/badge/Nomad-00A8E8?style=flat-square&logo=nomad&logoColor=white)
-![Shell](https://img.shields.io/badge/Shell-4EAA25?style=flat-square&logo=gnubash&logoColor=white)
-![Make](https://img.shields.io/badge/Make-777777?style=flat-square&logo=gnu&logoColor=white)
-![Framer Motion](https://img.shields.io/badge/Framer_Motion-000000?style=flat-square&logo=framer&logoColor=white)
-![Playwright](https://img.shields.io/badge/Playwright-2B2D42?style=flat-square&logo=nestjs&logoColor=white)
-![Jest](https://img.shields.io/badge/Jest-C21325?style=flat-square&logo=jest&logoColor=white)
-![Docker](https://img.shields.io/badge/Docker-2496ED?style=flat-square&logo=docker&logoColor=white)
-![Vercel](https://img.shields.io/badge/Vercel-000000?style=flat-square&logo=vercel&logoColor=white)
-![GitHub Actions](https://img.shields.io/badge/GitHub_Actions-2088FF?style=flat-square&logo=githubactions&logoColor=white)
-![Git](https://img.shields.io/badge/Git-F05032?style=flat-square&logo=git&logoColor=white)
-![Prettier](https://img.shields.io/badge/Prettier-F7B93E?style=flat-square&logo=prettier&logoColor=black)
-![ESLint](https://img.shields.io/badge/ESLint-4B3263?style=flat-square&logo=eslint&logoColor=white)
+![TypeScript](https://img.shields.io/badge/TypeScript-3178C6?style=flat-square&logo=typescript&logoColor=white) ![Node.js](https://img.shields.io/badge/Node.js-339933?style=flat-square&logo=nodedotjs&logoColor=white) ![Express](https://img.shields.io/badge/Express-000000?style=flat-square&logo=express&logoColor=white) ![Next.js](https://img.shields.io/badge/Next.js-000000?style=flat-square&logo=nextdotjs&logoColor=white) ![Shell](https://img.shields.io/badge/Shell-4EAA25?style=flat-square&logo=gnubash&logoColor=white) ![Docker](https://img.shields.io/badge/Docker-2496ED?style=flat-square&logo=docker&logoColor=white) ![Shadcn UI](https://img.shields.io/badge/Shadcn/UI-889889?style=flat-square&logo=shadcnui&logoColor=white) ![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-38B2AC?style=flat-square&logo=tailwindcss&logoColor=white) ![Framer Motion](https://img.shields.io/badge/Framer_Motion-000000?style=flat-square&logo=framer&logoColor=white) ![PostgreSQL](https://img.shields.io/badge/PostgreSQL-316192?style=flat-square&logo=postgresql&logoColor=white) ![TypeORM](https://img.shields.io/badge/TypeORM-336791?style=flat-square&logo=typeorm&logoColor=white) ![Supabase](https://img.shields.io/badge/Supabase-3ECF8E?style=flat-square&logo=supabase&logoColor=white) ![Redis](https://img.shields.io/badge/Redis-DC382D?style=flat-square&logo=redis&logoColor=white) ![RabbitMQ](https://img.shields.io/badge/RabbitMQ-FF6600?style=flat-square&logo=rabbitmq&logoColor=white) ![Swagger](https://img.shields.io/badge/Swagger-85EA2D?style=flat-square&logo=swagger&logoColor=black) ![JWT](https://img.shields.io/badge/JWT-000000?style=flat-square&logo=jsonwebtokens&logoColor=white) ![Google AI](https://img.shields.io/badge/Google_AI-4285F4?style=flat-square&logo=google&logoColor=white) ![AWS](https://img.shields.io/badge/AWS-232F3E?style=flat-square&logo=amazonwebservices&logoColor=white) ![AWS S3](https://img.shields.io/badge/AWS_S3-569A31?style=flat-square&logo=amazons3&logoColor=white) ![AWS RDS](https://img.shields.io/badge/AWS_RDS-527FFF?style=flat-square&logo=amazonrds&logoColor=white) ![AWS ECS](https://img.shields.io/badge/AWS_ECS-FF0022?style=flat-square&logo=amazonecs&logoColor=white) ![AWS ECR](https://img.shields.io/badge/AWS_ECR-456789?style=flat-square&logo=amazonec2&logoColor=white) ![AWS ALB](https://img.shields.io/badge/AWS_ALB-FF9900?style=flat-square&logo=awesomewm&logoColor=white) ![AWS IAM](https://img.shields.io/badge/AWS_IAM-F05900?style=flat-square&logo=amazoniam&logoColor=white) ![AWS KMS](https://img.shields.io/badge/AWS_KMS-FF9900?style=flat-square&logo=amazon&logoColor=white) ![AWS CloudWatch](https://img.shields.io/badge/AWS_CloudWatch-232F3E?style=flat-square&logo=amazoncloudwatch&logoColor=white) ![Vercel](https://img.shields.io/badge/Vercel-000000?style=flat-square&logo=vercel&logoColor=white) ![Terraform](https://img.shields.io/badge/Terraform-7B42BC?style=flat-square&logo=terraform&logoColor=white) ![Consul](https://img.shields.io/badge/Consul-DC322F?style=flat-square&logo=consul&logoColor=white) ![Nomad](https://img.shields.io/badge/Nomad-00A8E8?style=flat-square&logo=nomad&logoColor=white) ![Vault](https://img.shields.io/badge/Vault-121F31?style=flat-square&logo=vault&logoColor=white) ![Ansible](https://img.shields.io/badge/Ansible-EE0000?style=flat-square&logo=ansible&logoColor=white) ![Make](https://img.shields.io/badge/Make-777777?style=flat-square&logo=gnu&logoColor=white) ![Playwright](https://img.shields.io/badge/Playwright-2B2D42?style=flat-square&logo=nestjs&logoColor=white) ![Jest](https://img.shields.io/badge/Jest-C21325?style=flat-square&logo=jest&logoColor=white) ![GitHub Actions](https://img.shields.io/badge/GitHub_Actions-2088FF?style=flat-square&logo=githubactions&logoColor=white) ![Prettier](https://img.shields.io/badge/Prettier-F7B93E?style=flat-square&logo=prettier&logoColor=black) ![ESLint](https://img.shields.io/badge/ESLint-4B3263?style=flat-square&logo=eslint&logoColor=white)
 
 ---
 
@@ -68,6 +31,8 @@ Users can browse pets, swipe to adopt or pass, and manage their profile. They ca
 9. [AWS Deployment](#-aws-deployment)
    - [Our Stack](#our-stack)
    - [Terraform](#terraform)
+   - [Vault, Consul, Nomad](#vault-consul-nomad)
+   - [Ansible](#ansible)
 10. [Scripts & Utilities](#-scripts--utilities)
     - [Docker](#docker)
 11. [Command Line Interface](#-command-line-interface)
@@ -463,6 +428,9 @@ Currently, our stack is fully deployed on AWS using the following services:
     - **Vault**: Secrets management for securely storing sensitive information.
     - **Nomad**: Orchestration for deploying and managing applications across a cluster of machines.
 
+> [!NOTE]
+> This stack is designed to be flexible and scalable, allowing us to easily add or remove services as needed. The use of Terraform, Consul, Vault, and Nomad provides additional security and flexibility for managing our infrastructure.
+
 ### Terraform
 
 To deploy the app to AWS, we use **Terraform** for Infrastructure as Code (IaC). This allows us to define our AWS resources in code and deploy them easily.
@@ -491,6 +459,71 @@ To get started with Terraform:
    ```
 
 This will create all the necessary AWS resources for the app, including RDS, S3, ECS, ECR, IAM roles, and more.
+
+> [!CAUTION]
+> Make sure you have the necessary permissions to create and manage AWS resources. Review the Terraform scripts before applying them to avoid any unintended changes.
+
+### Vault, Consul, Nomad
+
+For managing secrets and service discovery, we use **HashiCorp Vault**, **Consul**, and **Nomad**. These tools help us securely store sensitive information, manage configurations, and orchestrate our services.
+
+These tools provide:
+
+- **Secure secret storage & dynamic secret issuance** (Vault)
+- **Encryption-as-a-Service & audit logging** (Vault)
+- **Distributed service discovery & health checking** (Consul)
+- **Centralized key/value configuration store** (Consul)
+- **Identity-based service mesh (mTLS) for secure service-to-service communication** (Consul)
+- **Flexible, multi-region workload orchestration & scheduling** (Nomad)
+- **Rolling upgrades, canary deployments & autoscaling** (Nomad)
+- **Support for containers, VMs & standalone binaries** (Nomad)
+
+These tools are optional but recommended for larger, more complex deployments. They can be set up using Terraform as well.
+
+> [!NOTE]
+> If you are not familiar with these tools, you can skip this section for now. The app can run without them, but they provide additional security and flexibility for production deployments.
+
+### Ansible
+
+For managing the deployment and configuration of the app, we also use **Ansible**. Ansible playbooks are used to automate tasks such as:
+
+- **Provisioning AWS infrastructure**
+  Create or update RDS instances, S3 buckets (static + uploads), ECR repositories, Application Load Balancer & Target Group, ECS clusters and services.
+
+- **Building & deploying containers**
+  Build, tag and push backend and frontend Docker images to ECR, then trigger zero-downtime rolling updates of your Fargate service.
+
+- **Configuring frontend hosting**
+  Sync Next.js static build to S3 and invalidate CloudFront distributions for instant cache busting.
+
+- **Managing application configuration**
+  Template out and distribute environment variables, secrets (via AWS Secrets Manager or HashiCorp Vault), and config files to running services.
+
+- **Database migrations & backups**
+  Run schema migrations on PostgreSQL (via TypeORM) and schedule or trigger automated backups and snapshots.
+
+- **Lifecycle & housekeeping**
+  Apply S3 lifecycle rules (e.g. purge old uploads), rotate credentials, and clean up unused resources.
+
+- **Service discovery & secrets bootstrap**
+  (If using HashiCorp stack) Bootstrap or update Consul/Nomad clusters, deploy Vault auto-unseal configuration, and distribute ACL tokens.
+
+- **OS & user management**
+  Install OS packages, manage system users, SSH keys, and security hardening on any EC2 hosts you might run.
+
+- **CI/CD integration**
+  Hook into GitHub Actions workflows to run Ansible playbooks on push or merge, ensuring every change is tested and deployed automatically.
+
+> [!CAUTION]
+> Remember to set up your AWS credentials and permissions correctly before running any Ansible playbooks. Ensure that the IAM user/role has the necessary permissions to create and manage the resources defined in your playbooks.
+
+> [!TIP]
+> For more information on how to use Ansible with AWS, check out the [ansible/README.md](ansible/README.md) file and the [Ansible AWS documentation](https://docs.ansible.com/ansible/latest/collections/amazon/aws/index.html).
+
+#### Important Notes
+
+> [!WARNING]
+> NEVER store sensitive information (like AWS credentials, database passwords, etc.) directly in your Ansible playbooks or inventory files. Use Ansible Vault or environment variables to securely manage secrets. Also, NEVER commit your `.env` files or any sensitive configuration files to version control!
 
 ---
 

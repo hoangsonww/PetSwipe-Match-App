@@ -1,0 +1,14 @@
+---
+- name: Ensure static website bucket exists
+  community.aws.s3_bucket:
+    name: "{{ static_bucket }}"
+    region: "{{ aws_region }}"
+    state: present
+    website_configuration:
+      index_document: index.html
+
+- name: Ensure uploads bucket exists
+  community.aws.s3_bucket:
+    name: "{{ uploads_bucket }}"
+    region: "{{ aws_region }}"
+    state: present

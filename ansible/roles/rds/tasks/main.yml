@@ -1,0 +1,28 @@
+---
+- name: Ensure RDS instance exists
+  community.aws.rds_instance:
+    region: "{{ aws_region }}"
+    db_instance_identifier: "{{ project }}-db"
+    db_instance_class: db.t3.micro
+    engine: postgres
+    allocated_storage: 20
+    db_name: "{{ db_name }}"
+    master_username: "{{ db_username }}"
+    master_user_password: "{{ db_password }}"
+    vpc_security_group_ids:
+      - "{{ default_sg_id }}"
+    publicly_accessible: false
+    tags:
+      Project: "{{ project }}"
+    wait: yes
+    state: present
+
+- name: Fetch RDS endpoint address
+  community.aws.rds_instance_info:
+    region: "{{ aws_region }}"
+    db_instance_identifier: "{{ project }}-db"
+  register: rds_info
+
+- name: Set DB endpoint fact
+  set_fact:
+    db_endpoint: "{{ rds_info.db_instances[0].endpoint.address }}"

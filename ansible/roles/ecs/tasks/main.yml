@@ -1,0 +1,52 @@
+---
+- name: Ensure ECS cluster exists
+  community.aws.ecs_cluster:
+    name: "{{ ecs_cluster }}"
+    state: present
+
+- name: Register ECS task definition
+  community.aws.ecs_taskdefinition:
+    family: "{{ project }}-backend"
+    network_mode: awsvpc
+    requires_compatibilities:
+      - FARGATE
+    cpu: "512"
+    memory: "1024"
+    execution_role_arn: "{{ task_role_arn }}"
+    container_definitions:
+      - name: backend
+        image: "{{ ecr_uri_backend }}:latest"
+        portMappings:
+          - containerPort: 5001
+            hostPort: 5001
+        environment:
+          - name: DB_HOST
+            value: "{{ db_endpoint }}"
+          - name: DB_NAME
+            value: "{{ db_name }}"
+          - name: DB_USER
+            value: "{{ db_username }}"
+          - name: DB_PASS
+            value: "{{ db_password }}"
+          - name: DB_SSL
+            value: "false"
+
+- name: Ensure ECS service exists
+  community.aws.ecs_service:
+    name: "{{ ecs_service_backend }}"
+    cluster: "{{ ecs_cluster }}"
+    task_definition: "{{ project }}-backend"
+    desired_count: 1
+    launch_type: FARGATE
+    network_configuration:
+      awsvpc_configuration:
+        subnets: "{{ subnet_ids }}"
+        security_groups:
+          - "{{ alb_sg_id }}"
+        assign_public_ip: DISABLED
+    load_balancers:
+      - target_group_arn: "{{ tg_arn }}"
+        container_name: backend
+        container_port: 5001
+    state: present
+    force_new_deployment: yes

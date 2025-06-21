@@ -1,0 +1,12 @@
+- name: Deploy petSwipe infrastructure & app
+  hosts: local
+  connection: local
+  gather_facts: no
+
+  roles:
+    - rds
+    - s3
+    - ecr
+    - alb
+    - ecs
+    - frontend
