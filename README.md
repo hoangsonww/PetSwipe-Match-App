@@ -60,10 +60,12 @@ I hope you enjoy using PetSwipe as much as I enjoyed building it! 🐱
 
 **[PetSwipe](https://petswipe.vercel.app)** is live on Vercel! You can try it out and see how it works.
 
+> [!TIP]
 > Link not working? Copy and paste this URL into your browser: [https://petswipe.vercel.app](https://petswipe.vercel.app).
 
 Also, checkout the backend API at **[PetSwipe API](https://petswipe-backend-api.vercel.app/)**. You can use tools like Postman or Swagger UI to explore the API endpoints.
 
+> [!IMPORTANT]
 > **Note**: Currently, most of the data is seeded with dummy data. We hope the app will be used by more real users and pet adoption shelters in the future. If you are a shelter or a pet adoption organization, please reach out to us to get **all** your data integrated into the app in seconds! Or you can also use the in-app manual add pet features to further enrich our pets database (only works for authenticated users).
 
 ---
@@ -125,6 +127,7 @@ Below is a high-level Mermaid diagram of our architecture/infrastructure:
   <img src="docs/img/mermaid.png" alt="Architecture Diagram" width="100%">
 </p>
 
+> [!TIP]
 > Image not showing? Here's the link to the diagram: [Mermaid Live Diagram](https://www.mermaidchart.com/raw/3c7480d2-191d-4d09-a8f1-6678de344fa4?theme=light&version=v0.1&format=svg)
 
 ---
@@ -248,6 +251,7 @@ _and more..._
 - **Docker** (optional, for local Postgres container)
 - **Google AI** API key (for chatbot feature)
 
+> [!CAUTION]
 > ⚠️ **Note**: Due to `shadcn/ui` peerDeps, install frontend dependencies with:
 >
 > ```bash
