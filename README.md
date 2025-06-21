@@ -31,6 +31,8 @@ Users can browse pets, swipe to adopt or pass, and manage their profile. They ca
 9. [AWS Deployment](#-aws-deployment)
    - [Our Stack](#our-stack)
    - [Terraform](#terraform)
+   - [Vault, Consul, Nomad](#vault-consul-nomad)
+   - [Ansible](#ansible)
 10. [Scripts & Utilities](#-scripts--utilities)
     - [Docker](#docker)
 11. [Command Line Interface](#-command-line-interface)
@@ -426,6 +428,9 @@ Currently, our stack is fully deployed on AWS using the following services:
     - **Vault**: Secrets management for securely storing sensitive information.
     - **Nomad**: Orchestration for deploying and managing applications across a cluster of machines.
 
+> [!NOTE]
+> This stack is designed to be flexible and scalable, allowing us to easily add or remove services as needed. The use of Terraform, Consul, Vault, and Nomad provides additional security and flexibility for managing our infrastructure.
+
 ### Terraform
 
 To deploy the app to AWS, we use **Terraform** for Infrastructure as Code (IaC). This allows us to define our AWS resources in code and deploy them easily.
@@ -454,6 +459,71 @@ To get started with Terraform:
    ```
 
 This will create all the necessary AWS resources for the app, including RDS, S3, ECS, ECR, IAM roles, and more.
+
+> [!CAUTION]
+> Make sure you have the necessary permissions to create and manage AWS resources. Review the Terraform scripts before applying them to avoid any unintended changes.
+
+### Vault, Consul, Nomad
+
+For managing secrets and service discovery, we use **HashiCorp Vault**, **Consul**, and **Nomad**. These tools help us securely store sensitive information, manage configurations, and orchestrate our services.
+
+These tools provide:
+
+- **Secure secret storage & dynamic secret issuance** (Vault)
+- **Encryption-as-a-Service & audit logging** (Vault)
+- **Distributed service discovery & health checking** (Consul)
+- **Centralized key/value configuration store** (Consul)
+- **Identity-based service mesh (mTLS) for secure service-to-service communication** (Consul)
+- **Flexible, multi-region workload orchestration & scheduling** (Nomad)
+- **Rolling upgrades, canary deployments & autoscaling** (Nomad)
+- **Support for containers, VMs & standalone binaries** (Nomad)
+
+These tools are optional but recommended for larger, more complex deployments. They can be set up using Terraform as well.
+
+> [!NOTE]
+> If you are not familiar with these tools, you can skip this section for now. The app can run without them, but they provide additional security and flexibility for production deployments.
+
+### Ansible
+
+For managing the deployment and configuration of the app, we also use **Ansible**. Ansible playbooks are used to automate tasks such as:
+
+- **Provisioning AWS infrastructure**
+  Create or update RDS instances, S3 buckets (static + uploads), ECR repositories, Application Load Balancer & Target Group, ECS clusters and services.
+
+- **Building & deploying containers**
+  Build, tag and push backend and frontend Docker images to ECR, then trigger zero-downtime rolling updates of your Fargate service.
+
+- **Configuring frontend hosting**
+  Sync Next.js static build to S3 and invalidate CloudFront distributions for instant cache busting.
+
+- **Managing application configuration**
+  Template out and distribute environment variables, secrets (via AWS Secrets Manager or HashiCorp Vault), and config files to running services.
+
+- **Database migrations & backups**
+  Run schema migrations on PostgreSQL (via TypeORM) and schedule or trigger automated backups and snapshots.
+
+- **Lifecycle & housekeeping**
+  Apply S3 lifecycle rules (e.g. purge old uploads), rotate credentials, and clean up unused resources.
+
+- **Service discovery & secrets bootstrap**
+  (If using HashiCorp stack) Bootstrap or update Consul/Nomad clusters, deploy Vault auto-unseal configuration, and distribute ACL tokens.
+
+- **OS & user management**
+  Install OS packages, manage system users, SSH keys, and security hardening on any EC2 hosts you might run.
+
+- **CI/CD integration**
+  Hook into GitHub Actions workflows to run Ansible playbooks on push or merge, ensuring every change is tested and deployed automatically.
+
+> [!CAUTION]
+> Remember to set up your AWS credentials and permissions correctly before running any Ansible playbooks. Ensure that the IAM user/role has the necessary permissions to create and manage the resources defined in your playbooks.
+
+> [!TIP]
+> For more information on how to use Ansible with AWS, check out the [ansible/README.md](ansible/README.md) file and the [Ansible AWS documentation](https://docs.ansible.com/ansible/latest/collections/amazon/aws/index.html).
+
+#### Important Notes
+
+> [!WARNING]
+> NEVER store sensitive information (like AWS credentials, database passwords, etc.) directly in your Ansible playbooks or inventory files. Use Ansible Vault or environment variables to securely manage secrets. Also, NEVER commit your `.env` files or any sensitive configuration files to version control!
 
 ---
 
