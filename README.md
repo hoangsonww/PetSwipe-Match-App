@@ -461,7 +461,7 @@ To get started with Terraform:
 This will create all the necessary AWS resources for the app, including RDS, S3, ECS, ECR, IAM roles, and more.
 
 > [!CAUTION]
-> Make sure you have the necessary permissions to create and manage AWS resources. Review the Terraform scripts before applying them to avoid any unintended changes.
+> Make sure you have the necessary permissions to create and manage AWS resources. Review the Terraform scripts before applying them to avoid any unintended changes. For more details on how to configure and use Terraform with AWS, check out the [Terraform AWS Provider documentation](https://registry.terraform.io/providers/hashicorp/aws/latest/docs).
 
 ### Vault, Consul, Nomad
 
@@ -478,7 +478,7 @@ These tools provide:
 - **Rolling upgrades, canary deployments & autoscaling** (Nomad)
 - **Support for containers, VMs & standalone binaries** (Nomad)
 
-These tools are optional but recommended for larger, more complex deployments. They can be set up using Terraform as well.
+These tools are optional but recommended for larger, more complex deployments. They can be set up using Terraform as well. For more information, refer to the [terraform/README.md](terraform/README.md) file in the `terraform` directory to see how to configure and deploy these tools.
 
 > [!NOTE]
 > If you are not familiar with these tools, you can skip this section for now. The app can run without them, but they provide additional security and flexibility for production deployments.
@@ -621,6 +621,7 @@ This CLI is designed to make it easier to manage the application and perform com
 
 Licensed under the **MIT License**. See [LICENSE](LICENSE) for details.
 
+> [!IMPORTANT]
 > In short, you may use this code for personal or educational purposes, but please do not use it for commercial purposes without permission. If you do use this code, please give proper credit to the original author.
 
 ---
