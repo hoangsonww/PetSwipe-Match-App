@@ -1,0 +1,32 @@
+---
+- name: Ensure backend ECR repo exists
+  community.aws.ecr_repository:
+    name: "{{ ecr_backend }}"
+    state: present
+
+- name: Ensure frontend ECR repo exists
+  community.aws.ecr_repository:
+    name: "{{ ecr_frontend }}"
+    state: present
+
+- name: Login to ECR
+  shell: >
+    aws ecr get-login-password --region {{ aws_region }}
+    | docker login --username AWS --password-stdin
+      {{ aws_account_id }}.dkr.ecr.{{ aws_region }}.amazonaws.com
+
+- name: Build & push backend Docker image
+  community.docker.docker_image:
+    build:
+      path: "{{ playbook_dir }}/../backend"
+    name: "{{ ecr_uri_backend }}"
+    tag: latest
+    push: yes
+
+- name: Build & push frontend Docker image
+  community.docker.docker_image:
+    build:
+      path: "{{ playbook_dir }}/../frontend"
+    name: "{{ ecr_uri_frontend }}"
+    tag: latest
+    push: yes

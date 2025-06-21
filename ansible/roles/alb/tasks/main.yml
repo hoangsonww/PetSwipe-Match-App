@@ -1,0 +1,54 @@
+---
+- name: Ensure Application Load Balancer exists
+  community.aws.elb_application_lb:
+    name: "{{ alb_name }}"
+    subnets: "{{ subnet_ids }}"
+    security_groups:
+      - "{{ alb_sg_id }}"
+    scheme: internet-facing
+    state: present
+    wait: yes
+
+- name: Gather ALB info
+  community.aws.elb_application_lb_info:
+    names:
+      - "{{ alb_name }}"
+  register: alb_info
+
+- name: Get VPC ID from first subnet
+  community.aws.ec2_vpc_net_info:
+    filters:
+      subnet-id: "{{ subnet_ids[0] }}"
+  register: vpc_info
+
+- name: Ensure Target Group exists
+  community.aws.elb_target_group:
+    name: "{{ tg_name }}"
+    protocol: HTTP
+    port: 5001
+    vpc_id: "{{ vpc_info.vpcs[0].vpc_id }}"
+    health_check_protocol: HTTP
+    health_check_path: "/"
+    matcher:
+      http_code: "200"
+    state: present
+
+- name: Gather Target Group info
+  community.aws.elb_target_group_info:
+    names:
+      - "{{ tg_name }}"
+  register: tg_info
+
+- name: Set TG ARN fact
+  set_fact:
+    tg_arn: "{{ tg_info.target_groups[0].target_group_arn }}"
+
+- name: Ensure HTTP listener on port 80
+  community.aws.elb_listener:
+    load_balancer_arn: "{{ alb_info.load_balancers[0].load_balancer_arn }}"
+    port: 80
+    protocol: HTTP
+    default_actions:
+      - type: forward
+        target_group_arn: "{{ tg_arn }}"
+    state: present
