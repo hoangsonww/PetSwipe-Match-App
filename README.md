@@ -4,7 +4,9 @@ Built with an aim to help shelter animals find loving homes, **PetSwipe** is a s
 Users can browse pets, swipe to adopt or pass, and manage their profile. They can also view their matches and history of swipes.
 
 <p align="center">
-  <img src="docs/img/logo.png" alt="PetSwipe Logo" width="30%">
+  <a href="https://petswipe.vercel.app" target="_blank">
+    <img src="docs/img/logo.png" alt="PetSwipe Logo" width="30%">
+  </a>
 </p>
 
 > [!NOTE]
