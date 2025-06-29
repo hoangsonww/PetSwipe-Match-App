@@ -1,5 +1,11 @@
 # Contributing to PetSwipe
 
+<p align="center">
+  <a href="https://petswipe.vercel.app" target="_blank">
+    <img src="../docs/img/logo.jpeg" alt="PetSwipe Logo" width="35%" style="border-radius: 8px">
+  </a>
+</p>
+
 Thanks for your interest in contributing! Please take a moment to read this guide.
 
 ## Getting Started
