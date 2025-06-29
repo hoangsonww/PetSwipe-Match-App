@@ -3,6 +3,12 @@
 Built with an aim to help shelter animals find loving homes, **PetSwipe** is a swipe-to-adopt platform connecting prospective pet parents with shelter animals.
 Users can browse pets, swipe to adopt or pass, and manage their profile. They can also view their matches and history of swipes.
 
+<p align="center">
+  <a href="https://petswipe.vercel.app" target="_blank">
+    <img src="docs/img/logo.png" alt="PetSwipe Logo" width="30%">
+  </a>
+</p>
+
 > [!NOTE]
 > Inspired by Tinder UX, but for pets to find their loving humans! 🐶🐱
 
@@ -65,8 +71,7 @@ I hope you enjoy using PetSwipe as much as I enjoyed building it! 🐱
 
 Also, checkout the backend API at **[PetSwipe API](https://petswipe-backend-api.vercel.app/)**. You can use tools like Postman or Swagger UI to explore the API endpoints.
 
-> [!IMPORTANT]
-> **Note**: Currently, most of the data is seeded with dummy data. We hope the app will be used by more real users and pet adoption shelters in the future. If you are a shelter or a pet adoption organization, please reach out to us to get **all** your data integrated into the app in seconds! Or you can also use the in-app manual add pet features to further enrich our pets database (only works for authenticated users).
+> [!IMPORTANT] > **Note**: Currently, most of the data is seeded with dummy data. We hope the app will be used by more real users and pet adoption shelters in the future. If you are a shelter or a pet adoption organization, please reach out to us to get **all** your data integrated into the app in seconds! Or you can also use the in-app manual add pet features to further enrich our pets database (only works for authenticated users).
 
 ---
 
