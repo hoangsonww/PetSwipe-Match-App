@@ -4,12 +4,6 @@ _Last updated: May 16, 2025_
 
 This document describes the security vulnerability disclosure process for the **PetSwipe** project. It covers supported versions, reporting guidelines, response commitments, and safe-harbor protections for security researchers.
 
-<p align="center">
-  <a href="https://petswipe.vercel.app" target="_blank">
-    <img src="../docs/img/logo.jpeg" alt="PetSwipe Logo" width="35%" style="border-radius: 8px">
-  </a>
-</p>
-
 ---
 
 ## Supported Versions

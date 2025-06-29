@@ -12,12 +12,6 @@ and orientation.
 We pledge to act and interact in ways that contribute to an open, welcoming,
 diverse, inclusive, and healthy community.
 
-<p align="center">
-  <a href="https://petswipe.vercel.app" target="_blank">
-    <img src="../docs/img/logo.jpeg" alt="PetSwipe Logo" width="35%" style="border-radius: 8px">
-  </a>
-</p>
-
 ## Our Standards
 
 Examples of behavior that contributes to a positive environment for our
