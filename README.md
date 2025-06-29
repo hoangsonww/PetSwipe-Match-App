@@ -60,6 +60,9 @@ And most importantly, it is built with the goal of helping shelter animals find 
 
 I hope you enjoy using PetSwipe as much as I enjoyed building it! 🐱
 
+> [!TIP]
+> Please spread the word about PetSwipe to your friends and family, and help us find loving homes for as many pets as possible! 🏠❤️
+
 ---
 
 ## 🌐 Live App
