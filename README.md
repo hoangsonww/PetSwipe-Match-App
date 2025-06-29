@@ -5,7 +5,7 @@ Users can browse pets, swipe to adopt or pass, and manage their profile. They ca
 
 <p align="center">
   <a href="https://petswipe.vercel.app" target="_blank">
-    <img src="docs/img/logo.png" alt="PetSwipe Logo" width="30%">
+    <img src="docs/img/logo.png" alt="PetSwipe Logo" width="25%" style="border-radius: 8px">
   </a>
 </p>
 
