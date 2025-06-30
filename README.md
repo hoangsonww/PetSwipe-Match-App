@@ -67,7 +67,7 @@ I hope you enjoy using PetSwipe as much as I enjoyed building it! 🐱
 
 ## 🌐 Live App
 
-**[PetSwipe](https://petswipe.vercel.app)** is live on Vercel! You can try it out and see how it works.
+**[PetSwipe](https://petswipe.vercel.app)** is live on Vercel! You can now try it out and see how it works.
 
 > [!TIP]
 > Link not working? Copy and paste this URL into your browser: [https://petswipe.vercel.app](https://petswipe.vercel.app).
