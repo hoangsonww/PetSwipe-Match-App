@@ -1,6 +1,6 @@
 # 🐾 PetSwipe - Swipe to Adopt
 
-**PetSwipe** is on a mission to help shelter animals find loving homes. This swipe-to-adopt platform connects prospective pet parents with adoptable animals in need. With PetSwipe, users can effortlessly browse pets, swipe right to adopt or left to pass, and manage their profiles with ease. They can also view their matches and keep track of their swipe history — making the journey to adoption simpler, faster, and more heartwarming.
+**PetSwipe** is on a mission to help shelter animals find loving homes. This swipe-to-adopt platform connects prospective pet parents with adoptable animals in need. With PetSwipe, users can effortlessly browse pets, swipe right to adopt or left to pass, and manage their profiles with ease. They can also view their matches and keep track of their swipe history — making the journey to adoption simpler, faster, and more heartwarming 🐰
 
 <p align="center">
   <a href="https://petswipe.vercel.app" target="_blank">
