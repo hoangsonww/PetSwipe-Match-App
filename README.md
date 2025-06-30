@@ -247,7 +247,7 @@ _and more..._
 |             | `updatedAt`      | `timestamp`           | No       | When user was last updated      | `@UpdateDateColumn()`                          |
 
 > [!NOTE]
-> This table may not be up-to-date, as more entities and relationships could be introduced in the near future to support additional features and enhancements.
+> This table may not be up-to-date, as more entities and relationships could be introduced in the near future to support additional features and enhancements!
 
 ---
 
