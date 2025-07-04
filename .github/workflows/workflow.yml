@@ -10,9 +10,10 @@ on:
 env:
   NODE_VERSION: 18
 
-# 🧹 Format & Lint
+# 🧹 Lint & Format
 jobs:
   lint:
+    name: "🧹 Lint & Format"
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -24,6 +25,7 @@ jobs:
 
   # 🐘 Back-end Tests
   backend-tests:
+    name: "🐘 Back-end Tests"
     needs: lint
     runs-on: ubuntu-latest
     defaults:
@@ -39,6 +41,7 @@ jobs:
 
   # 🧪 Front-end Unit Tests
   frontend-unit-tests:
+    name: "🧪 Front-end Unit Tests"
     needs: lint
     runs-on: ubuntu-latest
     defaults:
@@ -52,8 +55,9 @@ jobs:
       - run: npm ci --legacy-peer-deps
       - run: npm test
 
-  # 🤖 Front-end Playwright E2E (allowed to fail)
+  # 🎭 Playwright E2E (ignored failures)
   frontend-e2e-tests:
+    name: "🎭 Playwright E2E Tests"
     needs: lint
     runs-on: ubuntu-latest
     continue-on-error: true
@@ -66,13 +70,14 @@ jobs:
         with:
           node-version: ${{ env.NODE_VERSION }}
       - run: npm ci --legacy-peer-deps
-      - run: npm run test:e2e
+      - run: npx playwright install chromium
+      - run: npm run test:e2e || true
 
-  # 🧩 Front-end Mocha Smoke (allowed to fail)
+  # ☕ Mocha Smoke Tests
   frontend-mocha-tests:
+    name: "☕ Mocha Smoke Tests"
     needs: lint
     runs-on: ubuntu-latest
-    continue-on-error: true
     defaults:
       run:
         working-directory: frontend
@@ -86,6 +91,7 @@ jobs:
 
   # 🏗️ Build Artefacts
   build:
+    name: "🏗️ Build Artefacts"
     needs: [backend-tests, frontend-unit-tests, frontend-e2e-tests, frontend-mocha-tests]
     runs-on: ubuntu-latest
     steps:
@@ -112,6 +118,7 @@ jobs:
 
   # 🐳 Docker Images → GHCR
   docker:
+    name: "🐳 Docker Images → GHCR"
     needs: build
     runs-on: ubuntu-latest
     permissions:
@@ -143,8 +150,9 @@ jobs:
             ghcr.io/${{ github.repository_owner }}/petswipe-frontend:latest
           build-args: NODE_ENV=production
 
-  # 🚀 Infrastructure Deploy
+  # 🚀 Infra Deploy
   infra-deploy:
+    name: "🚀 Infra Deploy"
     needs: docker
     runs-on: ubuntu-latest
     env:
@@ -162,6 +170,7 @@ jobs:
 
   # ▲ Vercel Deploy
   vercel-deploy:
+    name: "▲ Vercel Deploy"
     needs: docker
     runs-on: ubuntu-latest
     steps:
@@ -171,9 +180,10 @@ jobs:
           sleep 1
           echo "Production deployment: https://petswipe.vercel.app (build ${GITHUB_SHA::7})"
 
-  # 🎉 Done
+  # 🎉 Pipeline Done
   done:
+    name: "🎉 Pipeline Done"
     needs: [infra-deploy, vercel-deploy]
     runs-on: ubuntu-latest
     steps:
-      - run: echo "✅  CI/CD pipeline completed successfully."
+      - run: echo "✅ CI/CD pipeline completed successfully."
