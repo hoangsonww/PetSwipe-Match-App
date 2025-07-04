@@ -89,10 +89,10 @@ jobs:
       - run: npm ci --legacy-peer-deps
       - run: npm run test:mocha
 
-  # 🏗️ Build Artifacts
-  build:
-    name: "🏗️ Build Artifacts"
-    needs: [backend-tests, frontend-unit-tests, frontend-e2e-tests, frontend-mocha-tests]
+  # 🏗️ Backend Build
+  backend-build:
+    name: "🏗️ Backend Build"
+    needs: [ backend-tests, frontend-unit-tests, frontend-e2e-tests, frontend-mocha-tests ]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -104,6 +104,21 @@ jobs:
           export TSC_COMPILE_ON_ERROR=true
           npm ci --legacy-peer-deps
           npm run build || true
+      - uses: actions/upload-artifact@v4
+        with:
+          name: backend-build
+          path: backend/dist
+
+  # 🏗️ Frontend Build
+  frontend-build:
+    name: "🏗️ Frontend Build"
+    needs: [ backend-tests, frontend-unit-tests, frontend-e2e-tests, frontend-mocha-tests ]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
       - run: |
           cd frontend
           export TSC_COMPILE_ON_ERROR=true
@@ -111,15 +126,13 @@ jobs:
           npm run build || true
       - uses: actions/upload-artifact@v4
         with:
-          name: build-outputs
-          path: |
-            backend/dist
-            frontend/.next
+          name: frontend-build
+          path: frontend/.next
 
   # 🐳 Docker Images → GHCR
   docker:
     name: "🐳 Docker Images → GHCR"
-    needs: build
+    needs: [backend-build, frontend-build]
     runs-on: ubuntu-latest
     permissions:
       contents: read
