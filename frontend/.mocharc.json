@@ -1,0 +1,4 @@
+{
+  "spec": ["tests/mocha/**/*.spec.js"],
+  "exit": true
+}
