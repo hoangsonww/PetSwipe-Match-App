@@ -4,7 +4,7 @@ import {
   ImageJobPayload,
 } from "../messaging/producers/imageProducer";
 import { getRepository } from "typeorm";
-import { Pet } from "../entities/Pet"; // adjust the path according to your entity structure
+import { Pet } from "../entities/Pet";
 
 /**
  * imageService.ts

@@ -1,15 +1,8 @@
+/** @type {import('jest').Config} */
 module.exports = {
-  preset: "ts-jest",
+  preset: "ts-jest", // transpile the *.ts controllers on-the-fly
   testEnvironment: "node",
-  roots: ["<rootDir>/__tests__"],
-  moduleFileExtensions: ["ts", "js", "json", "node"],
-  testRegex: "(/__tests__/.*|(\\.|/)(test|spec))\\.(ts|js)$",
-  collectCoverage: true,
-  collectCoverageFrom: ["src/**/*.ts", "!src/index.ts"],
-  coverageDirectory: "<rootDir>/coverage",
-  globals: {
-    "ts-jest": {
-      tsconfig: "tsconfig.json",
-    },
-  },
+  verbose: true,
+  setupFiles: ["<rootDir>/jest.setup.js"],
+  roots: ["<rootDir>/tests"],
 };

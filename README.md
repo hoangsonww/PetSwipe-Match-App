@@ -11,7 +11,7 @@
 > [!NOTE]
 > Inspired by Tinder UX, but for pets to find their loving humans! 🐶🐱
 
-![TypeScript](https://img.shields.io/badge/TypeScript-3178C6?style=flat-square&logo=typescript&logoColor=white) ![Node.js](https://img.shields.io/badge/Node.js-339933?style=flat-square&logo=nodedotjs&logoColor=white) ![Express](https://img.shields.io/badge/Express-000000?style=flat-square&logo=express&logoColor=white) ![Next.js](https://img.shields.io/badge/Next.js-000000?style=flat-square&logo=nextdotjs&logoColor=white) ![Shell](https://img.shields.io/badge/Shell-4EAA25?style=flat-square&logo=gnubash&logoColor=white) ![Docker](https://img.shields.io/badge/Docker-2496ED?style=flat-square&logo=docker&logoColor=white) ![Shadcn UI](https://img.shields.io/badge/Shadcn/UI-889889?style=flat-square&logo=shadcnui&logoColor=white) ![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-38B2AC?style=flat-square&logo=tailwindcss&logoColor=white) ![Framer Motion](https://img.shields.io/badge/Framer_Motion-000000?style=flat-square&logo=framer&logoColor=white) ![PostgreSQL](https://img.shields.io/badge/PostgreSQL-316192?style=flat-square&logo=postgresql&logoColor=white) ![TypeORM](https://img.shields.io/badge/TypeORM-336791?style=flat-square&logo=typeorm&logoColor=white) ![Supabase](https://img.shields.io/badge/Supabase-3ECF8E?style=flat-square&logo=supabase&logoColor=white) ![Redis](https://img.shields.io/badge/Redis-DC382D?style=flat-square&logo=redis&logoColor=white) ![RabbitMQ](https://img.shields.io/badge/RabbitMQ-FF6600?style=flat-square&logo=rabbitmq&logoColor=white) ![Swagger](https://img.shields.io/badge/Swagger-85EA2D?style=flat-square&logo=swagger&logoColor=black) ![JWT](https://img.shields.io/badge/JWT-000000?style=flat-square&logo=jsonwebtokens&logoColor=white) ![Google AI](https://img.shields.io/badge/Google_AI-4285F4?style=flat-square&logo=google&logoColor=white) ![Google Cloud](https://img.shields.io/badge/Google_Cloud-4242F4?style=flat-square&logo=googlecloud&logoColor=white) ![AWS](https://img.shields.io/badge/AWS-232F3E?style=flat-square&logo=amazonwebservices&logoColor=white) ![AWS S3](https://img.shields.io/badge/AWS_S3-569A31?style=flat-square&logo=amazons3&logoColor=white) ![AWS RDS](https://img.shields.io/badge/AWS_RDS-527FFF?style=flat-square&logo=amazonrds&logoColor=white) ![AWS ECS](https://img.shields.io/badge/AWS_ECS-FF0022?style=flat-square&logo=amazonecs&logoColor=white) ![AWS ECR](https://img.shields.io/badge/AWS_ECR-456789?style=flat-square&logo=amazonec2&logoColor=white) ![AWS ALB](https://img.shields.io/badge/AWS_ALB-FF9900?style=flat-square&logo=awesomewm&logoColor=white) ![AWS IAM](https://img.shields.io/badge/AWS_IAM-F05900?style=flat-square&logo=amazoniam&logoColor=white) ![AWS KMS](https://img.shields.io/badge/AWS_KMS-FF9900?style=flat-square&logo=amazon&logoColor=white) ![AWS CloudWatch](https://img.shields.io/badge/AWS_CloudWatch-232F3E?style=flat-square&logo=amazoncloudwatch&logoColor=white) ![Vercel](https://img.shields.io/badge/Vercel-000000?style=flat-square&logo=vercel&logoColor=white) ![Terraform](https://img.shields.io/badge/Terraform-7B42BC?style=flat-square&logo=terraform&logoColor=white) ![Consul](https://img.shields.io/badge/Consul-DC322F?style=flat-square&logo=consul&logoColor=white) ![Nomad](https://img.shields.io/badge/Nomad-00A8E8?style=flat-square&logo=nomad&logoColor=white) ![Vault](https://img.shields.io/badge/Vault-121F31?style=flat-square&logo=vault&logoColor=white) ![Ansible](https://img.shields.io/badge/Ansible-EE0000?style=flat-square&logo=ansible&logoColor=white) ![Make](https://img.shields.io/badge/Make-777777?style=flat-square&logo=gnu&logoColor=white) ![Playwright](https://img.shields.io/badge/Playwright-2B2D42?style=flat-square&logo=nestjs&logoColor=white) ![Jest](https://img.shields.io/badge/Jest-C21325?style=flat-square&logo=jest&logoColor=white) ![GitHub Actions](https://img.shields.io/badge/GitHub_Actions-2088FF?style=flat-square&logo=githubactions&logoColor=white) ![Prettier](https://img.shields.io/badge/Prettier-F7B93E?style=flat-square&logo=prettier&logoColor=black) ![ESLint](https://img.shields.io/badge/ESLint-4B3263?style=flat-square&logo=eslint&logoColor=white)
+![TypeScript](https://img.shields.io/badge/TypeScript-3178C6?style=flat-square&logo=typescript&logoColor=white) ![Node.js](https://img.shields.io/badge/Node.js-339933?style=flat-square&logo=nodedotjs&logoColor=white) ![Express](https://img.shields.io/badge/Express-000000?style=flat-square&logo=express&logoColor=white) ![Next.js](https://img.shields.io/badge/Next.js-000000?style=flat-square&logo=nextdotjs&logoColor=white) ![Shell](https://img.shields.io/badge/Shell-4EAA25?style=flat-square&logo=gnubash&logoColor=white) ![Docker](https://img.shields.io/badge/Docker-2496ED?style=flat-square&logo=docker&logoColor=white) ![Shadcn UI](https://img.shields.io/badge/Shadcn/UI-889889?style=flat-square&logo=shadcnui&logoColor=white) ![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-38B2AC?style=flat-square&logo=tailwindcss&logoColor=white) ![Framer Motion](https://img.shields.io/badge/Framer_Motion-000000?style=flat-square&logo=framer&logoColor=white) ![PostgreSQL](https://img.shields.io/badge/PostgreSQL-316192?style=flat-square&logo=postgresql&logoColor=white) ![TypeORM](https://img.shields.io/badge/TypeORM-336791?style=flat-square&logo=typeorm&logoColor=white) ![Supabase](https://img.shields.io/badge/Supabase-3ECF8E?style=flat-square&logo=supabase&logoColor=white) ![Redis](https://img.shields.io/badge/Redis-DC382D?style=flat-square&logo=redis&logoColor=white) ![RabbitMQ](https://img.shields.io/badge/RabbitMQ-FF6600?style=flat-square&logo=rabbitmq&logoColor=white) ![Swagger](https://img.shields.io/badge/Swagger-85EA2D?style=flat-square&logo=swagger&logoColor=black) ![JWT](https://img.shields.io/badge/JWT-000000?style=flat-square&logo=jsonwebtokens&logoColor=white) ![Google AI](https://img.shields.io/badge/Google_AI-4285F4?style=flat-square&logo=google&logoColor=white) ![Google Cloud](https://img.shields.io/badge/Google_Cloud-4242F4?style=flat-square&logo=googlecloud&logoColor=white) ![AWS](https://img.shields.io/badge/AWS-232F3E?style=flat-square&logo=amazonwebservices&logoColor=white) ![AWS S3](https://img.shields.io/badge/AWS_S3-569A31?style=flat-square&logo=amazons3&logoColor=white) ![AWS RDS](https://img.shields.io/badge/AWS_RDS-527FFF?style=flat-square&logo=amazonrds&logoColor=white) ![AWS ECS](https://img.shields.io/badge/AWS_ECS-FF0022?style=flat-square&logo=amazonecs&logoColor=white) ![AWS ECR](https://img.shields.io/badge/AWS_ECR-456789?style=flat-square&logo=amazonec2&logoColor=white) ![AWS ALB](https://img.shields.io/badge/AWS_ALB-FF9900?style=flat-square&logo=awesomewm&logoColor=white) ![AWS IAM](https://img.shields.io/badge/AWS_IAM-F05900?style=flat-square&logo=amazoniam&logoColor=white) ![AWS KMS](https://img.shields.io/badge/AWS_KMS-FF9900?style=flat-square&logo=amazon&logoColor=white) ![AWS CloudWatch](https://img.shields.io/badge/AWS_CloudWatch-232F3E?style=flat-square&logo=amazoncloudwatch&logoColor=white) ![Vercel](https://img.shields.io/badge/Vercel-000000?style=flat-square&logo=vercel&logoColor=white) ![Terraform](https://img.shields.io/badge/Terraform-7B42BC?style=flat-square&logo=terraform&logoColor=white) ![Consul](https://img.shields.io/badge/Consul-DC322F?style=flat-square&logo=consul&logoColor=white) ![Nomad](https://img.shields.io/badge/Nomad-00A8E8?style=flat-square&logo=nomad&logoColor=white) ![Vault](https://img.shields.io/badge/Vault-121F31?style=flat-square&logo=vault&logoColor=white) ![Ansible](https://img.shields.io/badge/Ansible-EE0000?style=flat-square&logo=ansible&logoColor=white) ![Make](https://img.shields.io/badge/Make-777777?style=flat-square&logo=gnu&logoColor=white) ![Playwright](https://img.shields.io/badge/Playwright-2B2D42?style=flat-square&logo=nestjs&logoColor=white) ![Jest](https://img.shields.io/badge/Jest-C21325?style=flat-square&logo=jest&logoColor=white) ![Chai](https://img.shields.io/badge/Chai-A30701?style=flat-square&logo=chai&logoColor=white) ![Mocha](https://img.shields.io/badge/Mocha-8D6748?style=flat-square&logo=mocha&logoColor=white) ![Commitlint](https://img.shields.io/badge/Commitlint-000000?style=flat-square&logo=commitlint&logoColor=white) ![GitHub Actions](https://img.shields.io/badge/GitHub_Actions-2088FF?style=flat-square&logo=githubactions&logoColor=white) ![Prettier](https://img.shields.io/badge/Prettier-F7B93E?style=flat-square&logo=prettier&logoColor=black) ![ESLint](https://img.shields.io/badge/ESLint-4B3263?style=flat-square&logo=eslint&logoColor=white)
 
 ---
 
@@ -40,10 +40,14 @@
    - [Ansible](#ansible)
 10. [Scripts & Utilities](#-scripts--utilities)
     - [Docker](#docker)
-11. [Command Line Interface](#-command-line-interface)
-12. [Contributing](#-contributing)
-13. [License](#-license)
-14. [Author](#-author)
+11. [Testing](#-testing)
+    - [Playwright](#playwright)
+    - [Jest](#jest)
+    - [Chai & Mocha](#chai--mocha)
+12. [Command Line Interface](#-command-line-interface)
+13. [Contributing](#-contributing)
+14. [License](#-license)
+15. [Author](#-author)
 
 ---
 
@@ -73,8 +77,7 @@ I hope you enjoy using PetSwipe as much as I enjoyed building it! 🐱
 
 Also, checkout the backend API at **[PetSwipe API](https://petswipe-backend-api.vercel.app/)**. You can use tools like Postman or Swagger UI to explore the API endpoints.
 
-> [!IMPORTANT] 
-> **Note**: Currently, most of the data is seeded with dummy data. We hope the app will be used by more real users and pet adoption shelters in the future. If you are a shelter or a pet adoption organization, please reach out to us to get **all** your data integrated into the app in seconds! Or you can also use the in-app manual add pet features to further enrich our pets database (only works for authenticated users).
+> [!IMPORTANT] > **Note**: Currently, most of the data is seeded with dummy data. We hope the app will be used by more real users and pet adoption shelters in the future. If you are a shelter or a pet adoption organization, please reach out to us to get **all** your data integrated into the app in seconds! Or you can also use the in-app manual add pet features to further enrich our pets database (only works for authenticated users).
 
 ---
 
@@ -592,6 +595,57 @@ docker-compose exec compute /bin/zsh
 ```
 
 This will give you a shell inside the Docker container where you can run commands as if you were on a regular terminal, plus you can access all the installed dependencies and tools of the application.
+
+---
+
+## ⚛️ Testing
+
+PetSwipe includes a comprehensive testing suite to ensure the application works as expected. The tests are organized into three main categories:
+
+- **Playwright**: End-to-end tests for the frontend UI.
+- **Jest**: Unit and integration tests for the backend API and frontend API helper functions.
+- **Chai & Mocha**: Additional tests for specific features and functionalities.
+- **Commitlint**: Ensures commit messages follow the conventional commit format.
+
+### Playwright
+
+Playwright is used for end-to-end testing of the frontend application. It simulates user interactions and verifies that the UI behaves as expected.
+
+To run Playwright tests, navigate to the `frontend` directory and run:
+
+```bash
+cd frontend
+npm run test:e2e
+```
+
+### Jest
+
+Jest is used for unit and integration tests in the backend API and some frontend components. It provides a fast and reliable testing framework.
+
+To run Jest tests in the backend, navigate to the `backend` directory and run:
+
+```bash
+cd backend
+npm run test
+```
+
+This will run all tests in the backend API, including unit tests for controllers, services, and integration tests for the database.
+
+To run Jest tests in the frontend, navigate to the `frontend` directory and run:
+
+```bash
+cd frontend
+npm run test
+```
+
+### Chai & Mocha
+
+Chai and Mocha are used for additional tests in the frontend. To run Chai & Mocha tests, navigate to the `frontend` directory and run:
+
+```bash
+cd frontend
+npm run test:mocha
+```
 
 ---
 
