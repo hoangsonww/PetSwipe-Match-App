@@ -55,7 +55,7 @@ jobs:
       - run: npm ci --legacy-peer-deps
       - run: npm test
 
-  # 🎭 Playwright E2E (ignored failures)
+  # 🎭 Playwright E2E Tests (ignore failures)
   frontend-e2e-tests:
     name: "🎭 Playwright E2E Tests"
     needs: lint
@@ -92,7 +92,7 @@ jobs:
   # 🏗️ Backend Build
   backend-build:
     name: "🏗️ Backend Build"
-    needs: [ backend-tests, frontend-unit-tests, frontend-e2e-tests, frontend-mocha-tests ]
+    needs: [backend-tests, frontend-unit-tests, frontend-e2e-tests, frontend-mocha-tests]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -112,7 +112,7 @@ jobs:
   # 🏗️ Frontend Build
   frontend-build:
     name: "🏗️ Frontend Build"
-    needs: [ backend-tests, frontend-unit-tests, frontend-e2e-tests, frontend-mocha-tests ]
+    needs: [backend-tests, frontend-unit-tests, frontend-e2e-tests, frontend-mocha-tests]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -129,7 +129,7 @@ jobs:
           name: frontend-build
           path: frontend/.next
 
-  # 🐳 Backend Docker Image
+  # 🐳 Docker Backend → GHCR
   docker-backend:
     name: "🐳 Docker Backend → GHCR"
     needs: backend-build
@@ -150,11 +150,11 @@ jobs:
           file: ./backend/Dockerfile
           push: true
           tags: |
-            ghcr.io/${{ github.repository_owner }}/petswipe-backend:${{ github.sha }}
-            ghcr.io/${{ github.repository_owner }}/petswipe-backend:latest
+            ghcr.io/${{ github.repository_owner }}/petswipe-app-backend:${{ github.sha }}
+            ghcr.io/${{ github.repository_owner }}/petswipe-app-backend:latest
           build-args: NODE_ENV=production
 
-  # 🐳 Frontend Docker Image
+  # 🐳 Docker Frontend → GHCR
   docker-frontend:
     name: "🐳 Docker Frontend → GHCR"
     needs: frontend-build
@@ -175,8 +175,8 @@ jobs:
           file: ./frontend/Dockerfile
           push: true
           tags: |
-            ghcr.io/${{ github.repository_owner }}/petswipe-frontend:${{ github.sha }}
-            ghcr.io/${{ github.repository_owner }}/petswipe-frontend:latest
+            ghcr.io/${{ github.repository_owner }}/petswipe-app-frontend:${{ github.sha }}
+            ghcr.io/${{ github.repository_owner }}/petswipe-app-frontend:latest
           build-args: NODE_ENV=production
 
   # 🚀 Infra Deploy
