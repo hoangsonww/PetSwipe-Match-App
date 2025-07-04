@@ -40,10 +40,14 @@
    - [Ansible](#ansible)
 10. [Scripts & Utilities](#-scripts--utilities)
     - [Docker](#docker)
-11. [Command Line Interface](#-command-line-interface)
-12. [Contributing](#-contributing)
-13. [License](#-license)
-14. [Author](#-author)
+11. [Testing](#-testing)
+    - [Playwright](#playwright)
+    - [Jest](#jest)
+    - [Chai & Mocha](#chai--mocha)
+12. [Command Line Interface](#-command-line-interface)
+13. [Contributing](#-contributing)
+14. [License](#-license)
+15. [Author](#-author)
 
 ---
 
@@ -73,8 +77,7 @@ I hope you enjoy using PetSwipe as much as I enjoyed building it! 🐱
 
 Also, checkout the backend API at **[PetSwipe API](https://petswipe-backend-api.vercel.app/)**. You can use tools like Postman or Swagger UI to explore the API endpoints.
 
-> [!IMPORTANT] 
-> **Note**: Currently, most of the data is seeded with dummy data. We hope the app will be used by more real users and pet adoption shelters in the future. If you are a shelter or a pet adoption organization, please reach out to us to get **all** your data integrated into the app in seconds! Or you can also use the in-app manual add pet features to further enrich our pets database (only works for authenticated users).
+> [!IMPORTANT] > **Note**: Currently, most of the data is seeded with dummy data. We hope the app will be used by more real users and pet adoption shelters in the future. If you are a shelter or a pet adoption organization, please reach out to us to get **all** your data integrated into the app in seconds! Or you can also use the in-app manual add pet features to further enrich our pets database (only works for authenticated users).
 
 ---
 
@@ -592,6 +595,57 @@ docker-compose exec compute /bin/zsh
 ```
 
 This will give you a shell inside the Docker container where you can run commands as if you were on a regular terminal, plus you can access all the installed dependencies and tools of the application.
+
+---
+
+## ⚛️ Testing
+
+PetSwipe includes a comprehensive testing suite to ensure the application works as expected. The tests are organized into three main categories:
+
+- **Playwright**: End-to-end tests for the frontend UI.
+- **Jest**: Unit and integration tests for the backend API and frontend API helper functions.
+- **Chai & Mocha**: Additional tests for specific features and functionalities.
+- **Commitlint**: Ensures commit messages follow the conventional commit format.
+
+### Playwright
+
+Playwright is used for end-to-end testing of the frontend application. It simulates user interactions and verifies that the UI behaves as expected.
+
+To run Playwright tests, navigate to the `frontend` directory and run:
+
+```bash
+cd frontend
+npm run test:e2e
+```
+
+### Jest
+
+Jest is used for unit and integration tests in the backend API and some frontend components. It provides a fast and reliable testing framework.
+
+To run Jest tests in the backend, navigate to the `backend` directory and run:
+
+```bash
+cd backend
+npm run test
+```
+
+This will run all tests in the backend API, including unit tests for controllers, services, and integration tests for the database.
+
+To run Jest tests in the frontend, navigate to the `frontend` directory and run:
+
+```bash
+cd frontend
+npm run test
+```
+
+### Chai & Mocha
+
+Chai and Mocha are used for additional tests in the frontend. To run Chai & Mocha tests, navigate to the `frontend` directory and run:
+
+```bash
+cd frontend
+npm run test:mocha
+```
 
 ---
 
