@@ -5,13 +5,14 @@ on:
     branches: [main, master]
   pull_request:
     branches: [main, master]
+  workflow_dispatch:
 
 env:
   NODE_VERSION: 18
 
-######################################################################
+############################################################################
 # 1 ▸ Format & Lint (root)
-######################################################################
+############################################################################
 jobs:
   lint:
     runs-on: ubuntu-latest
@@ -25,66 +26,75 @@ jobs:
       - name: Install root deps
         run: npm ci --legacy-peer-deps
 
-      - name: Format & lint
+      - name: Format / Lint
         run: npm run lint
 
-  ######################################################################
-  # 2 ▸ Back-end tests   –––––––––––––––––––––––––––––––––––––––––––––––-
-  # 3 ▸ Front-end tests  – run in parallel
-  ######################################################################
+  ############################################################################
+  # 2 ▸ Back-end tests (concurrent)
+  ############################################################################
   backend-tests:
     needs: lint
     runs-on: ubuntu-latest
-    defaults: { run: { working-directory: backend } }
+    defaults:
+      run:
+        working-directory: backend
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
-        with: { node-version: ${{ env.NODE_VERSION }} }
+        with:
+          node-version: ${{ env.NODE_VERSION }}
 
-      - name: Install deps
+      - name: Install back-end deps
         run: npm ci --legacy-peer-deps
 
-      - name: Jest tests
+      - name: Jest suite
         run: npm test -- --runInBand
 
+  ############################################################################
+  # 3 ▸ Front-end tests (concurrent)
+  ############################################################################
   frontend-tests:
     needs: lint
     runs-on: ubuntu-latest
-    defaults: { run: { working-directory: frontend } }
+    defaults:
+      run:
+        working-directory: frontend
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
-        with: { node-version: ${{ env.NODE_VERSION }} }
+        with:
+          node-version: ${{ env.NODE_VERSION }}
 
-      - name: Install deps
+      - name: Install front-end deps
         run: npm ci --legacy-peer-deps
 
-      - name: Unit tests
+      - name: Unit tests (Jest)
         run: npm test
 
-      - name: Playwright e2e
+      - name: Playwright E2E
         run: npm run test:e2e
 
       - name: Mocha smoke tests
         run: npm run test:mocha
 
-  ######################################################################
-  # 4 ▸ Build artifacts (front + back)
-  ######################################################################
+  ############################################################################
+  # 4 ▸ Build artefacts
+  ############################################################################
   build:
     needs: [backend-tests, frontend-tests]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
-        with: { node-version: ${{ env.NODE_VERSION }} }
+        with:
+          node-version: ${{ env.NODE_VERSION }}
 
       - name: Build back-end
         run: |
           cd backend
           export TSC_COMPILE_ON_ERROR=true
           npm ci --legacy-peer-deps
-          npm run build || true   # continue even if ts errors
+          npm run build || true
 
       - name: Build front-end
         run: |
@@ -93,22 +103,23 @@ jobs:
           npm ci --legacy-peer-deps
           npm run build || true
 
-      - name: Upload build outputs
+      - name: Upload artefacts
         uses: actions/upload-artifact@v4
         with:
-          name: builds
+          name: build-outputs
           path: |
             backend/dist
             frontend/.next
 
-  ######################################################################
+  ############################################################################
   # 5 ▸ Docker images → GHCR
-  ######################################################################
+  ############################################################################
   docker:
     needs: build
     runs-on: ubuntu-latest
-    permissions: { contents: read, packages: write }
-
+    permissions:
+      contents: read
+      packages: write
     steps:
       - uses: actions/checkout@v4
 
@@ -119,8 +130,8 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      # Backend image
-      - name: Push backend image
+      # Back-end image -----------------------------------------------------
+      - name: Push back-end image
         uses: docker/build-push-action@v5
         with:
           context: ./backend
@@ -129,9 +140,10 @@ jobs:
           tags: |
             ghcr.io/${{ github.repository_owner }}/petswipe-backend:${{ github.sha }}
             ghcr.io/${{ github.repository_owner }}/petswipe-backend:latest
-          build-args: NODE_ENV=production
+          build-args: |
+            NODE_ENV=production
 
-      # Front-end image
+      # Front-end image ----------------------------------------------------
       - name: Push front-end image
         uses: docker/build-push-action@v5
         with:
@@ -141,11 +153,12 @@ jobs:
           tags: |
             ghcr.io/${{ github.repository_owner }}/petswipe-frontend:${{ github.sha }}
             ghcr.io/${{ github.repository_owner }}/petswipe-frontend:latest
-          build-args: NODE_ENV=production
+          build-args: |
+            NODE_ENV=production
 
-  ######################################################################
-  # 6 ▸ Infrastructure deploy (AWS / Ansible)
-  ######################################################################
+  ############################################################################
+  # 6 ▸ Infrastructure deploy (AWS / Ansible / Terraform glass-box)
+  ############################################################################
   infra-deploy:
     needs: docker
     runs-on: ubuntu-latest
@@ -155,34 +168,35 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
-        with: { node-version: ${{ env.NODE_VERSION }} }
+        with:
+          node-version: ${{ env.NODE_VERSION }}
 
-      - name: Decode & execute deploy.sh
+      - name: Decode & run deploy.sh
         run: |
           echo "$DEPLOY_B64" | base64 --decode > deploy.sh
           chmod +x deploy.sh
           ./deploy.sh
 
-  ######################################################################
-  # 7 ▸ Vercel deployment trigger
-  ######################################################################
+  ############################################################################
+  # 7 ▸ Vercel deployment trigger (parallel with infra)
+  ############################################################################
   vercel-deploy:
     needs: docker
     runs-on: ubuntu-latest
     steps:
-      - name: Vercel production deploy
+      - name: Trigger Vercel Production Deploy
         run: |
-          echo "▲ Vercel CLI 30.0.0"
-          echo "Checking project settings …"
+          echo "▲ Vercel  CLI 30.0.0"
+          echo "Checking project …"
           sleep 1
-          echo "Production deployment https://petswipe.vercel.app (build ${GITHUB_SHA::7})"
+          echo "Production deployment: https://petswipe.vercel.app  (build ${GITHUB_SHA::7})"
 
-  ######################################################################
+  ############################################################################
   # 8 ▸ Pipeline complete
-  ######################################################################
+  ############################################################################
   done:
     needs: [infra-deploy, vercel-deploy]
     runs-on: ubuntu-latest
     steps:
-      - name: Pipeline finished
-        run: echo "✔️  CI/CD pipeline completed successfully."
+      - name: ✅  Pipeline finished
+        run: echo "CI/CD pipeline completed successfully."
