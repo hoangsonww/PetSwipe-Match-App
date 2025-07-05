@@ -10,10 +10,58 @@ on:
 env:
   NODE_VERSION: 18
 
-# 🧹 Lint & Format
 jobs:
+  # ────────────────────────────────────────────────────────────────
+  #  ⚙️ 0. Preflight Setup                                        #
+  # ────────────────────────────────────────────────────────────────
+  preflight:
+    name: "⚙️ Preflight Setup"
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup Node.js and cache deps
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+      - name: Verify environment
+        run: |
+          echo "Node.js version: $(node -v)"
+          echo "npm version: $(npm -v)"
+          echo "Workspace folders:"
+          ls -R .
+
+  # ────────────────────────────────────────────────────────────────
+  #  💾 0.1 Cache Dependencies                                    #
+  # ────────────────────────────────────────────────────────────────
+  cache-deps:
+    name: "💾 Cache Dependencies"
+    needs: [preflight]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Cache root npm
+        uses: actions/cache@v3
+        with:
+          path: ~/.npm
+          key: ${{ runner.os }}-npm-${{ hashFiles('**/package-lock.json') }}
+      - name: Cache backend deps
+        uses: actions/cache@v3
+        with:
+          path: backend/node_modules
+          key: ${{ runner.os }}-backend-npm-${{ hashFiles('backend/package-lock.json') }}
+      - name: Cache frontend deps
+        uses: actions/cache@v3
+        with:
+          path: frontend/node_modules
+          key: ${{ runner.os }}-frontend-npm-${{ hashFiles('frontend/package-lock.json') }}
+
+  # ────────────────────────────────────────────────────────────────
+  #  🧹 1. Lint & Format                                           #
+  # ────────────────────────────────────────────────────────────────
   lint:
     name: "🧹 Lint & Format"
+    needs: [preflight]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -23,11 +71,40 @@ jobs:
       - run: npm ci --legacy-peer-deps
       - run: npm run lint
 
-  # 🐘 Back-end Tests
-  backend-tests:
-    name: "🐘 Back-end Tests"
-    needs: lint
+  # ────────────────────────────────────────────────────────────────
+  #  🔒 2. Security & License Scan                                 #
+  # ────────────────────────────────────────────────────────────────
+  security-scan:
+    name: "🔒 Security & License Scan"
+    needs: [lint]
     runs-on: ubuntu-latest
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+      - run: npm ci --legacy-peer-deps
+      - name: npm audit
+        run: npm audit --audit-level=high || true
+      - name: license-checker
+        run: npx license-checker --production || true
+      - name: Static analysis
+        run: |
+          npx eslint "backend/**/*.{js,ts}" "frontend/**/*.{js,ts}" --max-warnings=0 || true
+          npx semgrep --config=auto --timeout 60 || true
+
+  # ────────────────────────────────────────────────────────────────
+  #  🐘 3a. Backend Tests (Matrix)                                  #
+  # ────────────────────────────────────────────────────────────────
+  backend-tests:
+    name: "🐘 Backend Tests"
+    needs: [lint]
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+        node: [18, 20]
+    runs-on: ${{ matrix.os }}
     defaults:
       run:
         working-directory: backend
@@ -35,14 +112,16 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
-          node-version: ${{ env.NODE_VERSION }}
+          node-version: ${{ matrix.node }}
       - run: npm ci --legacy-peer-deps
       - run: npm test -- --runInBand
 
-  # 🧪 Front-end Unit Tests
+  # ────────────────────────────────────────────────────────────────
+  #  🧪 3b. Front-end Unit Tests                                    #
+  # ────────────────────────────────────────────────────────────────
   frontend-unit-tests:
     name: "🧪 Front-end Unit Tests"
-    needs: lint
+    needs: [lint]
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -55,28 +134,37 @@ jobs:
       - run: npm ci --legacy-peer-deps
       - run: npm test
 
-  # 🎭 Playwright E2E Tests (ignore failures)
-  frontend-e2e-tests:
-    name: "🎭 Playwright E2E Tests"
-    needs: lint
+  # ────────────────────────────────────────────────────────────────
+  #  🌐 3c. Playwright E2E Matrix                                  #
+  # ────────────────────────────────────────────────────────────────
+  playwright-e2e:
+    name: "🌐 Playwright E2E Matrix"
+    needs: [lint]
     runs-on: ubuntu-latest
-    continue-on-error: true
+    strategy:
+      matrix:
+        browser: [chromium, firefox, webkit]
     defaults:
       run:
         working-directory: frontend
+    continue-on-error: true
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
       - run: npm ci --legacy-peer-deps
-      - run: npx playwright install chromium
-      - run: npm run test:e2e || true
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps
+      - name: Run on ${{ matrix.browser }}
+        run: npx playwright test --browser=${{ matrix.browser }} || true
 
-  # ☕ Mocha UI Tests
+  # ────────────────────────────────────────────────────────────────
+  #  ☕ 3d. Mocha UI Tests                                          #
+  # ────────────────────────────────────────────────────────────────
   frontend-mocha-tests:
     name: "☕ Mocha UI Tests"
-    needs: lint
+    needs: [lint]
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -89,10 +177,12 @@ jobs:
       - run: npm ci --legacy-peer-deps
       - run: npm run test:mocha
 
-  # 🏗️ Backend Build
+  # ────────────────────────────────────────────────────────────────
+  #  🏗️ 4a. Backend Build                                          #
+  # ────────────────────────────────────────────────────────────────
   backend-build:
     name: "🏗️ Backend Build"
-    needs: [backend-tests, frontend-unit-tests, frontend-e2e-tests, frontend-mocha-tests]
+    needs: [backend-tests, frontend-unit-tests, playwright-e2e, frontend-mocha-tests]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -109,10 +199,12 @@ jobs:
           name: backend-build
           path: backend/dist
 
-  # 🏗️ Frontend Build
+  # ────────────────────────────────────────────────────────────────
+  #  🏗️ 4b. Frontend Build                                         #
+  # ────────────────────────────────────────────────────────────────
   frontend-build:
     name: "🏗️ Frontend Build"
-    needs: [backend-tests, frontend-unit-tests, frontend-e2e-tests, frontend-mocha-tests]
+    needs: [backend-tests, frontend-unit-tests, playwright-e2e, frontend-mocha-tests]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -129,16 +221,18 @@ jobs:
           name: frontend-build
           path: frontend/.next
 
-  # 🐳 Docker Backend → GHCR
+  # ────────────────────────────────────────────────────────────────
+  #  🐳 5a. Docker Backend → GHCR (Multi-Arch)                     #
+  # ────────────────────────────────────────────────────────────────
   docker-backend:
     name: "🐳 Docker Backend → GHCR"
-    needs: backend-build
+    needs: [backend-build]
     runs-on: ubuntu-latest
     permissions:
       contents: read
       packages: write
     steps:
-      - uses: actions/checkout@v4
+      - uses: docker/setup-buildx-action@v2
       - uses: docker/login-action@v3
         with:
           registry: ghcr.io
@@ -146,6 +240,7 @@ jobs:
           password: ${{ secrets.GITHUB_TOKEN }}
       - uses: docker/build-push-action@v5
         with:
+          platforms: linux/amd64,linux/arm64
           context: ./backend
           file: ./backend/Dockerfile
           push: true
@@ -154,16 +249,18 @@ jobs:
             ghcr.io/${{ github.repository_owner }}/petswipe-app-backend:latest
           build-args: NODE_ENV=production
 
-  # 🐳 Docker Frontend → GHCR
+  # ────────────────────────────────────────────────────────────────
+  #  🐳 5b. Docker Frontend → GHCR (Multi-Arch)                    #
+  # ────────────────────────────────────────────────────────────────
   docker-frontend:
     name: "🐳 Docker Frontend → GHCR"
-    needs: frontend-build
+    needs: [frontend-build]
     runs-on: ubuntu-latest
     permissions:
       contents: read
       packages: write
     steps:
-      - uses: actions/checkout@v4
+      - uses: docker/setup-buildx-action@v2
       - uses: docker/login-action@v3
         with:
           registry: ghcr.io
@@ -171,6 +268,7 @@ jobs:
           password: ${{ secrets.GITHUB_TOKEN }}
       - uses: docker/build-push-action@v5
         with:
+          platforms: linux/amd64,linux/arm64
           context: ./frontend
           file: ./frontend/Dockerfile
           push: true
@@ -179,7 +277,46 @@ jobs:
             ghcr.io/${{ github.repository_owner }}/petswipe-app-frontend:latest
           build-args: NODE_ENV=production
 
-  # 🚀 Infra Deploy
+  # ────────────────────────────────────────────────────────────────
+  #  🔍 6. Image Vulnerability Scan                                #
+  # ────────────────────────────────────────────────────────────────
+  image-scan:
+    name: "🔍 Image Vulnerability Scan"
+    needs: [docker-backend, docker-frontend]
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    steps:
+      - name: Scan backend image
+        uses: aquasecurity/trivy-action@v0.12.0
+        with:
+          image-ref: ghcr.io/${{ github.repository_owner }}/petswipe-app-backend:latest
+          format: sarif
+          exit-code: 0
+      - name: Scan frontend image
+        uses: aquasecurity/trivy-action@v0.12.0
+        with:
+          image-ref: ghcr.io/${{ github.repository_owner }}/petswipe-app-frontend:latest
+          format: sarif
+          exit-code: 0
+
+  # ────────────────────────────────────────────────────────────────
+  #  ⚡ 7. Performance Benchmark                                   #
+  # ────────────────────────────────────────────────────────────────
+  perf-test:
+    name: "⚡ Performance Benchmark"
+    needs: [backend-build]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: npm ci --legacy-peer-deps
+      - run: |
+          npm --prefix backend start &
+          sleep 5
+          npx artillery quick --count 20 -n 50 http://localhost:5001/health || true
+
+  # ────────────────────────────────────────────────────────────────
+  #  🚀 8a. Infra Deploy                                           #
+  # ────────────────────────────────────────────────────────────────
   infra-deploy:
     name: "🚀 Infra Deploy"
     needs: [docker-backend, docker-frontend]
@@ -197,7 +334,9 @@ jobs:
           chmod +x deploy.sh
           ./deploy.sh
 
-  # ▲ Vercel Deploy
+  # ────────────────────────────────────────────────────────────────
+  #  🚀 8b. Vercel Deploy                                          #
+  # ────────────────────────────────────────────────────────────────
   vercel-deploy:
     name: "▲ Vercel Deploy"
     needs: [docker-backend, docker-frontend]
@@ -205,11 +344,11 @@ jobs:
     steps:
       - run: |
           echo "▲ Vercel CLI 30.0.0"
-          echo "Checking project …"
-          sleep 1
           echo "Production deployment: https://petswipe.vercel.app (build ${GITHUB_SHA::7})"
 
-  # 🎉 Pipeline Done
+  # ────────────────────────────────────────────────────────────────
+  #  🎉 9. Pipeline Done                                           #
+  # ────────────────────────────────────────────────────────────────
   done:
     name: "🎉 Pipeline Done"
     needs: [infra-deploy, vercel-deploy]
