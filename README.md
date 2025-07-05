@@ -44,7 +44,7 @@
     - [Playwright](#playwright)
     - [Jest](#jest)
     - [Chai & Mocha](#chai--mocha)
-12. [GitHub Actions CI/CD](#-github-actions-ci-cd)
+12. [GitHub Actions CI/CD](#-github-actions)
 13. [Command Line Interface](#-command-line-interface)
 14. [Contributing](#-contributing)
 15. [License](#-license)
@@ -650,7 +650,7 @@ npm run test:mocha
 
 ---
 
-## 📝 GitHub Actions CI/CD 
+## 📝 GitHub Actions
 
 PetSwipe uses GitHub Actions for Continuous Integration and Continuous Deployment (CI/CD). The workflow is defined in `.github/workflows/workflow.yml`.
 
@@ -666,6 +666,12 @@ The CI/CD pipeline includes the following steps:
 - **Deploy to AWS**: Deploys the backend API to AWS ECS and the frontend to Vercel.
 - **Notify on Failure**: Sends notifications via email if any step fails.
 - **Commitlint**: Ensures commit messages follow the conventional commit format.
+
+This setup ensures that every change pushed to the repository is automatically tested, built, and deployed, providing a robust and reliable development workflow.
+
+<p align="center">
+  <img src="docs/img/gh.png" alt="GitHub Actions Workflow" width="100%">
+</p>
 
 ---
 
