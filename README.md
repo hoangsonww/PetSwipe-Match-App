@@ -44,8 +44,8 @@
     - [Playwright](#playwright)
     - [Jest](#jest)
     - [Chai & Mocha](#chai--mocha)
-12. []
-12. [Command Line Interface](#-command-line-interface)
+12. [GitHub Actions CI/CD](#-github-actions-ci-cd)
+13. [Command Line Interface](#-command-line-interface)
 13. [Contributing](#-contributing)
 14. [License](#-license)
 15. [Author](#-author)
