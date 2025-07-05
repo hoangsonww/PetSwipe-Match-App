@@ -207,22 +207,36 @@ jobs:
   # ────────────────────────────────────────────────────────────────
   frontend-build:
     name: "🏗️ Frontend Build"
-    needs: [backend-tests, frontend-unit-tests, playwright-e2e, frontend-mocha-tests]
+    needs:
+      - backend-tests
+      - frontend-unit-tests
+      - playwright-e2e
+      - frontend-mocha-tests
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
+
     steps:
       - uses: actions/checkout@v4
+
       - uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
-      - run: |
-          cd frontend
+
+      - name: Install dependencies
+        run: |
           export TSC_COMPILE_ON_ERROR=true
           npm ci --legacy-peer-deps
-          npm run build || true
-      - uses: actions/upload-artifact@v4
+
+      - name: Build
+        run: npm run build
+
+      - name: Upload build output
+        uses: actions/upload-artifact@v4
         with:
           name: frontend-build
-          path: frontend/.next
+          path: .next/**
 
   # ────────────────────────────────────────────────────────────────
   #  🐳 Docker Backend → GHCR                                      #
