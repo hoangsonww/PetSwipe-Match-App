@@ -105,17 +105,19 @@ jobs:
         os: [ubuntu-latest, windows-latest, macos-latest]
         node: [18, 20]
     runs-on: ${{ matrix.os }}
+    env:
+      NODE_ENV: test                # set TEST env across all OSes
     defaults:
       run:
         working-directory: backend
-        shell: bash
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
           node-version: ${{ matrix.node }}
       - run: npm ci --legacy-peer-deps
-      - run: npm test -- --runInBand
+      - name: Run tests
+        run: npx jest --runInBand   # avoid inline "NODE_ENV=…" prefix that breaks on Windows
 
   # ────────────────────────────────────────────────────────────────
   #  🧪 3b. Front-end Unit Tests                                    #
