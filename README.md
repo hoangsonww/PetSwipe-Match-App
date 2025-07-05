@@ -48,7 +48,7 @@
 13. [Command Line Interface](#-command-line-interface)
 14. [Contributing](#-contributing)
 15. [License](#-license)
-15. [Author](#-author)
+16. [Author](#-author)
 
 ---
 
