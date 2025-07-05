@@ -286,13 +286,13 @@ jobs:
     continue-on-error: true
     steps:
       - name: Scan backend image
-        uses: aquasecurity/trivy-action@v0.12.0
+        uses: aquasecurity/trivy-action@0.28.0
         with:
           image-ref: ghcr.io/${{ github.repository_owner }}/petswipe-app-backend:latest
           format: sarif
           exit-code: 0
       - name: Scan frontend image
-        uses: aquasecurity/trivy-action@v0.12.0
+        uses: aquasecurity/trivy-action@0.28.0
         with:
           image-ref: ghcr.io/${{ github.repository_owner }}/petswipe-app-frontend:latest
           format: sarif
