@@ -44,10 +44,11 @@
     - [Playwright](#playwright)
     - [Jest](#jest)
     - [Chai & Mocha](#chai--mocha)
-12. [Command Line Interface](#-command-line-interface)
-13. [Contributing](#-contributing)
-14. [License](#-license)
-15. [Author](#-author)
+12. [GitHub Actions CI/CD](#-github-actions)
+13. [Command Line Interface](#-command-line-interface)
+14. [Contributing](#-contributing)
+15. [License](#-license)
+16. [Author](#-author)
 
 ---
 
@@ -646,6 +647,31 @@ Chai and Mocha are used for additional tests in the frontend. To run Chai & Moch
 cd frontend
 npm run test:mocha
 ```
+
+---
+
+## 📝 GitHub Actions
+
+PetSwipe uses GitHub Actions for Continuous Integration and Continuous Deployment (CI/CD). The workflow is defined in `.github/workflows/workflow.yml`.
+
+The CI/CD pipeline includes the following steps:
+- **Checkout Code**: Pulls the latest code from the repository.
+- **Set Up Node.js**: Installs the specified Node.js version.
+- **Install Dependencies**: Installs the necessary dependencies for both backend and frontend.
+- **Run Linting**: Runs ESLint and Prettier to ensure code quality and formatting.
+- **Run Tests**: Executes Jest tests for the backend and Playwright tests for the frontend.
+- **Build Frontend**: Builds the Next.js frontend application.
+- **Build Docker Images**: Builds Docker images for both backend and frontend.
+- **Push Docker Images**: Pushes the built images to GitHub Container Registry (GHCR).
+- **Deploy to AWS**: Deploys the backend API to AWS ECS and the frontend to Vercel.
+- **Notify on Failure**: Sends notifications via email if any step fails.
+- **Commitlint**: Ensures commit messages follow the conventional commit format.
+
+This setup ensures that every change pushed to the repository is automatically tested, built, and deployed, providing a robust and reliable development workflow.
+
+<p align="center">
+  <img src="docs/img/gh.png" alt="GitHub Actions Workflow" width="100%">
+</p>
 
 ---
 
