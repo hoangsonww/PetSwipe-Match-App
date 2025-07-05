@@ -649,6 +649,14 @@ npm run test:mocha
 
 ---
 
+## 📝 GitHub Actions CI/CD 
+
+PetSwipe uses GitHub Actions for Continuous Integration and Continuous Deployment (CI/CD). The workflow is defined in `.github/workflows/workflow.yml`.
+
+The CI/CD pipeline includes the following steps:
+
+---
+
 ## 🧪 Command Line Interface
 
 The app also includes a CLI for managing pets and users. You can run the CLI commands from the root directory:
