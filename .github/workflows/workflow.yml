@@ -73,9 +73,9 @@ jobs:
       - run: npx playwright install chromium
       - run: npm run test:e2e || true
 
-  # ☕ Mocha Smoke Tests
+  # ☕ Mocha UI Tests
   frontend-mocha-tests:
-    name: "☕ Mocha Smoke Tests"
+    name: "☕ Mocha UI Tests"
     needs: lint
     runs-on: ubuntu-latest
     defaults:
