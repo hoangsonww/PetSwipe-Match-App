@@ -47,7 +47,7 @@
 12. [GitHub Actions CI/CD](#-github-actions-ci-cd)
 13. [Command Line Interface](#-command-line-interface)
 14. [Contributing](#-contributing)
-14. [License](#-license)
+15. [License](#-license)
 15. [Author](#-author)
 
 ---
