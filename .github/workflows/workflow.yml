@@ -213,9 +213,6 @@ jobs:
       - playwright-e2e
       - frontend-mocha-tests
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: frontend
 
     steps:
       - uses: actions/checkout@v4
@@ -224,19 +221,21 @@ jobs:
         with:
           node-version: ${{ env.NODE_VERSION }}
 
-      - name: Install dependencies
+      - name: Install & Build
         run: |
+          cd frontend
           export TSC_COMPILE_ON_ERROR=true
           npm ci --legacy-peer-deps
+          npm run build
 
-      - name: Build
-        run: npm run build
-
-      - name: Upload build output
+      - name: Upload build artifact
         uses: actions/upload-artifact@v4
         with:
           name: frontend-build
-          path: .next/**
+          path: |
+            frontend/.next/**
+            frontend/public/**
+            frontend/next.config.js
 
   # ────────────────────────────────────────────────────────────────
   #  🐳 Docker Backend → GHCR                                      #
