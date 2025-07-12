@@ -365,7 +365,38 @@ jobs:
   # ────────────────────────────────────────────────────────────────
   done:
     name: "🎉 Pipeline Done"
-    needs: [infra-deploy, vercel-deploy]
     runs-on: ubuntu-latest
+    needs:
+      - infra-deploy
+      - vercel-deploy
     steps:
-      - run: echo "✅ CI/CD pipeline completed successfully."
+      - name: Deployment Summary (log)
+        run: |
+          echo "::group::🎉 PetSwipe Deployment Summary"
+          echo ""
+          echo "- 🌐 **User-Facing App:** https://petswipe.vercel.app"
+          echo "- 🐾 **Backend API (Vercel):** https://petswipe-backend-api.vercel.app"
+          echo "- 🐳 **Backend Container:** ghcr.io/${{ github.repository_owner }}/petswipe-app-backend:${{ github.sha }}"
+          echo "- 🐳 **Frontend Container:** ghcr.io/${{ github.repository_owner }}/petswipe-app-frontend:${{ github.sha }}"
+          echo "- 🚀 **Infrastructure:** AWS ECS & Terraform + Ansible"
+          echo "- ☁️ **Frontend Hosting:** Vercel ✅"
+          echo ""
+          echo "✅ All stages of the PetSwipe CI/CD pipeline have completed successfully!"
+          echo "::endgroup::"
+
+      - name: Write Summary to GitHub Step Summary
+        run: |
+          {
+            echo "## 🎉 PetSwipe CI/CD Pipeline Complete"
+            echo ""
+            echo "| Item                        | Details                                                      |"
+            echo "| --------------------------- | ------------------------------------------------------------ |"
+            echo "| **Live App**                | [https://petswipe.vercel.app](https://petswipe.vercel.app)    |"
+            echo "| **Backend API**             | [https://petswipe-backend-api.vercel.app](https://petswipe-backend-api.vercel.app) |"
+            echo "| **Backend Image**           | `ghcr.io/${{ github.repository_owner }}/petswipe-app-backend:${{ github.sha }}` |"
+            echo "| **Frontend Image**          | `ghcr.io/${{ github.repository_owner }}/petswipe-app-frontend:${{ github.sha }}` |"
+            echo "| **Infra Deployment**        | AWS ECS (Terraform + Ansible)                                |"
+            echo "| **Vercel Deployment**       | Frontend hosted on Vercel                                    |"
+            echo ""
+            echo "**Completed at** $(date -u +"%Y-%m-%dT%H:%M:%SZ") UTC"
+          } >> $GITHUB_STEP_SUMMARY
