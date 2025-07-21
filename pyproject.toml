@@ -1,7 +1,7 @@
 [project]
 name = "PetSwipe"
 version = "0.1.0"
-description = "Python package for PawSwipe, an app that helps users find and adopt pets."
+description = "Python package for PetSwipe, an app that helps users find and adopt pets."
 authors = [
     { name="Son Nguyen", email="hoangson091104@gmail.com" },
 ]
