@@ -16,6 +16,9 @@ import {
   ZoomIn,
   List,
   Heart,
+  MapPin,
+  Phone,
+  Mail,
 } from "lucide-react";
 import { Layout } from "@/components/Layout";
 import { Button } from "@/components/ui/button";
@@ -241,21 +244,143 @@ const Home: NextPage = () => {
 
   const renderCaseFace = (i: number, isTop: boolean) => {
     const p = cases[i];
+
     const handleCardClick = () => {
       const sinceSwipe = Date.now() - lastSwipeRef.current;
       if (sinceSwipe < 180) return;
       setFlipped((f) => !f);
     };
 
+    // -------------------- Robust contact parsing & formatting --------------------
+    const rawContact = (p.shelterContact ?? "").trim();
+
+    // Email(s)
+    const emailMatches =
+      rawContact.match(/[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/gi) ?? [];
+    const primaryEmail = emailMatches[0] || "";
+    const primaryEmailHref = primaryEmail
+      ? `mailto:${primaryEmail}?subject=${encodeURIComponent(
+        `Inquiry about ${p.name}`
+      )}`
+      : undefined;
+
+    // Find the best phone-like candidate (longest by digit count), incl. optional extension
+    const phoneCandidateRegex =
+      /(?:(?:\+?\d[\d\s().-]{6,}\d))(?:\s*(?:x|ext\.?|extension)\s*\d{1,6})?/gi;
+
+    const candidates = Array.from(rawContact.matchAll(phoneCandidateRegex)).map(
+      (m) => m[0]
+    );
+
+    const byDigitCount = (s: string) => (s.match(/\d/g) || []).length;
+    const phoneRaw =
+      candidates.sort((a, b) => byDigitCount(b) - byDigitCount(a))[0] || "";
+
+    // Extract extension if present
+    const extMatch = phoneRaw.match(/(?:^|\s)(?:x|ext\.?|extension)\s*(\d{1,6})/i);
+    const ext = extMatch?.[1] || "";
+
+    // Core number (strip extension text)
+    const phoneCore = phoneRaw
+      .replace(/(?:^|\s)(?:x|ext\.?|extension)\s*\d{1,6}\s*$/i, "")
+      .trim();
+
+    // Detect if it had a leading '+'
+    const hadPlus =
+      /^\s*\+/.test(phoneCore) || /^\s*\+/.test(phoneRaw) || /^\s*\+/.test(rawContact);
+
+    // Digits only (for parsing)
+    const digits = (phoneCore.match(/\d+/g) || []).join("");
+
+    // Split into CC + NSN (heuristic: choose 1–3 digit CC such that NSN >= 10; smallest CC that fits)
+    let cc = "";
+    let nsn = digits;
+
+    if (hadPlus && digits.length > 10) {
+      for (let k = 1; k <= 3; k++) {
+        const maybeCC = digits.slice(0, k);
+        const rest = digits.slice(k);
+        if (rest.length >= 10) {
+          cc = maybeCC;
+          nsn = rest;
+          break;
+        }
+      }
+      // Fallback if nothing chosen
+      if (!cc) {
+        cc = digits.slice(0, 1);
+        nsn = digits.slice(1);
+      }
+    }
+
+    // Format display:
+    // - Use the last 10 digits of NSN for (AAA) BBB-CCCC
+    // - If <10 digits, fall back to best-effort grouping (3-3-rest if >=7; else raw digits)
+    const last10 = nsn.slice(-10);
+    let displayPhone = "";
+    if (last10.length === 10) {
+      const a = last10.slice(0, 3);
+      const b = last10.slice(3, 6);
+      const c = last10.slice(6);
+      displayPhone = cc ? `+${cc} (${a}) ${b}-${c}` : `(${a}) ${b}-${c}`;
+    } else if (nsn.length >= 7) {
+      const a = nsn.slice(0, 3);
+      const b = nsn.slice(3, 6);
+      const c = nsn.slice(6);
+      displayPhone = cc ? `+${cc} (${a}) ${b}-${c}` : `(${a}) ${b}-${c}`;
+    } else if (nsn.length > 0) {
+      displayPhone = nsn; // too short to format nicely; show as-is
+    } else {
+      displayPhone = ""; // no phone
+    }
+
+    // tel: href
+    // Prefer the original sign if it had '+', otherwise use raw national digits
+    // Strip non-digits from CC+NSN, add ;ext= if extension present
+    const telNumeric = (hadPlus ? `+${cc}${nsn}` : digits) || "";
+    const primaryPhoneHref =
+      telNumeric.length > 0 ? `tel:${telNumeric}${ext ? `;ext=${ext}` : ""}` : undefined;
+
+    // -------------------- Contact dropdown handlers --------------------
+    const openMaps = (e: React.MouseEvent) => {
+      e.stopPropagation();
+      if (!p.shelterAddress) {
+        toast.info("No address available for this shelter");
+        return;
+      }
+      const url = `https://www.google.com/maps?q=${encodeURIComponent(
+        p.shelterAddress
+      )}`;
+      window.open(url, "_blank", "noopener,noreferrer");
+    };
+
+    const callShelter = (e: React.MouseEvent) => {
+      e.stopPropagation();
+      if (!primaryPhoneHref) {
+        toast.info("No phone number available");
+        return;
+      }
+      window.location.href = primaryPhoneHref;
+    };
+
+    const emailShelter = (e: React.MouseEvent) => {
+      e.stopPropagation();
+      if (!primaryEmailHref) {
+        toast.info("No email available");
+        return;
+      }
+      window.location.href = primaryEmailHref;
+    };
+
     return (
       <div
         className="
-          relative
-          w-full max-w-[95vw] sm:max-w-none mx-auto
-          h-full max-h-screen
-          cursor-grab active:cursor-grabbing
-          z-40
-        "
+        relative
+        w-full max-w-[95vw] sm:max-w-none mx-auto
+        h-full max-h-screen
+        cursor-grab active:cursor-grabbing
+        z-40
+      "
         style={{ perspective: 1000 }}
         {...(isTop ? swipeHandlers : {})}
         onClick={isTop ? handleCardClick : undefined}
@@ -268,6 +393,7 @@ const Home: NextPage = () => {
             transition: isTop ? "transform 0.6s" : "none",
           }}
         >
+          {/* FRONT (unchanged) */}
           <div
             className="absolute inset-0 flex flex-col p-6 bg-[#EDF6F3] rounded-2xl select-none overflow-hidden"
             style={{
@@ -299,6 +425,7 @@ const Home: NextPage = () => {
             </div>
           </div>
 
+          {/* BACK */}
           <div
             className="absolute inset-0 flex flex-col bg-[#EDF6F3] rounded-2xl overflow-hidden select-none"
             style={{
@@ -338,19 +465,100 @@ const Home: NextPage = () => {
                 <p>
                   <strong>Shelter:</strong> {p.shelterName ?? "N/A"}
                 </p>
-                {p.shelterContact && (
+
+                {/* Phone then Email (uniform display) */}
+                {displayPhone || primaryEmail ? (
+                  <>
+                    {displayPhone && (
+                      <p>
+                        <strong>Phone:</strong> {displayPhone}
+                      </p>
+                    )}
+                    {primaryEmail && (
+                      <p>
+                        <strong>Email:</strong> {primaryEmail}
+                      </p>
+                    )}
+                  </>
+                ) : (
                   <p>
-                    <strong>Contact:</strong> {p.shelterContact ?? "N/A"}
+                    <strong>Contact:</strong> N/A
                   </p>
                 )}
+
                 {p.shelterAddress && (
                   <p>
                     <strong>Address:</strong> {p.shelterAddress ?? "N/A"}
                   </p>
                 )}
               </div>
+
+              {/* Contact Shelter dropdown (opaque) */}
+              <div className="pt-2">
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <button
+                      onClick={(e) => e.stopPropagation()}
+                      className="
+                      w-full px-4 py-2 rounded-md font-medium
+                      bg-[#234851] hover:bg-[#1b3a3f] text-white
+                      focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#234851]
+                    "
+                    >
+                      Contact shelter
+                    </button>
+                  </PopoverTrigger>
+                  <PopoverContent
+                    onClick={(e) => e.stopPropagation()}
+                    className="
+                    bg-white text-[#234851] rounded-xl shadow-xl
+                    w-64 p-2 space-y-1
+                  "
+                  >
+                    <button
+                      onClick={openMaps}
+                      className="
+                      w-full flex items-center gap-2 px-3 py-2 rounded-md
+                      hover:bg-[#EDF6F3] transition
+                      disabled:opacity-50 disabled:cursor-not-allowed
+                    "
+                      disabled={!p.shelterAddress}
+                    >
+                      <MapPin size={18} />
+                      <span>Get address (Maps)</span>
+                    </button>
+
+                    <button
+                      onClick={callShelter}
+                      className="
+                      w-full flex items-center gap-2 px-3 py-2 rounded-md
+                      hover:bg-[#EDF6F3] transition
+                      disabled:opacity-50 disabled:cursor-not-allowed
+                    "
+                      disabled={!primaryPhoneHref}
+                    >
+                      <Phone size={18} />
+                      <span>Call</span>
+                    </button>
+
+                    {primaryEmailHref ? (
+                      <button
+                        onClick={emailShelter}
+                        className="
+                        w-full flex items-center gap-2 px-3 py-2 rounded-md
+                        hover:bg-[#EDF6F3] transition
+                      "
+                      >
+                        <Mail size={18} />
+                        <span>Send email</span>
+                      </button>
+                    ) : null}
+                  </PopoverContent>
+                </Popover>
+              </div>
             </div>
 
+            {/* Bottom actions (unchanged) */}
             <div className="flex gap-4 p-6 bg-[#EDF6F3] flex-shrink-0">
               <Button
                 variant="default"

@@ -145,6 +145,11 @@ app.get("/", (_req, res) => {
   res.redirect("/docs");
 });
 
+// ─── REDIRECT /api TO /docs ─────────────────────────────────────────────────────
+app.get(["/api", "/api/"], (_req, res) => {
+  res.redirect("/docs");
+});
+
 // ─── PING (for quick CORS test) ────────────────────────────────────────────────
 app.get("/ping", (_req, res) => {
   res.json({ pong: true });
