@@ -42,6 +42,10 @@ export class Pet {
   @Column({ type: "text", nullable: true })
   shelterAddress?: string;
 
+  /** Email of the uploader/creator (used for edit permissions) */
+  @Column({ type: "varchar", length: 255, default: "test@unc.edu" })
+  createdBy!: string;
+
   @OneToMany(() => Match, (m) => m.pet)
   matches!: Match[];
 

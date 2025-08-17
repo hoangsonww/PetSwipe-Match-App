@@ -3,8 +3,8 @@ import type { NextPage } from "next";
 import { useRouter } from "next/router";
 import useSWR from "swr";
 import { motion } from "framer-motion";
-import { toast, Toaster } from "sonner";
-import { Loader2, ArrowLeft } from "lucide-react";
+import { toast } from "sonner";
+import { Loader2, ArrowLeft, PawPrint } from "lucide-react";
 import Head from "next/head";
 import { useUser } from "@/hooks/useUser";
 import { swipeApi, Swipe } from "@/lib/api";
@@ -28,6 +28,11 @@ const SwipesPage: NextPage = () => {
     if (!authLoading && !user) router.replace("/login");
   }, [authLoading, user, router]);
 
+  // toast errors once when they occur
+  useEffect(() => {
+    if (error) toast.error("Failed to load your swipes");
+  }, [error]);
+
   if (authLoading || isValidating || !swipes) {
     return (
       <Layout>
@@ -38,10 +43,61 @@ const SwipesPage: NextPage = () => {
     );
   }
 
-  if (error) {
-    toast.error("Failed to load your swipes");
+  // Empty state when the user has no swipes
+  if (swipes.length === 0) {
+    return (
+      <Layout>
+        <Head>
+          <title>My Swipes | PetSwipe</title>
+        </Head>
+
+        <motion.h1
+          initial={{ opacity: 0, y: -10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.3 }}
+          className="text-3xl font-extrabold text-center text-[#234851] my-8 dark:text-[#B6EBE9]"
+        >
+          All My Swipes
+        </motion.h1>
+
+        <div className="px-6 pb-12">
+          <div className="max-w-2xl mx-auto">
+            <div className="rounded-2xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 shadow-sm p-10 text-center">
+              <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-[#EDF6F3] text-[#234851] dark:bg-neutral-800 dark:text-[#B6EBE9]">
+                <PawPrint size={26} />
+              </div>
+              <h2 className="text-xl font-semibold text-neutral-900 dark:text-neutral-100">
+                No swipes yet
+              </h2>
+              <p className="mt-2 text-neutral-600 dark:text-neutral-300">
+                You haven’t swiped on any pets. Head to the deck to start
+                browsing!
+              </p>
+
+              <div className="mt-6 flex flex-col sm:flex-row items-center justify-center gap-3">
+                <Button
+                  onClick={() => router.push("/home")}
+                  className="bg-[#7097A8] hover:bg-[#5f868d] text-white"
+                >
+                  Browse pets
+                </Button>
+                <Button
+                  variant="outline"
+                  onClick={() => router.back()}
+                  aria-label="Back"
+                  className="border-none bg-neutral-100 hover:bg-neutral-200 text-neutral-900 dark:bg-neutral-800 dark:hover:bg-neutral-700 dark:text-neutral-100"
+                >
+                  <ArrowLeft size={18} className="mr-2" /> Back
+                </Button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </Layout>
+    );
   }
 
+  // List of swipes
   return (
     <Layout>
       <Head>
@@ -87,7 +143,6 @@ const SwipesPage: NextPage = () => {
                   </p>
                 )}
 
-                {/* New shelter fields */}
                 {pet.shelterName && (
                   <p>
                     <strong>Shelter:</strong> {pet.shelterName}
@@ -115,13 +170,24 @@ const SwipesPage: NextPage = () => {
                   </span>
                 </p>
 
-                <p className="text-sm text-gray-500">
+                <p className="text-sm text-gray-500 dark:text-gray-400">
                   Swiped at{" "}
                   {new Date(swipe.swipedAt).toLocaleString(undefined, {
                     dateStyle: "medium",
                     timeStyle: "short",
                   })}
                 </p>
+
+                {/* View details button (same style used on other pages) */}
+                <div className="pt-2">
+                  <Button
+                    variant="outline"
+                    onClick={() => router.push(`/pet/${pet.id}`)}
+                    className="w-full border-none bg-neutral-100 hover:bg-neutral-2 00 text-neutral-900 dark:bg-neutral-800 dark:hover:bg-neutral-700 dark:text-neutral-100"
+                  >
+                    View details
+                  </Button>
+                </div>
               </CardContent>
             </Card>
           );

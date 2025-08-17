@@ -135,12 +135,40 @@ PetSwipe is built using a modern tech stack, ensuring scalability, maintainabili
 
 Below is a high-level Mermaid diagram of our architecture/infrastructure:
 
-<p align="center">
-  <img src="docs/img/mermaid.png" alt="Architecture Diagram" width="100%">
-</p>
+```mermaid
+flowchart LR
+  subgraph CI/CD
+    GH["GitHub Actions"]
+  end
+
+  subgraph Frontend
+    Browser["User’s Browser"]
+    Next["Next.js & Vercel"]
+  end
+
+  subgraph Backend
+    ECR["AWS ECR"]
+    ECS["AWS ECS (Fargate) & Express API"]
+  end
+
+  subgraph Data
+    RDS["PostgreSQL & AWS RDS"]
+    S3["AWS S3 (Avatars & Pet Photos)"]
+  end
+
+  Browser --> Next
+  Next -->|API calls| ECS
+  ECS -->|Reads/Writes| RDS
+  ECS -->|Uploads/Serves| S3
+  ECR -->|Docker images| ECS
+
+  GH -->|Build & Deploy Frontend| Next
+  GH -->|Build & Push Images| ECR
+  GH -->|Deploy Backend| ECS
+```
 
 > [!TIP]
-> Image not showing? Here's the link to the diagram: [Mermaid Live Diagram](https://www.mermaidchart.com/raw/3c7480d2-191d-4d09-a8f1-6678de344fa4?theme=light&version=v0.1&format=svg)
+> Image not showing? Here's the link to the diagram: **[Mermaid Live Diagram](https://www.mermaidchart.com/raw/3c7480d2-191d-4d09-a8f1-6678de344fa4?theme=light&version=v0.1&format=svg)**
 
 ---
 
@@ -655,6 +683,7 @@ npm run test:mocha
 PetSwipe uses GitHub Actions for Continuous Integration and Continuous Deployment (CI/CD). The workflow is defined in `.github/workflows/workflow.yml`.
 
 The CI/CD pipeline includes the following steps:
+
 - **Checkout Code**: Pulls the latest code from the repository.
 - **Set Up Node.js**: Installs the specified Node.js version.
 - **Install Dependencies**: Installs the necessary dependencies for both backend and frontend.

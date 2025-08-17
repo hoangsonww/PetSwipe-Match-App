@@ -135,6 +135,13 @@ export const components = {
           nullable: true,
           description: "Physical address of the shelter",
         },
+        createdBy: {
+          type: "string",
+          format: "email",
+          description:
+            "Email of the uploader/creator (used for edit permissions)",
+          default: "test@unc.edu",
+        },
         matches: {
           type: "array",
           description: "Array of Match objects",

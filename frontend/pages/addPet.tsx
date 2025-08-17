@@ -75,9 +75,14 @@ const AddPet: NextPage = () => {
         transition={{ duration: 0.45 }}
         className="mx-auto max-w-xl px-6 py-12"
       >
-        <h1 className="text-3xl font-bold text-center text-[#234851] mb-8 dark:text-[#B6EBE9]">
+        <h1 className="text-3xl font-bold text-center text-[#234851] mb-4 dark:text-[#B6EBE9]">
           Add a Pet for Adoption
         </h1>
+
+        <p className="text-center text-sm text-gray-600 mb-6 dark:text-gray-300">
+          We're so happy you're here to help pets find their forever homes!
+          Please fill out the details below to add a new pet for adoption.
+        </p>
 
         <Card className="shadow-lg border border-[#7097A8]">
           <CardHeader>
