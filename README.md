@@ -208,6 +208,30 @@ flowchart LR
   <img src="docs/img/adopted.png" alt="Adopted Pets" width="100%">
 </p>
 
+### Pet Details
+
+<p align="center">
+  <img src="docs/img/pet-details.png" alt="Pet Details" width="100%">
+</p>
+
+### My Pets
+
+<p align="center">
+  <img src="docs/img/my-pets.png" alt="My Pets" width="100%">
+</p>
+
+### Pets Map
+
+<p align="center">
+  <img src="docs/img/pets-map.png" alt="Pets Map" width="100%">
+</p>
+
+### Bulk Upload Pets
+
+<p align="center">
+  <img src="docs/img/bulk-upload.png" alt="Bulk Upload Pets" width="100%">
+</p>
+
 ### Chatbot
 
 <p align="center">
@@ -378,7 +402,7 @@ _and more..._
 
 ## 📚 API Reference
 
-Swagger docs at `http://localhost:5001/api-docs.json`.
+Swagger docs are served locally at `http://localhost:5001/api-docs.json`. You can also access the live API documentation at **[PetSwipe API](https://petswipe-backend-api.vercel.app/)**, and the JSON format at **[PetSwipe API JSON](https://petswipe-backend-api.vercel.app/api-docs.json)**.
 
 ### Authentication
 
@@ -401,13 +425,16 @@ Swagger docs at `http://localhost:5001/api-docs.json`.
 - **GET** `/api/pets/export`
 - **POST** `/api/pets/:petId/photo`
 - **POST** `/api/pets/upload`
+- **GET** `/api/pets/mine`
+- **PUT** `/api/pets/:petId`
+- **GET** `/api/pets/:petId`
 
 ### Swipes
 
 - **POST** `/api/swipes`
 - **GET** `/api/swipes/me`
 - **GET** `/api/swipes/me/liked`
-- **GET** `/api/swipes`
+- **GET** `/api/swipes` (Admins only)
 
 ### Users
 
