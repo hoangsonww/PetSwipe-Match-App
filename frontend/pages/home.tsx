@@ -16,6 +16,14 @@ import {
   ZoomIn,
   List,
   Heart,
+  MapPin,
+  Phone,
+  Mail,
+  Share2,
+  Facebook,
+  Twitter,
+  Copy,
+  PhoneCall,
 } from "lucide-react";
 import { Layout } from "@/components/Layout";
 import { Button } from "@/components/ui/button";
@@ -202,8 +210,13 @@ const Home: NextPage = () => {
       <div className="flex-1 w-full text-gray-700 space-y-4">
         <p>On the following page, you will see pets available for adoption.</p>
         <p>
-          Swipe right to “adopt” or left to “pass” based on their details and
-          photo.
+          Swipe right or left to navigate through the pets. For each pet, click
+          on its card to flip it and see more details, including a photo,
+          description, and contact information for the shelter.
+        </p>
+        <p>
+          Press the Adopt button on the back of the card if you like the pet, or
+          the Pass button if you do not like the pet.
         </p>
         <p>
           <strong>IMPORTANT: </strong>
@@ -241,21 +254,206 @@ const Home: NextPage = () => {
 
   const renderCaseFace = (i: number, isTop: boolean) => {
     const p = cases[i];
+
     const handleCardClick = () => {
       const sinceSwipe = Date.now() - lastSwipeRef.current;
       if (sinceSwipe < 180) return;
       setFlipped((f) => !f);
     };
 
+    // -------------------- Robust contact parsing & formatting --------------------
+    const rawContact = (p.shelterContact ?? "").trim();
+
+    // Email(s)
+    const emailMatches =
+      rawContact.match(/[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/gi) ?? [];
+    const primaryEmail = emailMatches[0] || "";
+    const primaryEmailHref = primaryEmail
+      ? `mailto:${primaryEmail}?subject=${encodeURIComponent(
+          `Inquiry about ${p.name}`,
+        )}`
+      : undefined;
+
+    // Find the best phone-like candidate (longest by digit count), incl. optional extension
+    const phoneCandidateRegex =
+      /(?:(?:\+?\d[\d\s().-]{6,}\d))(?:\s*(?:x|ext\.?|extension)\s*\d{1,6})?/gi;
+
+    const candidates = Array.from(rawContact.matchAll(phoneCandidateRegex)).map(
+      (m) => m[0],
+    );
+
+    const byDigitCount = (s: string) => (s.match(/\d/g) || []).length;
+    const phoneRaw =
+      candidates.sort((a, b) => byDigitCount(b) - byDigitCount(a))[0] || "";
+
+    // Extract extension if present
+    const extMatch = phoneRaw.match(
+      /(?:^|\s)(?:x|ext\.?|extension)\s*(\d{1,6})/i,
+    );
+    const ext = extMatch?.[1] || "";
+
+    // Core number (strip extension text)
+    const phoneCore = phoneRaw
+      .replace(/(?:^|\s)(?:x|ext\.?|extension)\s*\d{1,6}\s*$/i, "")
+      .trim();
+
+    // Detect if it had a leading '+'
+    const hadPlus =
+      /^\s*\+/.test(phoneCore) ||
+      /^\s*\+/.test(phoneRaw) ||
+      /^\s*\+/.test(rawContact);
+
+    // Digits only (for parsing)
+    const digits = (phoneCore.match(/\d+/g) || []).join("");
+
+    // Split into CC + NSN (heuristic)
+    let cc = "";
+    let nsn = digits;
+
+    if (hadPlus && digits.length > 10) {
+      for (let k = 1; k <= 3; k++) {
+        const maybeCC = digits.slice(0, k);
+        const rest = digits.slice(k);
+        if (rest.length >= 10) {
+          cc = maybeCC;
+          nsn = rest;
+          break;
+        }
+      }
+      if (!cc) {
+        cc = digits.slice(0, 1);
+        nsn = digits.slice(1);
+      }
+    }
+
+    // Format display (US-like last 10 digits) or best effort
+    const last10 = nsn.slice(-10);
+    let displayPhone = "";
+    if (last10.length === 10) {
+      const a = last10.slice(0, 3);
+      const b = last10.slice(3, 6);
+      const c = last10.slice(6);
+      displayPhone = cc ? `+${cc} (${a}) ${b}-${c}` : `(${a}) ${b}-${c}`;
+    } else if (nsn.length >= 7) {
+      const a = nsn.slice(0, 3);
+      const b = nsn.slice(3, 6);
+      const c = nsn.slice(6);
+      displayPhone = cc ? `+${cc} (${a}) ${b}-${c}` : `(${a}) ${b}-${c}`;
+    } else if (nsn.length > 0) {
+      displayPhone = nsn;
+    } else {
+      displayPhone = "";
+    }
+
+    // tel: href
+    const telNumeric = (hadPlus ? `+${cc}${nsn}` : digits) || "";
+    const primaryPhoneHref =
+      telNumeric.length > 0
+        ? `tel:${telNumeric}${ext ? `;ext=${ext}` : ""}`
+        : undefined;
+
+    // -------------------- Contact dropdown handlers --------------------
+    const openMaps = (e: React.MouseEvent) => {
+      e.stopPropagation();
+      if (!p.shelterAddress) {
+        toast.info("No address available for this shelter");
+        return;
+      }
+      const url = `https://www.google.com/maps?q=${encodeURIComponent(
+        p.shelterAddress,
+      )}`;
+      window.open(url, "_blank", "noopener,noreferrer");
+    };
+
+    const callShelter = (e: React.MouseEvent) => {
+      e.stopPropagation();
+      if (!primaryPhoneHref) {
+        toast.info("No phone number available");
+        return;
+      }
+      window.location.href = primaryPhoneHref;
+    };
+
+    const emailShelter = (e: React.MouseEvent) => {
+      e.stopPropagation();
+      if (!primaryEmailHref) {
+        toast.info("No email available");
+        return;
+      }
+      window.location.href = primaryEmailHref;
+    };
+
+    // -------------------- Share helpers (unique details page) --------------------
+    const pageUrl =
+      typeof window !== "undefined"
+        ? new URL(`/pet/${p.id}`, window.location.origin).toString()
+        : "";
+
+    const copyLink = async (e: React.MouseEvent) => {
+      e.stopPropagation();
+      try {
+        await navigator.clipboard.writeText(pageUrl);
+        toast.success("Link copied to clipboard");
+      } catch {
+        // fallback
+        const ta = document.createElement("textarea");
+        ta.value = pageUrl;
+        document.body.appendChild(ta);
+        ta.select();
+        try {
+          document.execCommand("copy");
+          toast.success("Link copied to clipboard");
+        } catch {
+          toast.error("Couldn’t copy the link");
+        } finally {
+          document.body.removeChild(ta);
+        }
+      }
+    };
+
+    const shareEmailLink = (e: React.MouseEvent) => {
+      e.stopPropagation();
+      const subject = encodeURIComponent(`Check out ${p.name} on PetSwipe`);
+      const body = encodeURIComponent(
+        `Hey,\n\nFound ${p.name} on PetSwipe and thought you might like to see:\n${pageUrl}\n\n`,
+      );
+      window.location.href = `mailto:?subject=${subject}&body=${body}`;
+    };
+
+    const shareFacebook = (e: React.MouseEvent) => {
+      e.stopPropagation();
+      const url = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(
+        pageUrl,
+      )}`;
+      window.open(url, "_blank", "noopener,noreferrer");
+    };
+
+    const shareX = (e: React.MouseEvent) => {
+      e.stopPropagation();
+      const text = `Check out ${p.name} available for adoption`;
+      const url = `https://twitter.com/intent/tweet?text=${encodeURIComponent(
+        text,
+      )}&url=${encodeURIComponent(pageUrl)}`;
+      window.open(url, "_blank", "noopener,noreferrer");
+    };
+
+    // -------------- Image placeholders & error fallbacks (front/back) --------------
+    const frontPlaceholder = `https://placehold.co/800x600?text=${encodeURIComponent(
+      p.name || "No Photo",
+    )}`;
+    const backPlaceholder = `https://placehold.co/640x384?text=${encodeURIComponent(
+      p.name || "No Photo",
+    )}`;
+
     return (
       <div
         className="
-          relative
-          w-full max-w-[95vw] sm:max-w-none mx-auto
-          h-full max-h-screen
-          cursor-grab active:cursor-grabbing
-          z-40
-        "
+        relative
+        w-full max-w-[95vw] sm:max-w-none mx-auto
+        h-full max-h-screen
+        cursor-grab active:cursor-grabbing
+        z-40
+      "
         style={{ perspective: 1000 }}
         {...(isTop ? swipeHandlers : {})}
         onClick={isTop ? handleCardClick : undefined}
@@ -268,6 +466,7 @@ const Home: NextPage = () => {
             transition: isTop ? "transform 0.6s" : "none",
           }}
         >
+          {/* FRONT */}
           <div
             className="absolute inset-0 flex flex-col p-6 bg-[#EDF6F3] rounded-2xl select-none overflow-hidden"
             style={{
@@ -282,25 +481,30 @@ const Home: NextPage = () => {
               <p className="text-3xl font-bold text-gray-800">{p.name}</p>
             </div>
 
-            {p.photoUrl && (
-              <div className="flex-1 w-full mb-4 overflow-hidden">
-                <img
-                  src={p.photoUrl}
-                  alt={p.name}
-                  draggable={false}
-                  onDragStart={(e) => e.preventDefault()}
-                  className="w-full h-full object-cover rounded-xl"
-                />
-              </div>
-            )}
+            <div className="flex-1 w-full mb-4 overflow-hidden">
+              <img
+                src={p.photoUrl?.trim() ? p.photoUrl : frontPlaceholder}
+                alt={p.name}
+                draggable={false}
+                onDragStart={(e) => e.preventDefault()}
+                className="w-full h-full object-cover rounded-xl"
+                onError={(e) => {
+                  const target = e.currentTarget as HTMLImageElement;
+                  if (target.src !== frontPlaceholder) {
+                    target.src = frontPlaceholder;
+                  }
+                }}
+              />
+            </div>
 
             <div className="mt-2 text-sm text-gray-700 text-center flex-shrink-0">
               Click to flip
             </div>
           </div>
 
+          {/* BACK */}
           <div
-            className="absolute inset-0 flex flex-col bg-[#EDF6F3] rounded-2xl overflow-hidden select-none"
+            className="absolute inset-0 flex flex-col bg-[#EDF6F3] rounded-2xl overflow-hidden select-none pt-2"
             style={{
               transform: "rotateY(180deg)",
               backfaceVisibility: "hidden",
@@ -314,17 +518,21 @@ const Home: NextPage = () => {
               </div>
               <h2 className="text-2xl font-bold mb-2 text-black">{p.name}</h2>
 
-              {p.photoUrl && (
-                <div className="overflow-hidden rounded-md mb-4">
-                  <img
-                    src={p.photoUrl}
-                    alt={p.name}
-                    draggable={false}
-                    onDragStart={(e) => e.preventDefault()}
-                    className="w-full object-cover h-48"
-                  />
-                </div>
-              )}
+              <div className="overflow-hidden rounded-md mb-4">
+                <img
+                  src={p.photoUrl?.trim() ? p.photoUrl : backPlaceholder}
+                  alt={p.name}
+                  draggable={false}
+                  onDragStart={(e) => e.preventDefault()}
+                  className="w-full object-cover h-48"
+                  onError={(e) => {
+                    const target = e.currentTarget as HTMLImageElement;
+                    if (target.src !== backPlaceholder) {
+                      target.src = backPlaceholder;
+                    }
+                  }}
+                />
+              </div>
 
               <div className="bg-[#CFE7F2] text-black rounded-lg p-4 space-y-2">
                 <h2 className="text-xl font-bold mb-2">Details</h2>
@@ -338,19 +546,203 @@ const Home: NextPage = () => {
                 <p>
                   <strong>Shelter:</strong> {p.shelterName ?? "N/A"}
                 </p>
-                {p.shelterContact && (
+
+                {/* Phone then Email (uniform display) */}
+                {displayPhone || primaryEmail ? (
+                  <>
+                    {displayPhone && (
+                      <p>
+                        <strong>Phone:</strong> {displayPhone}
+                      </p>
+                    )}
+                    {primaryEmail && (
+                      <p>
+                        <strong>Email:</strong> {primaryEmail}
+                      </p>
+                    )}
+                  </>
+                ) : (
                   <p>
-                    <strong>Contact:</strong> {p.shelterContact ?? "N/A"}
+                    <strong>Contact:</strong> N/A
                   </p>
                 )}
+
                 {p.shelterAddress && (
                   <p>
                     <strong>Address:</strong> {p.shelterAddress ?? "N/A"}
                   </p>
                 )}
               </div>
+
+              {/* Contact Shelter dropdown (opaque) */}
+              <div className="pt-2">
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <button
+                      onClick={(e) => e.stopPropagation()}
+                      className="
+          w-full px-4 py-3 rounded-md font-medium
+          bg-[#234851] hover:bg-[#1b3a3f] text-white
+          focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#234851]
+          flex items-center justify-center gap-2
+        "
+                    >
+                      <PhoneCall className="h-4 w-4 shrink-0" />
+                      <span className="leading-none">Contact shelter</span>
+                    </button>
+                  </PopoverTrigger>
+                  <PopoverContent
+                    onClick={(e) => e.stopPropagation()}
+                    className="
+                    bg-white text-[#234851] rounded-xl shadow-xl
+                    w-64 p-2 space-y-1
+                  "
+                  >
+                    <button
+                      onClick={openMaps}
+                      className="
+                      w-full flex items-center gap-2 px-3 py-2 rounded-md
+                      hover:bg-[#EDF6F3] transition
+                      disabled:opacity-50 disabled:cursor-not-allowed
+                    "
+                      disabled={!p.shelterAddress}
+                    >
+                      <MapPin size={18} />
+                      <span>Get address (Maps)</span>
+                    </button>
+
+                    <button
+                      onClick={callShelter}
+                      className="
+                      w-full flex items-center gap-2 px-3 py-2 rounded-md
+                      hover:bg-[#EDF6F3] transition
+                      disabled:opacity-50 disabled:cursor-not-allowed
+                    "
+                      disabled={!primaryPhoneHref}
+                    >
+                      <Phone size={18} />
+                      <span>Call</span>
+                    </button>
+
+                    {primaryEmailHref ? (
+                      <button
+                        onClick={emailShelter}
+                        className="
+                        w-full flex items-center gap-2 px-3 py-2 rounded-md
+                        hover:bg-[#EDF6F3] transition
+                      "
+                      >
+                        <Mail size={18} />
+                        <span>Send email</span>
+                      </button>
+                    ) : null}
+                  </PopoverContent>
+                </Popover>
+              </div>
+
+              {/* Share dropdown (opaque) */}
+              <div className="pt-2">
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <button
+                      onClick={(e) => e.stopPropagation()}
+                      className="
+                      w-full px-4 py-2 rounded-md font-medium
+                      bg-white hover:bg-gray-100 text-[#234851]
+                      border border-[#234851]/10
+                      flex items-center justify-center gap-2
+                      focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#234851]
+                    "
+                    >
+                      <Share2 size={18} />
+                      Share
+                    </button>
+                  </PopoverTrigger>
+                  <PopoverContent
+                    onClick={(e) => e.stopPropagation()}
+                    className="
+                    bg-white text-[#234851] rounded-xl shadow-xl
+                    w-64 p-2 space-y-1
+                  "
+                  >
+                    <button
+                      onClick={copyLink}
+                      className="
+                      w-full flex items-center gap-2 px-3 py-2 rounded-md
+                      hover:bg-[#EDF6F3] transition
+                    "
+                    >
+                      <Copy size={18} />
+                      <span>Copy link</span>
+                    </button>
+
+                    <button
+                      onClick={shareEmailLink}
+                      className="
+                      w-full flex items-center gap-2 px-3 py-2 rounded-md
+                      hover:bg-[#EDF6F3] transition
+                    "
+                    >
+                      <Mail size={18} />
+                      <span>Email</span>
+                    </button>
+
+                    <button
+                      onClick={shareFacebook}
+                      className="
+                      w-full flex items-center gap-2 px-3 py-2 rounded-md
+                      hover:bg-[#EDF6F3] transition
+                    "
+                    >
+                      <Facebook size={18} />
+                      <span>Share to Facebook</span>
+                    </button>
+
+                    <button
+                      onClick={shareX}
+                      className="
+                      w-full flex items-center gap-2 px-3 py-2 rounded-md
+                      hover:bg-[#EDF6F3] transition
+                    "
+                    >
+                      <Twitter size={18} />
+                      <span>Share to X</span>
+                    </button>
+                  </PopoverContent>
+                </Popover>
+              </div>
+
+              {/* view details button */}
+              <div className="pt-2 w-full">
+                <Button
+                  variant="secondary"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    router.push(`/pet/${p.id}`);
+                  }}
+                  className="
+      w-full justify-center gap-2
+      bg-white text-[#234851]
+      dark:bg-neutral-800 dark:text-neutral-100
+      border border-[#234851]/20 dark:border-neutral-700
+      rounded-xl shadow-sm
+      hover:bg-neutral-50 dark:hover:bg-neutral-700 hover:shadow-md
+      active:scale-[0.99]
+      focus-visible:outline-none focus-visible:ring-2
+      focus-visible:ring-[#234851]/40 focus-visible:ring-offset-2
+      focus-visible:ring-offset-[#EDF6F3]
+      transition-colors transition-shadow duration-200
+    "
+                >
+                  <List size={18} className="opacity-80" />
+                  <span className="font-semibold tracking-wide">
+                    View details
+                  </span>
+                </Button>
+              </div>
             </div>
 
+            {/* Bottom actions (unchanged) */}
             <div className="flex gap-4 p-6 bg-[#EDF6F3] flex-shrink-0">
               <Button
                 variant="default"

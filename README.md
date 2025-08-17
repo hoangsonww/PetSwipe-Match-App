@@ -135,12 +135,40 @@ PetSwipe is built using a modern tech stack, ensuring scalability, maintainabili
 
 Below is a high-level Mermaid diagram of our architecture/infrastructure:
 
-<p align="center">
-  <img src="docs/img/mermaid.png" alt="Architecture Diagram" width="100%">
-</p>
+```mermaid
+flowchart LR
+  subgraph CI/CD
+    GH["GitHub Actions"]
+  end
+
+  subgraph Frontend
+    Browser["User’s Browser"]
+    Next["Next.js & Vercel"]
+  end
+
+  subgraph Backend
+    ECR["AWS ECR"]
+    ECS["AWS ECS (Fargate) & Express API"]
+  end
+
+  subgraph Data
+    RDS["PostgreSQL & AWS RDS"]
+    S3["AWS S3 (Avatars & Pet Photos)"]
+  end
+
+  Browser --> Next
+  Next -->|API calls| ECS
+  ECS -->|Reads/Writes| RDS
+  ECS -->|Uploads/Serves| S3
+  ECR -->|Docker images| ECS
+
+  GH -->|Build & Deploy Frontend| Next
+  GH -->|Build & Push Images| ECR
+  GH -->|Deploy Backend| ECS
+```
 
 > [!TIP]
-> Image not showing? Here's the link to the diagram: [Mermaid Live Diagram](https://www.mermaidchart.com/raw/3c7480d2-191d-4d09-a8f1-6678de344fa4?theme=light&version=v0.1&format=svg)
+> Image not showing? Here's the link to the diagram: **[Mermaid Live Diagram](https://www.mermaidchart.com/raw/3c7480d2-191d-4d09-a8f1-6678de344fa4?theme=light&version=v0.1&format=svg)**
 
 ---
 
@@ -178,6 +206,30 @@ Below is a high-level Mermaid diagram of our architecture/infrastructure:
 
 <p align="center">
   <img src="docs/img/adopted.png" alt="Adopted Pets" width="100%">
+</p>
+
+### Pet Details
+
+<p align="center">
+  <img src="docs/img/pet-details.png" alt="Pet Details" width="100%">
+</p>
+
+### My Pets
+
+<p align="center">
+  <img src="docs/img/my-pets.png" alt="My Pets" width="100%">
+</p>
+
+### Pets Map
+
+<p align="center">
+  <img src="docs/img/pets-map.png" alt="Pets Map" width="100%">
+</p>
+
+### Bulk Upload Pets
+
+<p align="center">
+  <img src="docs/img/bulk-upload.png" alt="Bulk Upload Pets" width="100%">
 </p>
 
 ### Chatbot
@@ -350,7 +402,7 @@ _and more..._
 
 ## 📚 API Reference
 
-Swagger docs at `http://localhost:5001/api-docs.json`.
+Swagger docs are served locally at `http://localhost:5001/api-docs.json`. You can also access the live API documentation at **[PetSwipe API](https://petswipe-backend-api.vercel.app/)**, and the JSON format at **[PetSwipe API JSON](https://petswipe-backend-api.vercel.app/api-docs.json)**.
 
 ### Authentication
 
@@ -373,13 +425,16 @@ Swagger docs at `http://localhost:5001/api-docs.json`.
 - **GET** `/api/pets/export`
 - **POST** `/api/pets/:petId/photo`
 - **POST** `/api/pets/upload`
+- **GET** `/api/pets/mine`
+- **PUT** `/api/pets/:petId`
+- **GET** `/api/pets/:petId`
 
 ### Swipes
 
 - **POST** `/api/swipes`
 - **GET** `/api/swipes/me`
 - **GET** `/api/swipes/me/liked`
-- **GET** `/api/swipes`
+- **GET** `/api/swipes` (Admins only)
 
 ### Users
 
@@ -655,6 +710,7 @@ npm run test:mocha
 PetSwipe uses GitHub Actions for Continuous Integration and Continuous Deployment (CI/CD). The workflow is defined in `.github/workflows/workflow.yml`.
 
 The CI/CD pipeline includes the following steps:
+
 - **Checkout Code**: Pulls the latest code from the repository.
 - **Set Up Node.js**: Installs the specified Node.js version.
 - **Install Dependencies**: Installs the necessary dependencies for both backend and frontend.

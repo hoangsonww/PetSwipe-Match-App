@@ -13,7 +13,8 @@
     "test:watch": "NODE_ENV=test jest --watchAll",
     "test:ci": "NODE_ENV=test jest --ci --reporters=default --reporters=jest-junit",
     "coverage": "NODE_ENV=test jest --coverage",
-    "assign:user": "ts-node -r tsconfig-paths/register scripts/assignPetsToUser.ts"
+    "assign:user": "ts-node -r tsconfig-paths/register scripts/assignPetsToUser.ts",
+    "migrate": "npx typeorm-ts-node-commonjs migration:run -d src/data-source.ts"
   },
   "keywords": [
     "typescript",

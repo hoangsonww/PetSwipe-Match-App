@@ -254,6 +254,11 @@ export const petApi = {
     return res.data;
   },
 
+  getById: async (id: string): Promise<Pet> => {
+    const res = await api.get<Pet>(`/pets/${id}`);
+    return res.data;
+  },
+
   /**
    * List all pets.
    * @returns an array of Pet objects
