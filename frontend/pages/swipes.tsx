@@ -183,7 +183,7 @@ const SwipesPage: NextPage = () => {
                   <Button
                     variant="outline"
                     onClick={() => router.push(`/pet/${pet.id}`)}
-                    className="w-full border-none bg-neutral-100 hover:bg-neutral-2 00 text-neutral-900 dark:bg-neutral-800 dark:hover:bg-neutral-700 dark:text-neutral-100"
+                    className="w-full border-none bg-neutral-100 hover:bg-neutral-200 text-neutral-900 dark:bg-neutral-800 dark:hover:bg-neutral-700 dark:text-neutral-100"
                   >
                     View details
                   </Button>
