@@ -370,10 +370,22 @@ const DraggableChatbot: React.FC = () => {
                       <X className="w-5 h-5 text-gray-700 dark:text-gray-300" />
                     </button>
                   </div>
+
                   <div
                     ref={scrollRef}
                     className="h-72 overflow-y-auto pr-1 space-y-4"
                   >
+                    {/* Empty state when no messages yet */}
+                    {!pending && msgs.length === 0 && (
+                      <div className="h-full flex items-center justify-center">
+                        <p className="text-sm text-gray-500 dark:text-gray-400 text-center px-4">
+                          No messages yet - say hi 👋 Our assistant can help you
+                          find pets, answer questions, and more! Just type your
+                          message below and hit enter or click send.
+                        </p>
+                      </div>
+                    )}
+
                     {msgs.map((m, i) => (
                       <motion.div
                         key={i}
@@ -386,13 +398,13 @@ const DraggableChatbot: React.FC = () => {
                       >
                         <div
                           className={`px-4 py-3 rounded-2xl shadow transition-transform pb-1 z-10
-                            ${
-                              m.sender === "user"
-                                ? "bg-gradient-to-br from-[#6FB8C6] to-[#3B7683] text-white rounded-br-none"
-                                : "bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-gray-100 rounded-bl-none"
-                            }
-                            group-hover:scale-[1.01] group-hover:shadow-lg
-                          `}
+                          ${
+                            m.sender === "user"
+                              ? "bg-gradient-to-br from-[#6FB8C6] to-[#3B7683] text-white rounded-br-none"
+                              : "bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-gray-100 rounded-bl-none"
+                          }
+                          group-hover:scale-[1.01] group-hover:shadow-lg
+                        `}
                         >
                           <ReactMarkdown
                             remarkPlugins={[remarkGfm, remarkMath]}
@@ -405,6 +417,7 @@ const DraggableChatbot: React.FC = () => {
                         </div>
                       </motion.div>
                     ))}
+
                     {pending && (
                       <motion.div
                         variants={bubbleVar}
@@ -418,6 +431,7 @@ const DraggableChatbot: React.FC = () => {
                       </motion.div>
                     )}
                   </div>
+
                   <div className="flex gap-2">
                     <input
                       value={input}
