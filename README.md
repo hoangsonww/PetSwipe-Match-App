@@ -251,7 +251,13 @@ flowchart LR
 </p>
 
 <p align="center">
-  <img src="docs/img/register.png" alt="Signup" width="100%">
+  <img src="docs/img/signup.png" alt="Signup" width="100%">
+</p>
+
+### Reset Password
+
+<p align="center">
+  <img src="docs/img/reset-password.png" alt="Reset Password" width="100%">
 </p>
 
 ### FAQ
@@ -260,7 +266,7 @@ flowchart LR
   <img src="docs/img/faq.png" alt="FAQ" width="100%">
 </p>
 
-_and more..._
+_and so many more..._
 
 ---
 
