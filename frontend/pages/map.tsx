@@ -5,6 +5,7 @@ import React, {
   useRef,
   useState,
 } from "react";
+import { useRouter } from "next/router";
 import type { NextPage } from "next";
 import Head from "next/head";
 import Script from "next/script";
@@ -310,6 +311,7 @@ async function pMap<T, R>(
 const MapPage: NextPage = () => {
   const [leafletReady, setLeafletReady] = useState(false);
   const [clusterReady, setClusterReady] = useState(false);
+  const router = useRouter();
 
   const mapRef = useRef<any>(null);
   const tileLayerRef = useRef<any>(null);
@@ -328,6 +330,43 @@ const MapPage: NextPage = () => {
     obs.observe(el, { attributes: true, attributeFilter: ["class"] });
     return () => obs.disconnect();
   }, []);
+  useEffect(() => {
+    let cancelled = false;
+
+    const checkAuth = async () => {
+      if (typeof window === "undefined") return;
+
+      const raw = localStorage.getItem("jwt");
+      if (!raw) {
+        if (!cancelled) router.replace("/login");
+        return;
+      }
+
+      const token = raw.replace(/^Bearer\s+/i, "");
+      try {
+        const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/users/me`, {
+          method: "GET",
+          headers: { Authorization: `Bearer ${token}` },
+        });
+
+        if (!res.ok) {
+          localStorage.removeItem("jwt");
+          if (!cancelled) router.replace("/login");
+        }
+      } catch {
+        // network hiccup: keep current page; next poll will re-check
+      }
+    };
+
+    // immediate check + poll every 2s for invalid/expired tokens
+    checkAuth();
+    const id = setInterval(checkAuth, 2000);
+
+    return () => {
+      cancelled = true;
+      clearInterval(id);
+    };
+  }, [router]);
   const tiles = useMemo(
     () =>
       isDark
@@ -436,7 +475,7 @@ const MapPage: NextPage = () => {
         const pets = await petApi.listPets();
         if (!cancelled) setAllPets(pets);
       } catch {
-        toast.error("Failed to load pets");
+        // fail silently
       } finally {
         if (!cancelled) setLoadingPets(false);
       }

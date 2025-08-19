@@ -9,9 +9,12 @@ import remarkMath from "remark-math";
 import rehypeKatex from "rehype-katex";
 import "katex/dist/katex.min.css";
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL + "/chat";
+const API_BASE = process.env.NEXT_PUBLIC_API_URL;
+const API_URL = `${API_BASE}/chat`;
+const AUTH_PING = `${API_BASE}/users/me`; // tiny auth check
 const MARGIN = 16;
 const BRAND = { btn: "#234851", accent: "#7097A8" };
+
 type Role = "user" | "model";
 interface Msg {
   sender: Role;
@@ -118,39 +121,55 @@ const wrapBareLatex = (text: string) =>
     .join("\n");
 
 const DraggableChatbot: React.FC = () => {
-  const [authed, setAuthed] = useState(
-    typeof window !== "undefined" && !!localStorage.getItem("jwt"),
-  );
+  // Show trigger only when there's a VALID token
+  const [authed, setAuthed] = useState(false);
+
+  // Poll token validity every 2s (token might exist but be invalid/expired)
   useEffect(() => {
-    const interval = setInterval(
-      async () => {
-        const raw = localStorage.getItem("jwt");
+    let mounted = true;
+    const tick = async () => {
+      try {
+        const raw =
+          typeof window !== "undefined" ? localStorage.getItem("jwt") : null;
         if (!raw) {
-          setAuthed(false);
+          if (mounted) setAuthed(false);
           return;
         }
         const token = raw.replace(/^Bearer\s+/i, "");
-        try {
-          const res = await fetch(API_URL, {
-            method: "GET",
-            headers: { Authorization: `Bearer ${token}` },
-          });
-          if (res.status === 401) {
-            setAuthed(false);
+        const res = await fetch(AUTH_PING, {
+          method: "GET",
+          headers: {
+            Accept: "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+        });
+        if (res.ok) {
+          if (mounted) setAuthed(true);
+        } else {
+          if (mounted) setAuthed(false);
+          if (res.status === 401 || res.status === 403) {
             localStorage.removeItem("jwt");
           }
-        } catch {}
-      },
-      5 * 60 * 1000,
-    ); // 5 minutes
-    return () => clearInterval(interval);
+        }
+      } catch {
+        // transient network issues: keep current state; do not flip authed immediately
+      }
+    };
+
+    // immediate check, then interval
+    tick();
+    const id = setInterval(tick, 2000);
+    return () => {
+      mounted = false;
+      clearInterval(id);
+    };
   }, []);
-  if (!authed) return null;
 
   const saved =
     typeof window !== "undefined" && localStorage.getItem("chatPos");
+  const defaultY = typeof window !== "undefined" ? window.innerHeight / 2 : 300;
   const [pos, setPos] = useState<{ x: number; y: number }>(
-    saved ? JSON.parse(saved) : { x: MARGIN, y: window.innerHeight / 2 },
+    saved ? JSON.parse(saved as string) : { x: MARGIN, y: defaultY },
   );
   const dragging = useRef(false);
   const moved = useRef(false);
@@ -203,8 +222,7 @@ const DraggableChatbot: React.FC = () => {
       const maxY = window.innerHeight - btn - MARGIN;
       let x = Math.min(Math.max(pos.x, MARGIN), maxX);
       let y = Math.min(Math.max(pos.y, MARGIN), maxY);
-      // if it was snapped right before, keep it snapped right
-      if (pos.x > window.innerWidth / 2) x = maxX;
+      if (pos.x > window.innerWidth / 2) x = maxX; // keep snapped right if it was
       if (x !== pos.x || y !== pos.y) {
         setPos({ x, y });
         localStorage.setItem("chatPos", JSON.stringify({ x, y }));
@@ -226,6 +244,11 @@ const DraggableChatbot: React.FC = () => {
   const [pending, setPending] = useState(false);
   const [stage, setStage] = useState<"thinking" | "generating">("thinking");
   const scrollRef = useRef<HTMLDivElement>(null);
+
+  // If auth status flips to false while open, close it
+  useEffect(() => {
+    if (!authed && open) setOpen(false);
+  }, [authed, open]);
 
   useEffect(() => {
     scrollRef.current?.scrollTo(0, scrollRef.current.scrollHeight);
@@ -299,38 +322,41 @@ const DraggableChatbot: React.FC = () => {
 
   return (
     <>
-      <motion.div
-        initial={{ scale: 0 }}
-        animate={{ scale: 1 }}
-        style={{ left: pos.x, top: pos.y, touchAction: "none" }}
-        className="fixed z-50"
-        onPointerDown={onDown}
-        onPointerMove={onMove}
-        onPointerUp={onUp}
-        onClick={() => !dragging.current && !moved.current && setOpen(true)}
-      >
-        <Button
-          size="icon"
-          style={{ backgroundColor: BRAND.btn, color: "white" }}
-          className="shadow-xl hover:scale-110 hover:shadow-2xl transition-all"
+      {/* Trigger button only when authenticated */}
+      {authed && (
+        <motion.div
+          initial={{ scale: 0 }}
+          animate={{ scale: 1 }}
+          style={{ left: pos.x, top: pos.y, touchAction: "none" }}
+          className="fixed z-50"
+          onPointerDown={onDown}
+          onPointerMove={onMove}
+          onPointerUp={onUp}
+          onClick={() => !dragging.current && !moved.current && setOpen(true)}
         >
-          <motion.div
-            initial={{ rotate: 0 }}
-            animate={{ rotate: [0, 10, -8, 0] }}
-            transition={{
-              repeat: Infinity,
-              duration: 2.5,
-              ease: "easeInOut",
-              repeatDelay: 5,
-            }}
+          <Button
+            size="icon"
+            style={{ backgroundColor: BRAND.btn, color: "white" }}
+            className="shadow-xl hover:scale-110 hover:shadow-2xl transition-all"
           >
-            <MessageSquare />
-          </motion.div>
-        </Button>
-      </motion.div>
+            <motion.div
+              initial={{ rotate: 0 }}
+              animate={{ rotate: [0, 10, -8, 0] }}
+              transition={{
+                repeat: Infinity,
+                duration: 2.5,
+                ease: "easeInOut",
+                repeatDelay: 5,
+              }}
+            >
+              <MessageSquare />
+            </motion.div>
+          </Button>
+        </motion.div>
+      )}
 
       <AnimatePresence>
-        {open && (
+        {authed && open && (
           <motion.div
             className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 dark:bg-black/80 backdrop-blur-sm"
             initial={{ opacity: 0 }}
@@ -379,9 +405,7 @@ const DraggableChatbot: React.FC = () => {
                     {!pending && msgs.length === 0 && (
                       <div className="h-full flex items-center justify-center">
                         <p className="text-sm text-gray-500 dark:text-gray-400 text-center px-4">
-                          No messages yet - say hi 👋 Our assistant can help you
-                          find pets, answer questions, and more! Just type your
-                          message below and hit enter or click send.
+                          No messages yet — say hi 👋
                         </p>
                       </div>
                     )}
@@ -398,13 +422,13 @@ const DraggableChatbot: React.FC = () => {
                       >
                         <div
                           className={`px-4 py-3 rounded-2xl shadow transition-transform pb-1 z-10
-                          ${
-                            m.sender === "user"
-                              ? "bg-gradient-to-br from-[#6FB8C6] to-[#3B7683] text-white rounded-br-none"
-                              : "bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-gray-100 rounded-bl-none"
-                          }
-                          group-hover:scale-[1.01] group-hover:shadow-lg
-                        `}
+                            ${
+                              m.sender === "user"
+                                ? "bg-gradient-to-br from-[#6FB8C6] to-[#3B7683] text-white rounded-br-none"
+                                : "bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-gray-100 rounded-bl-none"
+                            }
+                            group-hover:scale-[1.01] group-hover:shadow-lg
+                          `}
                         >
                           <ReactMarkdown
                             remarkPlugins={[remarkGfm, remarkMath]}
