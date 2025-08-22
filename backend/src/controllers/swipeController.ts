@@ -2,9 +2,11 @@ import { Request, Response, NextFunction } from "express";
 import { AppDataSource } from "../index";
 import { Swipe } from "../entities/Swipe";
 import { Pet } from "../entities/Pet";
+import { Conversation } from "../entities/Conversation";
 
 const swipeRepo = () => AppDataSource.getRepository(Swipe);
 const petRepo = () => AppDataSource.getRepository(Pet);
+const conversationRepo = () => AppDataSource.getRepository(Conversation);
 
 /**
  * @openapi
@@ -137,6 +139,28 @@ export const recordSwipe = async (
       liked,
     });
     await swipeRepo().save(swipe);
+
+    // If user liked the pet, create a conversation automatically
+    if (liked) {
+      try {
+        // Check if conversation already exists
+        const existingConversation = await conversationRepo().findOne({
+          where: { user: { id: req.user.id }, pet: { id: petId } },
+        });
+
+        if (!existingConversation) {
+          const conversation = conversationRepo().create({
+            user: req.user,
+            pet,
+            shelterEmail: pet.shelterContact,
+          });
+          await conversationRepo().save(conversation);
+        }
+      } catch (convErr) {
+        // Log error but don't fail the swipe operation
+        console.error("Failed to create conversation:", convErr);
+      }
+    }
 
     res.json(swipe);
   } catch (err) {
