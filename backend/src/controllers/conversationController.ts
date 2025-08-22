@@ -1,10 +1,14 @@
 import { RequestHandler } from "express";
 import { Repository } from "typeorm";
-import { AppDataSource } from "../data-source";
+import { AppDataSource } from "../index";
 import { Conversation } from "../entities/Conversation";
 import { Message, MessageSender } from "../entities/Message";
 import { Pet } from "../entities/Pet";
 import { AppUser } from "../entities/User";
+
+const conversationRepo = () => AppDataSource.getRepository(Conversation);
+const messageRepo = () => AppDataSource.getRepository(Message);
+const petRepo = () => AppDataSource.getRepository(Pet);
 
 /**
  * @openapi
@@ -65,10 +69,7 @@ export const getConversations: RequestHandler = async (req, res, next) => {
       return;
     }
 
-    const conversationRepo = AppDataSource.getRepository(Conversation);
-    const messageRepo = AppDataSource.getRepository(Message);
-
-    const conversations = await conversationRepo.find({
+    const conversations = await conversationRepo().find({
       where: { user: { id: req.user.id } },
       relations: ["pet"],
       order: { lastMessageAt: "DESC" },
@@ -77,13 +78,13 @@ export const getConversations: RequestHandler = async (req, res, next) => {
     const conversationsWithData = await Promise.all(
       conversations.map(async (conv) => {
         // Get last message
-        const lastMessage = await messageRepo.findOne({
+        const lastMessage = await messageRepo().findOne({
           where: { conversation: { id: conv.id } },
           order: { createdAt: "DESC" },
         });
 
         // Get unread count (messages from shelter that user hasn't read)
-        const unreadCount = await messageRepo.count({
+        const unreadCount = await messageRepo().count({
           where: {
             conversation: { id: conv.id },
             sender: MessageSender.SHELTER,
@@ -176,11 +177,9 @@ export const getMessages: RequestHandler = async (req, res, next) => {
     }
 
     const { id } = req.params;
-    const conversationRepo = AppDataSource.getRepository(Conversation);
-    const messageRepo = AppDataSource.getRepository(Message);
 
     // Verify user has access to this conversation
-    const conversation = await conversationRepo.findOne({
+    const conversation = await conversationRepo().findOne({
       where: { id, user: { id: req.user.id } },
     });
 
@@ -189,13 +188,13 @@ export const getMessages: RequestHandler = async (req, res, next) => {
       return;
     }
 
-    const messages = await messageRepo.find({
+    const messages = await messageRepo().find({
       where: { conversation: { id } },
       order: { createdAt: "ASC" },
     });
 
     // Mark messages from shelter as read
-    await messageRepo.update(
+    await messageRepo().update(
       {
         conversation: { id },
         sender: MessageSender.SHELTER,
@@ -281,11 +280,8 @@ export const sendMessage: RequestHandler = async (req, res, next) => {
       return;
     }
 
-    const conversationRepo = AppDataSource.getRepository(Conversation);
-    const messageRepo = AppDataSource.getRepository(Message);
-
     // Verify user has access to this conversation
-    const conversation = await conversationRepo.findOne({
+    const conversation = await conversationRepo().findOne({
       where: { id, user: { id: req.user.id } },
     });
 
@@ -294,7 +290,7 @@ export const sendMessage: RequestHandler = async (req, res, next) => {
       return;
     }
 
-    const message = messageRepo.create({
+    const message = messageRepo().create({
       conversation,
       sender: MessageSender.USER,
       senderUser: req.user,
@@ -302,10 +298,10 @@ export const sendMessage: RequestHandler = async (req, res, next) => {
       imageUrl,
     });
 
-    await messageRepo.save(message);
+    await messageRepo().save(message);
 
     // Update conversation's lastMessageAt
-    await conversationRepo.update(id, { lastMessageAt: new Date() });
+    await conversationRepo().update(id, { lastMessageAt: new Date() });
 
     res.status(201).json({
       id: message.id,
@@ -367,17 +363,14 @@ export const createConversation: RequestHandler = async (req, res, next) => {
       return;
     }
 
-    const petRepo = AppDataSource.getRepository(Pet);
-    const conversationRepo = AppDataSource.getRepository(Conversation);
-
-    const pet = await petRepo.findOne({ where: { id: petId } });
+    const pet = await petRepo().findOne({ where: { id: petId } });
     if (!pet) {
       res.status(404).json({ message: "Pet not found" });
       return;
     }
 
     // Check if conversation already exists
-    const existingConversation = await conversationRepo.findOne({
+    const existingConversation = await conversationRepo().findOne({
       where: { user: { id: req.user.id }, pet: { id: petId } },
     });
 
@@ -389,13 +382,13 @@ export const createConversation: RequestHandler = async (req, res, next) => {
       return;
     }
 
-    const conversation = conversationRepo.create({
+    const conversation = conversationRepo().create({
       user: req.user,
       pet,
       shelterEmail: pet.shelterContact,
     });
 
-    await conversationRepo.save(conversation);
+    await conversationRepo().save(conversation);
 
     res.status(201).json({
       id: conversation.id,
