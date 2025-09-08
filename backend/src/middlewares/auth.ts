@@ -4,14 +4,13 @@ import { AppDataSource } from "../index";
 import { AppUser } from "../entities/User";
 
 export const authMiddleware: RequestHandler = async (req, res, next) => {
-  // let token = req.cookies?.token as string | undefined;
-  let token = "";
+  // Try reading token from query first to support EventSource connections
+  const queryToken = (req as any).query?.token as string | undefined;
+  let token = queryToken || "";
   if (!token) {
     const h = req.get("Authorization");
     if (h?.startsWith("Bearer ")) token = h.slice(7);
   }
-
-  console.log(token);
 
   if (!token) {
     res.status(401).json({ message: "Unauthorized: no token provided" });

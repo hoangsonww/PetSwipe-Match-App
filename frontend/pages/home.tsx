@@ -42,6 +42,7 @@ import {
 } from "@/components/ui/popover";
 import { Slider } from "@/components/ui/slider";
 import Link from "next/link";
+import { usePetStream } from "@/hooks/usePetStream";
 
 const fetchMatches = () => matchApi.listMyMatches();
 const pageVariants = {
@@ -73,6 +74,11 @@ const Home: NextPage = () => {
   useEffect(() => {
     setCases(matches?.map((m) => m.pet) ?? []);
   }, [matches]);
+
+  // Hook into SSE stream for newly created pets
+  usePetStream((pet) => {
+    toast.success(`New pet available: ${pet.name}`);
+  });
 
   const [index, setIndex] = useState(-1); // start with instructions
   const [flipped, setFlipped] = useState(false);
