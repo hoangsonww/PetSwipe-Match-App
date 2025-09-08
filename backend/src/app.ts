@@ -10,6 +10,7 @@ import petsRoutes from "./routes/pets";
 import matchesRoutes from "./routes/matches";
 import swipesRoutes from "./routes/swipes";
 import chatRoutes from "./routes/chat";
+import favoritesRoutes from "./routes/favorites";
 import { errorHandler } from "./middlewares/errorHandler";
 import { ensureInitialized } from "./index";
 import { components as schemaComponents } from "./swagger/schemas";
@@ -56,6 +57,7 @@ app.use("/api/pets", petsRoutes);
 app.use("/api/matches", matchesRoutes);
 app.use("/api/swipes", swipesRoutes);
 app.use("/api/chat", chatRoutes);
+app.use("/api/favorites", favoritesRoutes);
 
 // ─── SWAGGER / OPENAPI SETUP ───────────────────────────────────────────────────
 const swaggerSpec = swaggerJsdoc({
