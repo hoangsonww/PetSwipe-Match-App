@@ -1,0 +1,16 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+const express_1 = require("express");
+const petController_1 = require("../controllers/petController");
+const auth_1 = require("../middlewares/auth");
+const router = (0, express_1.Router)();
+router.use(auth_1.authMiddleware);
+router.post("/", petController_1.createPet);
+router.post("/upload", ...petController_1.uploadPets);
+router.get("/", petController_1.listPets);
+router.get("/export", petController_1.exportPets);
+router.get("/mine", petController_1.listMyCreatedPets);
+router.put("/:petId", petController_1.updatePet);
+router.post("/:petId/photo", ...petController_1.uploadPetPhoto);
+router.get("/:petId", petController_1.getPetById);
+exports.default = router;

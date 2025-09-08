@@ -1,12 +1,11 @@
-import { Request, Response, NextFunction } from "express";
-import { AppDataSource } from "../index";
-import { Swipe } from "../entities/Swipe";
-import { Pet } from "../entities/Pet";
-import { onPetSwiped } from "./deckController";
-
-const swipeRepo = () => AppDataSource.getRepository(Swipe);
-const petRepo = () => AppDataSource.getRepository(Pet);
-
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.listMyLikedSwipes = exports.listMySwipes = exports.recordSwipe = void 0;
+const index_1 = require("../index");
+const Swipe_1 = require("../entities/Swipe");
+const Pet_1 = require("../entities/Pet");
+const swipeRepo = () => index_1.AppDataSource.getRepository(Swipe_1.Swipe);
+const petRepo = () => index_1.AppDataSource.getRepository(Pet_1.Pet);
 /**
  * @openapi
  * /api/swipes:
@@ -99,55 +98,44 @@ const petRepo = () => AppDataSource.getRepository(Pet);
  *       '500':
  *         description: Internal server error
  */
-export const recordSwipe = async (
-  req: Request,
-  res: Response,
-  next: NextFunction,
-): Promise<void> => {
-  try {
-    if (!req.user) {
-      res.status(401).json({ message: "Not authenticated" });
-      return;
+const recordSwipe = async (req, res, next) => {
+    try {
+        if (!req.user) {
+            res.status(401).json({ message: "Not authenticated" });
+            return;
+        }
+        const { petId, liked } = req.body ?? {};
+        if (typeof petId !== "string" || typeof liked !== "boolean") {
+            res
+                .status(400)
+                .json({ message: "petId (uuid) and liked (boolean) required" });
+            return;
+        }
+        const pet = await petRepo().findOne({ where: { id: petId } });
+        if (!pet) {
+            res.status(404).json({ message: "Pet not found" });
+            return;
+        }
+        const existing = await swipeRepo().findOne({
+            where: { user: { id: req.user.id }, pet: { id: petId } },
+        });
+        if (existing) {
+            res.status(409).json({ message: "You have already swiped on this pet." });
+            return;
+        }
+        const swipe = swipeRepo().create({
+            user: req.user,
+            pet,
+            liked,
+        });
+        await swipeRepo().save(swipe);
+        res.json(swipe);
     }
-
-    const { petId, liked } = req.body ?? {};
-    if (typeof petId !== "string" || typeof liked !== "boolean") {
-      res
-        .status(400)
-        .json({ message: "petId (uuid) and liked (boolean) required" });
-      return;
+    catch (err) {
+        next(err);
     }
-
-    const pet = await petRepo().findOne({ where: { id: petId } });
-    if (!pet) {
-      res.status(404).json({ message: "Pet not found" });
-      return;
-    }
-
-    const existing = await swipeRepo().findOne({
-      where: { user: { id: req.user.id }, pet: { id: petId } },
-    });
-    if (existing) {
-      res.status(409).json({ message: "You have already swiped on this pet." });
-      return;
-    }
-
-    const swipe = swipeRepo().create({
-      user: req.user,
-      pet,
-      liked,
-    });
-    await swipeRepo().save(swipe);
-
-    // Update deck cache by removing this pet
-    await onPetSwiped((req.user as any).id, petId);
-
-    res.json(swipe);
-  } catch (err) {
-    next(err);
-  }
 };
-
+exports.recordSwipe = recordSwipe;
 /**
  * @openapi
  * /api/swipes/me:
@@ -195,28 +183,24 @@ export const recordSwipe = async (
  *       '500':
  *         description: Internal server error
  */
-export const listMySwipes = async (
-  req: Request,
-  res: Response,
-  next: NextFunction,
-): Promise<void> => {
-  try {
-    if (!req.user) {
-      res.status(401).json({ message: "Not authenticated" });
-      return;
+const listMySwipes = async (req, res, next) => {
+    try {
+        if (!req.user) {
+            res.status(401).json({ message: "Not authenticated" });
+            return;
+        }
+        const all = await swipeRepo().find({
+            where: { user: { id: req.user.id } },
+            relations: ["pet"],
+            order: { swipedAt: "DESC" },
+        });
+        res.json(all);
     }
-
-    const all = await swipeRepo().find({
-      where: { user: { id: req.user.id } },
-      relations: ["pet"],
-      order: { swipedAt: "DESC" },
-    });
-    res.json(all);
-  } catch (err) {
-    next(err);
-  }
+    catch (err) {
+        next(err);
+    }
 };
-
+exports.listMySwipes = listMySwipes;
 /**
  * @openapi
  * /api/swipes/me/liked:
@@ -267,24 +251,21 @@ export const listMySwipes = async (
  *       '500':
  *         description: Internal server error
  */
-export const listMyLikedSwipes = async (
-  req: Request,
-  res: Response,
-  next: NextFunction,
-): Promise<void> => {
-  try {
-    if (!req.user) {
-      res.status(401).json({ message: "Not authenticated" });
-      return;
+const listMyLikedSwipes = async (req, res, next) => {
+    try {
+        if (!req.user) {
+            res.status(401).json({ message: "Not authenticated" });
+            return;
+        }
+        const liked = await swipeRepo().find({
+            where: { user: { id: req.user.id }, liked: true },
+            relations: ["pet"],
+            order: { swipedAt: "DESC" },
+        });
+        res.json(liked);
     }
-
-    const liked = await swipeRepo().find({
-      where: { user: { id: req.user.id }, liked: true },
-      relations: ["pet"],
-      order: { swipedAt: "DESC" },
-    });
-    res.json(liked);
-  } catch (err) {
-    next(err);
-  }
+    catch (err) {
+        next(err);
+    }
 };
+exports.listMyLikedSwipes = listMyLikedSwipes;

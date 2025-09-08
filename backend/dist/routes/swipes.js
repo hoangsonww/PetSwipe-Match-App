@@ -1,0 +1,11 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+const express_1 = require("express");
+const swipeController_1 = require("../controllers/swipeController");
+const auth_1 = require("../middlewares/auth");
+const router = (0, express_1.Router)();
+router.use(auth_1.authMiddleware);
+router.post("/", swipeController_1.recordSwipe);
+router.get("/me", swipeController_1.listMySwipes);
+router.get("/me/liked", swipeController_1.listMyLikedSwipes);
+exports.default = router;
