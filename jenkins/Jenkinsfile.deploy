@@ -1,0 +1,43 @@
+pipeline {
+  agent any
+  environment {
+    AWS_REGION = credentials('aws-region')
+    DB_PASSWORD = credentials('db-password')
+    CF_DISTRIBUTION_ID = credentials('cf-distribution-id')
+  }
+  stages {
+    stage('Checkout') {
+      steps {
+        checkout scm
+      }
+    }
+    stage('AWS Credentials') {
+      steps {
+        withCredentials([aws(accessKeyVariable: 'AWS_ACCESS_KEY_ID', secretKeyVariable: 'AWS_SECRET_ACCESS_KEY', credentialsId: 'aws-creds')]) {
+          sh 'aws sts get-caller-identity'
+        }
+      }
+    }
+    stage('Setup Node') {
+      steps {
+        sh 'nvm install 18 && nvm use 18'
+      }
+    }
+    stage('Install Frontend Deps') {
+      steps {
+        sh 'npm ci --prefix frontend'
+      }
+    }
+    stage('Login to ECR') {
+      steps {
+        sh 'aws ecr get-login-password --region $AWS_REGION | docker login --username AWS --password-stdin $(aws sts get-caller-identity --query Account --output text).dkr.ecr.$AWS_REGION.amazonaws.com'
+      }
+    }
+    stage('Deploy Script') {
+      steps {
+        sh 'chmod +x aws/deploy.sh'
+        sh './aws/deploy.sh'
+      }
+    }
+  }
+}
