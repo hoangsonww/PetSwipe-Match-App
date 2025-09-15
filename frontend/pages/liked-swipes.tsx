@@ -4,7 +4,7 @@ import { useRouter } from "next/router";
 import useSWR from "swr";
 import { motion } from "framer-motion";
 import { toast } from "sonner";
-import { ArrowLeft, Loader2, PawPrint } from "lucide-react";
+import { ArrowLeft, Loader2, Milestone, PawPrint } from "lucide-react";
 import Head from "next/head";
 import { useUser } from "@/hooks/useUser";
 import { swipeApi, Swipe } from "@/lib/api";
@@ -167,7 +167,14 @@ const LikedSwipesPage: NextPage = () => {
                 </p>
 
                 {/* View details button (same style as My Pets page) */}
-                <div className="pt-2">
+                <div className="flex flex-col gap-2 pt-2">
+                  <Button
+                    variant="outline"
+                    onClick={() => router.push(`/journeys?petId=${pet.id}`)}
+                    className="w-full border-[#7097A8]/40 bg-white text-[#234851] hover:bg-[#EDF6F3] dark:border-[#B6EBE9]/30 dark:bg-neutral-900 dark:text-[#B6EBE9] dark:hover:bg-[#1f3135]"
+                  >
+                    <Milestone className="mr-2 h-4 w-4" /> Track adoption journey
+                  </Button>
                   <Button
                     variant="outline"
                     onClick={() => router.push(`/pet/${pet.id}`)}

@@ -11,6 +11,7 @@ import {
   Laptop,
   Upload,
   MapPin,
+  Milestone,
   User,
 } from "lucide-react";
 import { useUser } from "@/hooks/useUser";
@@ -298,6 +299,28 @@ export function Navbar() {
                     >
                       <PawPrint className="h-4 w-4 text-gray-600 dark:text-gray-300" />
                       <span className="truncate">My Pets</span>
+                    </a>
+                  </Link>
+                </DropdownMenuItem>
+
+                <DropdownMenuItem
+                  asChild
+                  className="cursor-pointer rounded-md data-[highlighted]:bg-gray-100 dark:data-[highlighted]:bg-gray-700"
+                >
+                  <Link href="/journeys" legacyBehavior>
+                    <a
+                      className="
+                        group flex items-center gap-2 px-2 py-1.5
+                        text-sm leading-5
+                        text-gray-800 dark:text-gray-100
+                        transition-all duration-150
+                        hover:bg-gray-100 dark:hover:bg-gray-700
+                        hover:text-[#234851]
+                        rounded-md
+                      "
+                    >
+                      <Milestone className="h-4 w-4 text-gray-600 dark:text-gray-300" />
+                      <span className="truncate">Adoption journeys</span>
                     </a>
                   </Link>
                 </DropdownMenuItem>
