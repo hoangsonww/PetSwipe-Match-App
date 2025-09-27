@@ -1,4 +1,4 @@
-# 📊 PawSwipe Monitoring & Observability
+# PawSwipe Monitoring & Observability
 
 This directory contains the monitoring and observability configuration for the PawSwipe application using Prometheus and Grafana.
 
