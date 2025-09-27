@@ -46,9 +46,10 @@
     - [Chai & Mocha](#chai--mocha)
 12. [GitHub Actions CI/CD](#-github-actions)
 13. [Command Line Interface](#-command-line-interface)
-14. [Contributing](#-contributing)
-15. [License](#-license)
-16. [Author](#-author)
+14. [Monitoring & Observability](#-monitoring--observability)
+15. [Contributing](#-contributing)
+16. [License](#-license)
+17. [Author](#-author)
 
 ---
 
@@ -757,6 +758,37 @@ petswipe <command> [options]
 - `petswipe test`: Run tests in both projects.
 
 This CLI is designed to make it easier to manage the application and perform common tasks without having to navigate through multiple directories or run multiple commands.
+
+---
+
+## 📊 Monitoring & Observability
+
+PetSwipe includes comprehensive monitoring and observability using Prometheus and Grafana to track application performance, health, and metrics.
+
+### Quick Access
+
+- **Prometheus**: http://localhost:9090 - Metrics collection and querying
+- **Grafana**: http://localhost:3001 - Dashboards and visualization (admin/admin)
+
+### Getting Started
+
+The monitoring stack is automatically included when you run:
+
+```bash
+docker-compose up -d
+```
+
+This starts Prometheus, Grafana, and configures them to monitor your application services including the backend API, frontend, and database.
+
+### What's Monitored
+
+- Service uptime and health checks
+- Backend API performance metrics
+- Frontend application metrics
+- Database connection status
+- System resource usage
+
+For detailed configuration and customization options, see [monitoring/Monitoring.md](monitoring/Monitoring.md).
 
 ---
 
