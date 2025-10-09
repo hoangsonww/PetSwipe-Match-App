@@ -134,42 +134,263 @@ PetSwipe is built using a modern tech stack, ensuring scalability, maintainabili
 | **AI**                  | Google AI, Retrieval-Augmented Generation (RAG)                                           |
 | **Testing**             | Playwright (frontend), Jest (backend)                                                     |
 
-Below is a high-level Mermaid diagram of our architecture/infrastructure:
+### High-Level System Architecture
+
+```mermaid
+flowchart TB
+    subgraph Client["🖥️ Client Layer"]
+        Browser["Web Browser"]
+        Mobile["Mobile Browser"]
+    end
+
+    subgraph CDN["🌐 CDN & Edge"]
+        Vercel["Vercel Edge Network"]
+        CloudFront["AWS CloudFront"]
+    end
+
+    subgraph Frontend["⚛️ Frontend (Next.js)"]
+        NextApp["Next.js Application"]
+        SWR["SWR Data Fetching"]
+        Framer["Framer Motion"]
+        Shadcn["shadcn/ui Components"]
+    end
+
+    subgraph LoadBalancing["⚖️ Load Balancing"]
+        ALB["AWS Application Load Balancer"]
+        TG["Target Group"]
+    end
+
+    subgraph Backend["🔧 Backend Services"]
+        ECS["AWS ECS Fargate"]
+        Express["Express.js API"]
+        TypeORM["TypeORM"]
+        Redis["Redis Cache"]
+        RabbitMQ["RabbitMQ"]
+    end
+
+    subgraph Data["💾 Data Layer"]
+        RDS["AWS RDS PostgreSQL"]
+        S3["AWS S3 Storage"]
+        Supabase["Supabase (Backup)"]
+    end
+
+    subgraph AI["🤖 AI Services"]
+        GoogleAI["Google AI / Gemini"]
+        RAG["RAG System"]
+    end
+
+    subgraph Monitoring["📊 Monitoring & Observability"]
+        Prometheus["Prometheus"]
+        Grafana["Grafana"]
+        CloudWatch["AWS CloudWatch"]
+    end
+
+    subgraph Infrastructure["🏗️ Infrastructure as Code"]
+        Terraform["Terraform"]
+        Consul["HashiCorp Consul"]
+        Vault["HashiCorp Vault"]
+        Nomad["HashiCorp Nomad"]
+        Ansible["Ansible"]
+    end
+
+    subgraph CICD["🚀 CI/CD Pipeline"]
+        GHA["GitHub Actions"]
+        Jenkins["Jenkins"]
+        ECR["AWS ECR"]
+        GHCR["GitHub Container Registry"]
+    end
+
+    Browser --> Vercel
+    Mobile --> Vercel
+    Vercel --> NextApp
+    NextApp --> SWR
+    SWR --> ALB
+    ALB --> TG
+    TG --> ECS
+    ECS --> Express
+    Express --> TypeORM
+    Express --> Redis
+    Express --> RabbitMQ
+    TypeORM --> RDS
+    Express --> S3
+    Express --> GoogleAI
+    GoogleAI --> RAG
+
+    Express --> Prometheus
+    Prometheus --> Grafana
+    ECS --> CloudWatch
+
+    GHA --> ECR
+    GHA --> GHCR
+    GHA --> Vercel
+    Jenkins --> ECR
+    ECR --> ECS
+
+    Terraform --> Backend
+    Terraform --> Data
+    Consul --> Backend
+    Vault --> Backend
+    Nomad --> Backend
+    Ansible --> Infrastructure
+
+    S3 -.Backup.-> Supabase
+```
+
+### Infrastructure & Deployment Flow
 
 ```mermaid
 flowchart LR
-  subgraph CI/CD
-    GH["GitHub Actions"]
-  end
+    subgraph Development["👨‍💻 Development"]
+        Dev["Developer"]
+        Git["Git Repository"]
+    end
 
-  subgraph Frontend
-    Browser["User’s Browser"]
-    Next["Next.js & Vercel"]
-  end
+    subgraph CI["🔄 Continuous Integration"]
+        GHA["GitHub Actions"]
+        Jenkins["Jenkins Pipeline"]
+        Lint["Linting & Format"]
+        Test["Testing Suite"]
+        Build["Build Process"]
+        Security["Security Scan"]
+    end
 
-  subgraph Backend
-    ECR["AWS ECR"]
-    ECS["AWS ECS (Fargate) & Express API"]
-  end
+    subgraph Registry["📦 Container Registry"]
+        ECR["AWS ECR"]
+        GHCR["GitHub CR"]
+    end
 
-  subgraph Data
-    RDS["PostgreSQL & AWS RDS"]
-    S3["AWS S3 (Avatars & Pet Photos)"]
-  end
+    subgraph IaC["🏗️ Infrastructure"]
+        TF["Terraform Apply"]
+        Ansible["Ansible Playbooks"]
+    end
 
-  Browser --> Next
-  Next -->|API calls| ECS
-  ECS -->|Reads/Writes| RDS
-  ECS -->|Uploads/Serves| S3
-  ECR -->|Docker images| ECS
+    subgraph AWS["☁️ AWS Cloud"]
+        ECS["ECS Fargate"]
+        RDS["RDS PostgreSQL"]
+        S3["S3 Buckets"]
+        ALB["Load Balancer"]
+        CW["CloudWatch"]
+    end
 
-  GH -->|Build & Deploy Frontend| Next
-  GH -->|Build & Push Images| ECR
-  GH -->|Deploy Backend| ECS
+    subgraph HashiStack["🔐 HashiCorp Stack"]
+        Consul["Service Discovery"]
+        Vault["Secrets Management"]
+        Nomad["Orchestration"]
+    end
+
+    Dev -->|Push Code| Git
+    Git -->|Trigger| GHA
+    Git -->|Trigger| Jenkins
+    GHA --> Lint
+    Lint --> Test
+    Test --> Security
+    Security --> Build
+    Build --> ECR
+    Build --> GHCR
+
+    Jenkins --> Lint
+
+    ECR --> ECS
+    TF -->|Provision| AWS
+    TF -->|Configure| HashiStack
+    Ansible -->|Deploy| AWS
+
+    Consul --> ECS
+    Vault --> ECS
+    Nomad --> ECS
+
+    ECS --> ALB
+    ECS --> RDS
+    ECS --> S3
+    ECS --> CW
 ```
 
-> [!TIP]
-> Image not showing? Here's the link to the diagram: **[Mermaid Live Diagram](https://www.mermaidchart.com/raw/3c7480d2-191d-4d09-a8f1-6678de344fa4?theme=light&version=v0.1&format=svg)**
+### Data Flow & Entity Relationships
+
+```mermaid
+erDiagram
+    AppUser ||--o{ Swipe : makes
+    AppUser ||--o{ Match : receives
+    AppUser {
+        uuid id PK
+        string email UK
+        string password
+        string name
+        date dob
+        text bio
+        text avatarUrl
+        timestamp createdAt
+        timestamp updatedAt
+    }
+
+    Pet ||--o{ Swipe : receives
+    Pet ||--o{ Match : appears_in
+    Pet {
+        uuid id PK
+        string name
+        string type
+        text description
+        text photoUrl
+        string shelterName
+        text shelterContact
+        text shelterAddress
+        timestamp createdAt
+        timestamp updatedAt
+    }
+
+    Swipe {
+        uuid id PK
+        uuid userId FK
+        uuid petId FK
+        boolean liked
+        timestamp swipedAt
+    }
+
+    Match {
+        uuid id PK
+        uuid userId FK
+        uuid petId FK
+        timestamp matchedAt
+    }
+```
+
+### Authentication & Security Flow
+
+```mermaid
+sequenceDiagram
+    participant User as 👤 User
+    participant Frontend as ⚛️ Next.js
+    participant ALB as ⚖️ ALB
+    participant Backend as 🔧 Express API
+    participant Vault as 🔐 Vault
+    participant DB as 💾 PostgreSQL
+    participant S3 as 📦 S3
+
+    User->>Frontend: Visit App
+    Frontend->>User: Show Login Page
+    User->>Frontend: Submit Credentials
+    Frontend->>ALB: POST /api/auth/login
+    ALB->>Backend: Forward Request
+    Backend->>Vault: Retrieve Secrets
+    Vault-->>Backend: Return Secrets
+    Backend->>DB: Verify Credentials
+    DB-->>Backend: User Data
+    Backend->>Backend: Generate JWT
+    Backend->>ALB: Set HTTP-Only Cookie
+    ALB-->>Frontend: 200 OK + Token
+    Frontend->>Frontend: Store Auth State
+
+    User->>Frontend: Upload Avatar
+    Frontend->>ALB: POST /api/users/me/avatar
+    ALB->>Backend: Forward with JWT
+    Backend->>Backend: Verify JWT
+    Backend->>S3: Upload Image
+    S3-->>Backend: S3 URL
+    Backend->>DB: Update User Record
+    Backend->>ALB: Return Success
+    ALB-->>Frontend: 200 OK
+    Frontend-->>User: Show Updated Profile
+```
 
 ---
 
