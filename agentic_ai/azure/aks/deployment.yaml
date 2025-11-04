@@ -1,0 +1,153 @@
+# Kubernetes Deployment for Azure AKS
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: agentic-ai
+
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: agentic-ai-secrets
+  namespace: agentic-ai
+type: Opaque
+stringData:
+  openai-api-key: ${OPENAI_API_KEY}
+
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: agentic-ai-config
+  namespace: agentic-ai
+data:
+  MODEL: "gpt-4o-mini"
+  TEMPERATURE: "0.7"
+  MIN_SCORE_THRESHOLD: "0.5"
+  ENVIRONMENT: "production"
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: agentic-ai
+  namespace: agentic-ai
+  labels:
+    app: agentic-ai
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: agentic-ai
+  template:
+    metadata:
+      labels:
+        app: agentic-ai
+    spec:
+      containers:
+      - name: agentic-ai
+        image: ${CONTAINER_REGISTRY}/agentic-ai:latest
+        ports:
+        - containerPort: 8765
+          name: http
+        env:
+        - name: OPENAI_API_KEY
+          valueFrom:
+            secretKeyRef:
+              name: agentic-ai-secrets
+              key: openai-api-key
+        envFrom:
+        - configMapRef:
+            name: agentic-ai-config
+        resources:
+          requests:
+            memory: "1Gi"
+            cpu: "500m"
+          limits:
+            memory: "2Gi"
+            cpu: "1000m"
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 8765
+          initialDelaySeconds: 30
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 3
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: 8765
+          initialDelaySeconds: 15
+          periodSeconds: 5
+          timeoutSeconds: 3
+          failureThreshold: 3
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: agentic-ai-service
+  namespace: agentic-ai
+spec:
+  selector:
+    app: agentic-ai
+  ports:
+  - name: http
+    protocol: TCP
+    port: 80
+    targetPort: 8765
+  type: LoadBalancer
+
+---
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: agentic-ai-hpa
+  namespace: agentic-ai
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: agentic-ai
+  minReplicas: 2
+  maxReplicas: 10
+  metrics:
+  - type: Resource
+    resource:
+      name: cpu
+      target:
+        type: Utilization
+        averageUtilization: 70
+  - type: Resource
+    resource:
+      name: memory
+      target:
+        type: Utilization
+        averageUtilization: 80
+
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: agentic-ai-ingress
+  namespace: agentic-ai
+  annotations:
+    kubernetes.io/ingress.class: nginx
+    cert-manager.io/cluster-issuer: letsencrypt-prod
+spec:
+  tls:
+  - hosts:
+    - agentic-ai.petswipe.com
+    secretName: agentic-ai-tls
+  rules:
+  - host: agentic-ai.petswipe.com
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: agentic-ai-service
+            port:
+              number: 80

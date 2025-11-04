@@ -1,0 +1,133 @@
+# Agentic AI Configuration
+# Environment: Production
+
+# Server Configuration
+server:
+  host: "0.0.0.0"
+  port: 8765
+  workers: 4
+  timeout: 300
+
+# AI Models Configuration
+models:
+  default_model: "gpt-4o-mini"
+  temperature: 0.7
+  max_tokens: 2048
+  fallback_model: "gpt-3.5-turbo"
+
+# Agent Configuration
+agents:
+  pet_analyzer:
+    enabled: true
+    model: "gpt-4o-mini"
+    temperature: 0.7
+
+  user_profiler:
+    enabled: true
+    model: "gpt-4o-mini"
+    temperature: 0.5
+
+  matching:
+    enabled: true
+    min_score_threshold: 0.5
+    max_matches: 20
+
+  recommendation:
+    enabled: true
+    model: "gpt-4o-mini"
+    temperature: 0.8
+    diversity_factor: 0.3
+
+  conversation:
+    enabled: true
+    model: "gpt-4o-mini"
+    temperature: 0.7
+    max_history: 20
+
+  monitoring:
+    enabled: true
+    thresholds:
+      max_processing_time: 5.0
+      min_success_rate: 0.95
+      max_error_rate: 0.05
+
+# Workflow Configuration
+workflows:
+  recommendation:
+    agents:
+      - user_profiler
+      - pet_analyzer
+      - matching
+      - recommendation
+      - monitoring
+    timeout: 120
+
+  conversation:
+    agents:
+      - user_profiler
+      - conversation
+      - monitoring
+    timeout: 60
+
+  analysis:
+    agents:
+      - pet_analyzer
+      - monitoring
+    timeout: 30
+
+# Storage Configuration
+storage:
+  type: "local" # Options: local, s3, azure_blob
+  local_path: "./state_storage"
+  retention_days: 7
+
+# Caching Configuration
+cache:
+  enabled: true
+  backend: "redis" # Options: redis, memory
+  redis_url: "redis://localhost:6379"
+  ttl: 3600
+
+# Logging Configuration
+logging:
+  level: "INFO" # DEBUG, INFO, WARNING, ERROR, CRITICAL
+  format: "json"
+  handlers:
+    - console
+    - file
+  file:
+    path: "./logs/agentic-ai.log"
+    max_bytes: 10485760 # 10MB
+    backup_count: 5
+
+# Monitoring Configuration
+monitoring:
+  enabled: true
+  prometheus:
+    enabled: true
+    port: 9090
+  health_check:
+    enabled: true
+    interval: 30
+  metrics:
+    - request_count
+    - error_count
+    - processing_time
+    - agent_execution_time
+
+# Security Configuration
+security:
+  api_key_required: false
+  rate_limiting:
+    enabled: true
+    requests_per_minute: 60
+  cors:
+    enabled: true
+    allowed_origins:
+      - "*"
+
+# Feature Flags
+features:
+  batch_processing: true
+  streaming_responses: false
+  analytics_collection: true
