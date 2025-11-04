@@ -119,9 +119,6 @@ graph TB
     Agent6 --> Prometheus
     Prometheus --> Grafana
     Pipeline --> CloudWatch
-
-    style Pipeline fill:#f9f,stroke:#333,stroke-width:4px
-    style MCP fill:#bbf,stroke:#333,stroke-width:2px
 ```
 
 ### Assembly Line Architecture
@@ -161,13 +158,6 @@ graph LR
         Buffer5 --> Stage6[Monitoring Agent]
         Stage6 --> |Metrics & Health| Output[Output Data]
     end
-
-    style Stage1 fill:#e1f5e1,stroke:#4caf50,stroke-width:2px
-    style Stage2 fill:#e3f2fd,stroke:#2196f3,stroke-width:2px
-    style Stage3 fill:#fff3e0,stroke:#ff9800,stroke-width:2px
-    style Stage4 fill:#f3e5f5,stroke:#9c27b0,stroke-width:2px
-    style Stage5 fill:#fce4ec,stroke:#e91e63,stroke-width:2px
-    style Stage6 fill:#e0f2f1,stroke:#009688,stroke-width:2px
 ```
 
 ---
@@ -197,8 +187,6 @@ graph TD
         Conversationalist --> |NLP| ConvCap[Natural Language Responses]
         Monitor --> |Observability| MonitorCap[Metrics, Health, Alerts]
     end
-
-    style Base fill:#ffd54f,stroke:#f57c00,stroke-width:3px
 ```
 
 ### 1. Pet Analyzer Agent
@@ -361,9 +349,6 @@ graph TD
         Final --> Disk[Disk Storage]
         Final --> DB[Database]
     end
-
-    style AS fill:#ffe082,stroke:#f57c00
-    style Final fill:#81c784,stroke:#388e3c
 ```
 
 ---
@@ -422,8 +407,6 @@ graph TB
     WF2 --> Success
     WF3 --> Success
     WF4 --> Success
-
-    style Server fill:#64b5f6,stroke:#1976d2,stroke-width:3px
 ```
 
 ### MCP Protocol Message Format
@@ -664,10 +647,6 @@ graph LR
     ECS --> S3[S3 Storage]
     ECS --> Secrets[Secrets Manager]
     ECS --> CW[CloudWatch]
-
-    style ALB fill:#ff9800
-    style ECS fill:#4caf50
-    style CW fill:#2196f3
 ```
 
 #### Option 2: AWS Lambda
@@ -714,10 +693,6 @@ graph LR
     ACA --> KV[Key Vault]
     ACA --> AI[Application Insights]
     ACA --> LA[Log Analytics]
-
-    style LB fill:#0078d4
-    style ACA fill:#00bcf2
-    style AI fill:#ff6b6b
 ```
 
 #### Option 2: Azure Kubernetes Service (AKS)
