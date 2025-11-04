@@ -1,5 +1,6 @@
 # 🤖 PetSwipe Agentic AI Pipeline
 
+> [!NOTE]
 > A sophisticated multi-agent AI system using LangGraph and LangChain with assembly line architecture for intelligent pet matching and recommendations.
 
 [![Python](https://img.shields.io/badge/Python-3.11+-blue.svg)](https://www.python.org/)
