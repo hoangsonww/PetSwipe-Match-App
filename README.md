@@ -38,18 +38,19 @@
    - [Terraform](#terraform)
    - [Vault, Consul, Nomad](#vault-consul-nomad)
    - [Ansible](#ansible)
-10. [Scripts & Utilities](#-scripts--utilities)
+10. [Agentic AI Integration](#-agentic-ai-integration)
+11. [Scripts & Utilities](#-scripts--utilities)
     - [Docker](#docker)
-11. [Testing](#-testing)
+12. [Testing](#-testing)
     - [Playwright](#playwright)
     - [Jest](#jest)
     - [Chai & Mocha](#chai--mocha)
-12. [GitHub Actions CI/CD](#-github-actions)
-13. [Command Line Interface](#-command-line-interface)
-14. [Monitoring & Observability](#-monitoring--observability)
-15. [Contributing](#-contributing)
-16. [License](#-license)
-17. [Author](#-author)
+13. [GitHub Actions CI/CD](#-github-actions)
+14. [Command Line Interface](#-command-line-interface)
+15. [Monitoring & Observability](#-monitoring--observability)
+16. [Contributing](#-contributing)
+17. [License](#-license)
+18. [Author](#-author)
 
 ---
 
@@ -826,6 +827,33 @@ For managing the deployment and configuration of the app, we also use **Ansible*
 
 > [!WARNING]
 > NEVER store sensitive information (like AWS credentials, database passwords, etc.) directly in your Ansible playbooks or inventory files. Use Ansible Vault or environment variables to securely manage secrets. Also, NEVER commit your `.env` files or any sensitive configuration files to version control!
+
+---
+
+## 🤖 Agentic AI Integration
+
+PetSwipe features a sophisticated **multi-agent AI system** built with **LangGraph** and **LangChain** that provides intelligent pet matching, personalized recommendations, and natural language conversations. The system uses an assembly line architecture where specialized agents work together to deliver the best possible pet-to-human matches.
+
+### Key Features
+
+- 🤖 **6 Specialized AI Agents** - User profiler, pet analyzer, matcher, recommender, conversation, and monitoring agents
+- ⚡ **Assembly Line Processing** - Sequential and parallel agent execution for optimal performance
+- 🎯 **Intelligent Matching** - AI-powered compatibility scoring between users and pets
+- 💬 **Natural Conversations** - Chatbot powered by RAG (Retrieval-Augmented Generation)
+- 📊 **Production Ready** - Full AWS and Azure deployment configurations with monitoring
+
+### Architecture
+
+The agentic AI pipeline processes user requests through multiple stages:
+
+1. **User Profiling** - Analyzes user preferences and swipe history
+2. **Pet Analysis** - Extracts personality traits and compatibility factors from pet profiles
+3. **Matching** - Calculates compatibility scores using semantic matching
+4. **Recommendations** - Generates personalized pet recommendations
+5. **Conversation** - Handles natural language interactions
+6. **Monitoring** - Tracks performance metrics and system health
+
+For detailed information about the AI system, including installation, configuration, API reference, and deployment guides, see the **[Agentic AI README](agentic_ai/README.md)**.
 
 ---
 
