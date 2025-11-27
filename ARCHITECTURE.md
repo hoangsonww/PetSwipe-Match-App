@@ -899,6 +899,121 @@ flowchart TB
 
 ## Deployment Architecture
 
+### Production Deployment Strategies
+
+PetSwipe implements **enterprise-grade deployment strategies** for zero-downtime releases:
+
+#### 🔵🟢 Blue-Green Deployment
+```mermaid
+flowchart TB
+    subgraph ALB["⚖️ Application Load Balancer"]
+        Listener["HTTPS Listener :443"]
+    end
+
+    subgraph TargetGroups["🎯 Target Groups"]
+        BlueTarget["Blue Target Group<br/>(Production)"]
+        GreenTarget["Green Target Group<br/>(Standby)"]
+    end
+
+    subgraph ECS["🐳 ECS Cluster"]
+        subgraph Blue["🔵 Blue Environment"]
+            BlueService["ECS Service: backend-blue<br/>Tasks: 4<br/>Version: v1.0.0"]
+        end
+        
+        subgraph Green["🟢 Green Environment"]
+            GreenService["ECS Service: backend-green<br/>Tasks: 4<br/>Version: v1.1.0"]
+        end
+    end
+
+    subgraph Deployment["🚀 Deployment Process"]
+        Step1["1. Deploy to Green<br/>(New version)"]
+        Step2["2. Health Checks<br/>(Validate)"]
+        Step3["3. Switch Traffic<br/>(ALB Listener)"]
+        Step4["4. Monitor<br/>(5-10 minutes)"]
+        Step5["5. Rollback or<br/>Promote"]
+    end
+
+    Listener -->|100% Traffic| BlueTarget
+    Listener -.->|0% Traffic| GreenTarget
+    BlueTarget --> BlueService
+    GreenTarget --> GreenService
+
+    Step1 --> Step2 --> Step3 --> Step4 --> Step5
+```
+
+**Key Features**:
+- **Zero-downtime**: Instant traffic switch between environments
+- **Fast rollback**: < 30 seconds to revert
+- **Full validation**: Test new version before production traffic
+- **Database migrations**: Safe schema changes with backward compatibility
+
+#### 🐤 Canary Deployment
+```mermaid
+flowchart TB
+    subgraph ALB["⚖️ Application Load Balancer"]
+        Listener["Weighted Target Groups"]
+    end
+
+    subgraph Routing["📊 Progressive Traffic Shift"]
+        Stage1["Stage 1: 5%<br/>(Initial canary)"]
+        Stage2["Stage 2: 10%<br/>(First validation)"]
+        Stage3["Stage 3: 25%<br/>(Expanded test)"]
+        Stage4["Stage 4: 50%<br/>(Half traffic)"]
+        Stage5["Stage 5: 100%<br/>(Full rollout)"]
+    end
+
+    subgraph ECS["🐳 ECS Services"]
+        Production["Production Service<br/>Current: v1.0.0<br/>Tasks: 4"]
+        Canary["Canary Service<br/>New: v1.1.0<br/>Tasks: 1-4"]
+    end
+
+    subgraph Monitoring["📊 Health Monitoring"]
+        ErrorRate["Error Rate<br/>Threshold: < 5%"]
+        Latency["P99 Latency<br/>Threshold: < 1s"]
+        HealthChecks["Unhealthy Targets<br/>Threshold: 0"]
+    end
+
+    subgraph Automation["🤖 Automated Actions"]
+        Lambda["Lambda Rollback Function"]
+        CloudWatch["CloudWatch Alarms"]
+        CodeDeploy["CodeDeploy Automation"]
+    end
+
+    Listener --> Stage1
+    Stage1 --> Stage2
+    Stage2 --> Stage3
+    Stage3 --> Stage4
+    Stage4 --> Stage5
+
+    Stage1 -->|95% / 5%| Production
+    Stage1 -->|95% / 5%| Canary
+    Stage5 -->|0% / 100%| Canary
+
+    Monitoring --> ErrorRate
+    Monitoring --> Latency
+    Monitoring --> HealthChecks
+
+    ErrorRate --> CloudWatch
+    Latency --> CloudWatch
+    HealthChecks --> CloudWatch
+    CloudWatch --> Lambda
+    Lambda -->|Auto-rollback| Production
+```
+
+**Key Features**:
+- **Progressive rollout**: Gradual traffic increase (5% → 10% → 25% → 50% → 100%)
+- **Automated rollback**: Lambda function triggers on alarm breach
+- **Real-time monitoring**: CloudWatch metrics and alarms
+- **Risk mitigation**: Early detection with minimal user impact
+
+**Deployment Strategy Selection**:
+- **Blue-Green**: Major releases, database migrations, infrastructure changes
+- **Canary**: Feature releases, bug fixes, performance improvements
+
+📖 **[Full Deployment Guide](docs/DEPLOYMENT.md)** | 🚀 **[Quick Reference](docs/DEPLOYMENT_QUICK_REFERENCE.md)**
+
+---
+
 ### AWS Multi-Region Architecture
 
 ```mermaid
@@ -912,11 +1027,13 @@ flowchart TB
     subgraph USEast1["🇺🇸 us-east-1 (Primary)"]
         subgraph VPC1["VPC 10.0.0.0/16"]
             subgraph PublicSubnet1["Public Subnets"]
-                ALB1["Application Load Balancer"]
+                ALB1["Application Load Balancer<br/>Blue/Green/Canary Routing"]
                 NAT1["NAT Gateway"]
             end
             subgraph PrivateSubnet1["Private Subnets"]
-                ECS1["ECS Fargate Tasks<br/>(4 tasks across 2 AZs)"]
+                ECSBlue["ECS Blue Environment<br/>(Production)"]
+                ECSGreen["ECS Green Environment<br/>(Standby)"]
+                ECSCanary["ECS Canary Environment<br/>(Progressive)"]
                 RDS1Primary["RDS Primary<br/>(Multi-AZ)"]
                 ElastiCache1["ElastiCache Redis"]
             end
@@ -951,12 +1068,18 @@ flowchart TB
     CloudFront --> ALB1
     CloudFront --> ALB2
 
-    ALB1 --> ECS1
+    ALB1 --> ECSBlue
+    ALB1 -.-> ECSGreen
+    ALB1 -.-> ECSCanary
     ALB2 --> ECS2
 
-    ECS1 --> RDS1Primary
-    ECS1 --> ElastiCache1
-    ECS1 --> S3
+    ECSBlue --> RDS1Primary
+    ECSGreen --> RDS1Primary
+    ECSCanary --> RDS1Primary
+    ECSBlue --> ElastiCache1
+    ECSGreen --> ElastiCache1
+    ECSCanary --> ElastiCache1
+    ECSBlue --> S3
 
     ECS2 --> RDS2Replica
     ECS2 --> ElastiCache2
@@ -972,56 +1095,81 @@ flowchart TB
 ```mermaid
 flowchart TB
     subgraph Cluster["🐳 ECS Cluster: petswipe-cluster"]
-        subgraph ServiceBackend["🔧 Service: backend-service"]
-            TaskDef["Task Definition<br/>- CPU: 1 vCPU<br/>- Memory: 2 GB<br/>- Container: backend"]
-            DesiredCount["Desired Count: 4"]
-            Scaling["Auto Scaling<br/>- Target CPU: 70%<br/>- Min: 2, Max: 10"]
+        subgraph BlueService["🔵 Blue Service (Production)"]
+            BlueTaskDef["Task Definition: backend-blue<br/>- CPU: 1 vCPU<br/>- Memory: 2 GB<br/>- Image: backend:v1.0.0"]
+            BlueCount["Desired Count: 4"]
+            BlueScaling["Auto Scaling<br/>- Target CPU: 70%<br/>- Min: 2, Max: 10"]
         end
 
-        subgraph Tasks["📦 Running Tasks"]
-            Task1["Task 1<br/>(us-east-1a)<br/>10.0.1.10"]
-            Task2["Task 2<br/>(us-east-1a)<br/>10.0.1.11"]
-            Task3["Task 3<br/>(us-east-1b)<br/>10.0.2.10"]
-            Task4["Task 4<br/>(us-east-1b)<br/>10.0.2.11"]
+        subgraph GreenService["🟢 Green Service (Standby)"]
+            GreenTaskDef["Task Definition: backend-green<br/>- CPU: 1 vCPU<br/>- Memory: 2 GB<br/>- Image: backend:v1.1.0"]
+            GreenCount["Desired Count: 4"]
+            GreenScaling["Auto Scaling<br/>- Target CPU: 70%<br/>- Min: 0, Max: 10"]
+        end
+
+        subgraph CanaryService["🐤 Canary Service (Progressive)"]
+            CanaryTaskDef["Task Definition: backend-canary<br/>- CPU: 1 vCPU<br/>- Memory: 2 GB<br/>- Image: backend:v1.1.0"]
+            CanaryCount["Desired Count: 1-4<br/>(Progressive)"]
+            CanaryScaling["Auto Scaling<br/>- Dynamic based on stage"]
         end
 
         subgraph HealthChecks["❤️ Health Monitoring"]
             ECSHealth["ECS Health Checks<br/>(Docker HEALTHCHECK)"]
             ALBHealth["ALB Target Health<br/>(/health endpoint)"]
-            CWAlarms["CloudWatch Alarms<br/>- High CPU<br/>- High Memory<br/>- Task Failures"]
+            CWAlarms["CloudWatch Alarms<br/>- High CPU/Memory<br/>- Task Failures<br/>- Deployment Health"]
         end
     end
 
     subgraph ALB["⚖️ Application Load Balancer"]
         Listener["Listener: 443<br/>(HTTPS)"]
-        TargetGroup["Target Group<br/>Protocol: HTTP<br/>Port: 5001"]
+        BlueTarget["Blue Target Group<br/>Weight: 100"]
+        GreenTarget["Green Target Group<br/>Weight: 0"]
+        CanaryTarget["Canary Target Group<br/>Weight: 5-100"]
     end
 
     subgraph Registry["📦 Container Registry"]
         ECR["ECR Repository<br/>petswipe-backend"]
-        Images["Images<br/>- latest<br/>- v1.0.0<br/>- v0.9.0"]
+        Images["Images<br/>- latest<br/>- v1.1.0<br/>- v1.0.0<br/>- v0.9.0"]
     end
 
-    TaskDef --> DesiredCount
-    DesiredCount --> Scaling
-    Scaling --> Tasks
+    subgraph Deployment["🚀 Deployment Tools"]
+        CodeDeploy["AWS CodeDeploy<br/>Blue-Green automation"]
+        Lambda["Lambda Function<br/>Canary auto-rollback"]
+        Jenkins["Jenkins Pipelines<br/>- Jenkinsfile.bluegreen<br/>- Jenkinsfile.canary"]
+    end
 
-    Task1 --> ECSHealth
-    Task2 --> ECSHealth
-    Task3 --> ECSHealth
-    Task4 --> ECSHealth
+    BlueTaskDef --> BlueCount
+    BlueCount --> BlueScaling
+    GreenTaskDef --> GreenCount
+    GreenCount --> GreenScaling
+    CanaryTaskDef --> CanaryCount
+    CanaryCount --> CanaryScaling
+
+    BlueScaling --> ECSHealth
+    GreenScaling --> ECSHealth
+    CanaryScaling --> ECSHealth
 
     ECSHealth --> ALBHealth
     ALBHealth --> CWAlarms
 
-    Listener --> TargetGroup
-    TargetGroup --> Task1
-    TargetGroup --> Task2
-    TargetGroup --> Task3
-    TargetGroup --> Task4
+    Listener --> BlueTarget
+    Listener --> GreenTarget
+    Listener --> CanaryTarget
+    
+    BlueTarget --> BlueService
+    GreenTarget --> GreenService
+    CanaryTarget --> CanaryService
 
     ECR --> Images
-    Images --> TaskDef
+    Images --> BlueTaskDef
+    Images --> GreenTaskDef
+    Images --> CanaryTaskDef
+
+    CodeDeploy --> BlueService
+    CodeDeploy --> GreenService
+    Lambda --> CanaryService
+    Jenkins --> CodeDeploy
+    Jenkins --> Lambda
 ```
 
 ---
@@ -1038,16 +1186,29 @@ flowchart TB
         Variables["variables.tf<br/>Input variables"]
         Outputs["outputs.tf<br/>Output values"]
         Backend["backend.tf<br/>S3 state backend"]
+        BlueGreen["ecs-blue-green.tf<br/>Blue-Green deployment"]
+        Canary["ecs-canary.tf<br/>Canary deployment"]
+        Monitoring["monitoring.tf<br/>CloudWatch resources"]
     end
 
-    subgraph Modules["📦 Modules"]
+    subgraph Modules["📦 Core Modules"]
         VPC["module: vpc<br/>- Subnets<br/>- Route Tables<br/>- IGW, NAT"]
         RDS["module: rds<br/>- PostgreSQL<br/>- Multi-AZ<br/>- Backups"]
-        ECS["module: ecs<br/>- Cluster<br/>- Service<br/>- Task Definition"]
-        ALB["module: alb<br/>- Load Balancer<br/>- Target Group<br/>- Listeners"]
+        ECS["module: ecs<br/>- Cluster<br/>- Base Configuration"]
+        ALB["module: alb<br/>- Load Balancer<br/>- Target Groups<br/>- Listeners"]
         S3["module: s3<br/>- Buckets<br/>- Lifecycle<br/>- Replication"]
-        IAM["module: iam<br/>- Roles<br/>- Policies<br/>- Instance Profiles"]
-        CloudWatch["module: monitoring<br/>- Log Groups<br/>- Alarms<br/>- Dashboards"]
+        IAM["module: iam<br/>- Roles<br/>- Policies<br/>- Task Execution"]
+    end
+
+    subgraph DeploymentModules["🚀 Deployment Modules"]
+        BlueGreenModule["Blue-Green Resources<br/>- Blue ECS Service<br/>- Green ECS Service<br/>- Blue/Green Target Groups<br/>- CodeDeploy Application"]
+        CanaryModule["Canary Resources<br/>- Canary ECS Service<br/>- Weighted Target Group<br/>- Lambda Rollback Function<br/>- CloudWatch Alarms<br/>- SNS Topics"]
+    end
+
+    subgraph MonitoringModule["📊 Monitoring Module"]
+        Dashboards["CloudWatch Dashboards<br/>- Main Overview<br/>- Canary Specific"]
+        Alarms["CloudWatch Alarms<br/>- Service Health<br/>- Deployment Health<br/>- Composite Alarms"]
+        LogGroups["Log Groups<br/>- Application Logs<br/>- ECS Logs<br/>- ALB Access Logs"]
     end
 
     subgraph HashiCorp["🔐 HashiCorp Stack"]
@@ -1064,6 +1225,9 @@ flowchart TB
 
     Main --> Provider
     Main --> Modules
+    Main --> BlueGreen
+    Main --> Canary
+    Main --> Monitoring
     Provider --> Backend
     Backend --> State
 
@@ -1073,7 +1237,10 @@ flowchart TB
     Modules --> ALB
     Modules --> S3
     Modules --> IAM
-    Modules --> CloudWatch
+
+    BlueGreen --> BlueGreenModule
+    Canary --> CanaryModule
+    Monitoring --> MonitoringModule
 
     Main --> HashiCorp
     HashiCorp --> Consul
@@ -1210,17 +1377,103 @@ graph TB
         ReplicationLag["Replication Lag (s)"]
     end
 
+    subgraph DeploymentMetrics["🚀 Deployment Metrics"]
+        CanaryErrors["Canary Error Rate"]
+        CanaryLatency["Canary P99 Latency"]
+        UnhealthyTargets["Unhealthy Targets"]
+        DeploymentStatus["Deployment Status"]
+    end
+
     subgraph AlertThresholds["🚨 Alert Thresholds"]
         HighCPU["CPU > 80% for 5min"]
         HighError["Error Rate > 5%"]
         SlowResponse["p99 > 1s"]
         DBDown["DB Connection Failed"]
+        CanaryFailed["Canary Error > 5%"]
+        LatencyBreach["Canary Latency > 1s"]
     end
+```
+
+### Deployment Monitoring
+
+```mermaid
+flowchart TB
+    subgraph Dashboards["📊 CloudWatch Dashboards"]
+        MainDash["Main Dashboard<br/>- Overall system health<br/>- All services metrics<br/>- Infrastructure status"]
+        CanaryDash["Canary Dashboard<br/>- Canary-specific metrics<br/>- Traffic split visualization<br/>- Rollout progress<br/>- Comparison with production"]
+    end
+
+    subgraph Alarms["🚨 CloudWatch Alarms"]
+        ServiceAlarms["Service Health Alarms<br/>- High CPU (>80%)<br/>- High Memory (>80%)<br/>- Task failures"]
+        DeploymentAlarms["Deployment Alarms<br/>- Canary error rate (>5%)<br/>- Canary latency (>1s)<br/>- Unhealthy targets"]
+        CompositeAlarms["Composite Alarms<br/>- Deployment quality gate<br/>- Multiple metric correlation"]
+    end
+
+    subgraph Notifications["📢 Notifications"]
+        SNSTopic["SNS Topics<br/>- deployment-alerts<br/>- canary-rollback"]
+        Email["Email Alerts<br/>- DevOps team"]
+        Slack["Slack Integration<br/>- #deployments channel"]
+    end
+
+    subgraph Automation["🤖 Automated Response"]
+        LambdaRollback["Lambda Rollback Function<br/>- Triggered by alarms<br/>- Instant traffic revert<br/>- Notification sent"]
+        CloudWatchEvents["CloudWatch Events<br/>- Deployment state changes<br/>- Service events"]
+    end
+
+    MainDash --> ServiceAlarms
+    CanaryDash --> DeploymentAlarms
+    
+    ServiceAlarms --> CompositeAlarms
+    DeploymentAlarms --> CompositeAlarms
+    
+    CompositeAlarms --> SNSTopic
+    SNSTopic --> Email
+    SNSTopic --> Slack
+    SNSTopic --> LambdaRollback
+    
+    LambdaRollback --> CloudWatchEvents
+    CloudWatchEvents --> SNSTopic
 ```
 
 ---
 
 ## CI/CD Pipeline
+
+### Deployment Strategy Selection
+
+PetSwipe supports **multiple deployment strategies** based on the type of release:
+
+```mermaid
+flowchart LR
+    subgraph Decision["🎯 Deployment Decision"]
+        GitCommit["Git Commit/Tag"]
+        Strategy{"Release Type?"}
+    end
+
+    subgraph BlueGreen["🔵🟢 Blue-Green"]
+        BGUseCase["Use Cases:<br/>- Major releases<br/>- Database migrations<br/>- Infrastructure changes<br/>- Urgent hotfixes"]
+        BGPipeline["Jenkinsfile.bluegreen"]
+    end
+
+    subgraph Canary["🐤 Canary"]
+        CanaryUseCase["Use Cases:<br/>- Feature releases<br/>- Bug fixes<br/>- Performance improvements<br/>- Gradual rollouts"]
+        CanaryPipeline["Jenkinsfile.canary"]
+    end
+
+    subgraph CI["🧪 Continuous Integration"]
+        CIUseCase["Use Cases:<br/>- Pull requests<br/>- Feature branches<br/>- Quality checks"]
+        CIPipeline["Jenkinsfile.ci"]
+    end
+
+    GitCommit --> Strategy
+    Strategy -->|Major/Breaking| BGPipeline
+    Strategy -->|Feature/Fix| CanaryPipeline
+    Strategy -->|PR/Test| CIPipeline
+
+    BGPipeline --> BGUseCase
+    CanaryPipeline --> CanaryUseCase
+    CIPipeline --> CIUseCase
+```
 
 ### GitHub Actions Workflow
 
@@ -1256,7 +1509,8 @@ flowchart LR
     end
 
     subgraph Deploy["🚀 Deploy"]
-        UpdateECS["Update ECS Service<br/>(Force New Deployment)"]
+        SelectStrategy["Select Strategy<br/>(Blue-Green/Canary)"]
+        DeployBackend["Deploy Backend<br/>(Automated)"]
         DeployVercel["Deploy to Vercel<br/>(Frontend)"]
         RunMigrations["Run DB Migrations"]
         SmokeTest["Smoke Tests"]
@@ -1285,67 +1539,165 @@ flowchart LR
     LoginGHCR --> PushECR
     LoginGHCR --> PushGHCR
 
-    PushECR --> UpdateECS
+    PushECR --> SelectStrategy
+    SelectStrategy --> DeployBackend
     PushGHCR --> DeployVercel
-    UpdateECS --> RunMigrations
+    DeployBackend --> RunMigrations
     DeployVercel --> SmokeTest
 
     SmokeTest --> Notify
 ```
 
-### Jenkins Pipeline
+### Jenkins Deployment Pipelines
+
+#### Blue-Green Deployment Pipeline (Jenkinsfile.bluegreen)
 
 ```mermaid
 flowchart TB
-    subgraph Jenkinsfile["📄 Jenkinsfile.ci"]
-        Stages["Pipeline Stages"]
+    subgraph Preparation["📋 Preparation"]
+        Init["Initialize<br/>- Environment setup<br/>- Tool checks"]
+        BuildImage["Build Docker Image<br/>- Tag: v{VERSION}"]
+        PushImage["Push to ECR/GHCR"]
     end
 
-    subgraph Execution["⚙️ Execution Flow"]
-        Preflight["Preflight Setup<br/>- Node.js version<br/>- Tool checks"]
-        LintFormat["Lint & Format<br/>- ESLint<br/>- Prettier"]
-        Security["Security & License<br/>- npm audit<br/>- Semgrep<br/>- License checker"]
-        TestMatrix["Test Matrix<br/>- Node 18, 20<br/>- Backend Jest<br/>- Frontend Jest"]
-        E2EMatrix["E2E Matrix<br/>- Chromium<br/>- Firefox<br/>- WebKit"]
-        BuildStage["Build Stage<br/>- Backend build<br/>- Frontend build"]
-        DockerStage["Docker Stage<br/>- Build images<br/>- Push to GHCR"]
-        ImageScan["Image Scan<br/>- Trivy scan"]
-        PerfTest["Performance Test<br/>- Artillery load test"]
-        InfraDeploy["Infra Deploy<br/>- Run deploy.sh"]
-        VercelDeploy["Vercel Deploy<br/>- Frontend deployment"]
+    subgraph GreenDeploy["🟢 Green Deployment"]
+        UpdateGreen["Update Green Service<br/>- New task definition<br/>- New image tag"]
+        WaitGreen["Wait for Healthy<br/>- Health checks pass<br/>- Timeout: 10 min"]
+        TestGreen["Validation Tests<br/>- Smoke tests<br/>- Integration tests"]
     end
 
-    subgraph Parallel["🔀 Parallel Execution"]
-        BackendTest["Backend Tests<br/>(Node 18, 20)"]
-        FrontendTest["Frontend Tests"]
-        E2EChrome["Playwright<br/>(Chromium)"]
-        E2EFirefox["Playwright<br/>(Firefox)"]
-        E2EWebKit["Playwright<br/>(WebKit)"]
+    subgraph TrafficSwitch["🔄 Traffic Switch"]
+        Approval["Manual Approval<br/>(Optional)"]
+        SwitchALB["Switch ALB Listener<br/>- Blue: 0%<br/>- Green: 100%"]
+        Monitor["Monitor Metrics<br/>- 5-10 minutes<br/>- Error rates<br/>- Latency"]
     end
 
-    Jenkinsfile --> Stages
-    Stages --> Preflight
-    Preflight --> LintFormat
-    LintFormat --> Security
-    Security --> TestMatrix
+    subgraph Finalize["✅ Finalize"]
+        Decision{"Success?"}
+        Promote["Promote Green → Blue<br/>- Update labels<br/>- Scale down old blue"]
+        Rollback["Rollback<br/>- Switch to Blue<br/>- < 30 seconds"]
+        Cleanup["Cleanup<br/>- Old task definitions<br/>- Unused images"]
+    end
 
-    TestMatrix --> BackendTest
-    TestMatrix --> FrontendTest
-    TestMatrix --> E2EChrome
-    TestMatrix --> E2EFirefox
-    TestMatrix --> E2EWebKit
+    Init --> BuildImage
+    BuildImage --> PushImage
+    PushImage --> UpdateGreen
+    UpdateGreen --> WaitGreen
+    WaitGreen --> TestGreen
+    TestGreen --> Approval
+    Approval --> SwitchALB
+    SwitchALB --> Monitor
+    Monitor --> Decision
+    Decision -->|Success| Promote
+    Decision -->|Failure| Rollback
+    Promote --> Cleanup
+```
 
-    BackendTest --> BuildStage
-    FrontendTest --> BuildStage
-    E2EChrome --> BuildStage
-    E2EFirefox --> BuildStage
-    E2EWebKit --> BuildStage
+#### Canary Deployment Pipeline (Jenkinsfile.canary)
 
-    BuildStage --> DockerStage
-    DockerStage --> ImageScan
-    ImageScan --> PerfTest
-    PerfTest --> InfraDeploy
-    InfraDeploy --> VercelDeploy
+```mermaid
+flowchart TB
+    subgraph Preparation["📋 Preparation"]
+        Init["Initialize<br/>- Environment setup<br/>- Tool checks"]
+        BuildImage["Build Docker Image<br/>- Tag: v{VERSION}"]
+        PushImage["Push to ECR/GHCR"]
+    end
+
+    subgraph CanaryDeploy["🐤 Canary Deployment"]
+        DeployCanary["Deploy Canary Service<br/>- 1 task initially"]
+        WaitCanary["Wait for Healthy<br/>- Health checks pass"]
+    end
+
+    subgraph ProgressiveRollout["📊 Progressive Rollout"]
+        Stage5["Stage 1: 5%<br/>- Monitor: 5 min"]
+        Stage10["Stage 2: 10%<br/>- Monitor: 5 min"]
+        Stage25["Stage 3: 25%<br/>- Monitor: 10 min"]
+        Stage50["Stage 4: 50%<br/>- Monitor: 10 min"]
+        Stage100["Stage 5: 100%<br/>- Full rollout"]
+    end
+
+    subgraph Monitoring["📊 Continuous Monitoring"]
+        Metrics["CloudWatch Metrics<br/>- Error rate < 5%<br/>- P99 latency < 1s<br/>- Unhealthy targets = 0"]
+        Alarms["CloudWatch Alarms<br/>- Auto-trigger on breach"]
+        Lambda["Lambda Rollback<br/>- Automated recovery"]
+    end
+
+    subgraph Finalize["✅ Finalize"]
+        Decision{"All Stages Pass?"}
+        Complete["Complete Rollout<br/>- Update production<br/>- Scale down old version"]
+        AutoRollback["Auto-Rollback<br/>- Revert to production<br/>- Lambda triggered"]
+    end
+
+    Init --> BuildImage
+    BuildImage --> PushImage
+    PushImage --> DeployCanary
+    DeployCanary --> WaitCanary
+    WaitCanary --> Stage5
+
+    Stage5 --> Metrics
+    Metrics --> Stage10
+    Stage10 --> Metrics
+    Metrics --> Stage25
+    Stage25 --> Metrics
+    Metrics --> Stage50
+    Stage50 --> Metrics
+    Metrics --> Stage100
+
+    Metrics --> Alarms
+    Alarms --> Lambda
+    Lambda --> AutoRollback
+
+    Stage100 --> Decision
+    Decision -->|Success| Complete
+    Decision -->|Failure| AutoRollback
+```
+
+#### CI Pipeline (Jenkinsfile.ci)
+
+```mermaid
+flowchart TB
+    subgraph Preflight["🚀 Preflight"]
+        Checkout["Checkout Code"]
+        Setup["Setup Environment<br/>- Node.js<br/>- Docker<br/>- Tools"]
+    end
+
+    subgraph Quality["🧪 Quality Checks"]
+        Lint["Lint & Format<br/>- ESLint<br/>- Prettier"]
+        Security["Security Scan<br/>- npm audit<br/>- Semgrep<br/>- License check"]
+    end
+
+    subgraph Testing["🧪 Testing Matrix"]
+        BackendTest["Backend Tests<br/>- Node 18, 20<br/>- Jest"]
+        FrontendTest["Frontend Tests<br/>- React Testing Library"]
+        E2ETest["E2E Tests<br/>- Playwright<br/>- Chrome/Firefox/WebKit"]
+    end
+
+    subgraph Build["🏗️ Build & Package"]
+        BuildCode["Build Code<br/>- TypeScript<br/>- Next.js"]
+        DockerBuild["Docker Build<br/>- Backend<br/>- Frontend"]
+        ImageScan["Image Scan<br/>- Trivy vulnerability scan"]
+    end
+
+    subgraph Deploy["🚀 Deploy (Optional)"]
+        PushGHCR["Push to GHCR<br/>- Backup registry"]
+        DeployDev["Deploy to Dev<br/>- Development environment"]
+    end
+
+    Checkout --> Setup
+    Setup --> Lint
+    Lint --> Security
+    Security --> BackendTest
+    Security --> FrontendTest
+    Security --> E2ETest
+
+    BackendTest --> BuildCode
+    FrontendTest --> BuildCode
+    E2ETest --> BuildCode
+
+    BuildCode --> DockerBuild
+    DockerBuild --> ImageScan
+    ImageScan --> PushGHCR
+    PushGHCR --> DeployDev
 ```
 
 ---

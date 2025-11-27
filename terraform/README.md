@@ -1,31 +1,42 @@
-# Terraform Infrastructure
+# 🏗️ PetSwipe Terraform Infrastructure
 
-This directory contains Terraform configurations and modules to bootstrap your HashiCorp stack (Consul, Nomad, Vault) and any shared infrastructure. A `Dockerfile` is provided to run Terraform in a reproducible container.
+Production-grade Infrastructure as Code for PetSwipe deployment on AWS with support for Blue-Green and Canary deployments.
+
+This directory contains Terraform configurations and modules to bootstrap:
+- **AWS ECS Fargate** with Blue-Green and Canary deployment strategies
+- **Application Load Balancer** with weighted traffic routing
+- **RDS PostgreSQL** with Multi-AZ and automated backups
+- **CloudWatch** monitoring, dashboards, and alarms
+- **HashiCorp Stack** (Consul, Nomad, Vault) - Optional
+- **Security** (KMS, WAF, IAM roles, security groups)
 
 ---
 
 ## 📁 Layout
 
 ```
-
 terraform/
 ├── Dockerfile               # Container for Terraform CLI
 ├── provider.tf              # Provider & backend configuration
-├── main.tf                  # Root module (e.g. networking, IAM, remote‐state)
-├── outputs.tf               # Root outputs
-├── consul/                  # Consul cluster module
+├── main.tf                  # Core infrastructure (RDS, S3, ECR, ECS)
+├── variables.tf             # Input variable definitions
+├── outputs.tf               # Output values
+├── ecs-blue-green.tf        # Blue-Green deployment configuration
+├── ecs-canary.tf            # Canary deployment configuration
+├── monitoring.tf            # CloudWatch dashboards and alarms
+├── README.md                # This file
+├── consul/                  # Consul cluster module (optional)
 │   ├── variables.tf
 │   ├── main.tf
 │   └── outputs.tf
-├── nomad/                   # Nomad cluster module
+├── nomad/                   # Nomad cluster module (optional)
 │   ├── variables.tf
 │   ├── main.tf
 │   └── outputs.tf
-└── vault/                   # Vault cluster module
-├── variables.tf
-├── main.tf
-└── outputs.tf
-
+└── vault/                   # Vault cluster module (optional)
+    ├── variables.tf
+    ├── main.tf
+    └── outputs.tf
 ```
 
 ---
@@ -33,73 +44,124 @@ terraform/
 ## 🚀 Prerequisites
 
 - **Terraform** v1.0+
-- **AWS CLI v2** (or other cloud CLI) configured with credentials
-- **Docker** (optional, if you prefer containerized Terraform)
-- A remote‐state backend (e.g. S3 + DynamoDB) configured in `provider.tf`
+- **AWS CLI v2** configured with credentials
+- **Docker** (optional, for containerized Terraform)
+- **VPC & Subnets** - Pre-existing VPC with public/private subnets
+- **ACM Certificate** - SSL certificate for HTTPS (recommended)
+- **Remote State Backend** - S3 + DynamoDB for state management
 
 ---
 
 ## 🛠️ Quickstart
 
-1. **Build the Terraform container** (optional)
+### 1. Configure Variables
 
-   ```bash
-   cd terraform
-   docker build -t terraform-cli .
-   ```
+Create `terraform.tfvars`:
 
-2. **Initialize & plan**
+```hcl
+# Required
+project     = "petswipe"
+environment = "production"
+aws_region  = "us-east-1"
 
-- **Locally**
+# Network (use your existing VPC)
+vpc_id             = "vpc-xxxxx"
+subnet_ids         = ["subnet-xxxxx", "subnet-yyyyy", "subnet-zzzzz"]
+security_group_ids = ["sg-xxxxx"]
 
-  ```bash
-  terraform init
-  terraform plan
-  ```
+# Database
+db_username         = "petswipe_admin"
+db_password         = "your-secure-password-min-16-chars"
+db_instance_class   = "db.t3.medium"
+db_allocated_storage = 100
 
-- **With Docker**
+# SSL Certificate
+acm_certificate_arn = "arn:aws:acm:us-east-1:xxxxx:certificate/xxxxx"
 
-  ```bash
-  docker run --rm -v "$(pwd)":/workspace -w /workspace terraform-cli \
-    terraform init
-  docker run --rm -v "$(pwd)":/workspace -w /workspace terraform-cli \
-    terraform plan
-  ```
+# Alerts
+alert_email = "devops@petswipe.com"
 
-3. **Apply**
+# ECS
+ecs_desired_count = 4
+ecs_min_capacity  = 2
+ecs_max_capacity  = 20
+```
 
-   ```bash
-   terraform apply
-   ```
+### 2. Initialize Terraform
 
-   This will:
+```bash
+cd terraform
+terraform init
+```
 
-- Provision any root‐level resources (VPCs, IAM roles, remote‐state)
-- Instantiate the **consul**, **nomad**, and **vault** modules
+### 3. Plan Infrastructure
+
+```bash
+terraform plan -out=tfplan
+```
+
+### 4. Apply Infrastructure
+
+```bash
+terraform apply tfplan
+```
+
+This will provision:
+- **ECS Cluster** with Blue/Green/Canary services
+- **Application Load Balancer** with weighted routing
+- **RDS PostgreSQL** with Multi-AZ and automated backups
+- **ECR Repositories** for Docker images
+- **S3 Buckets** for static assets and logs
+- **CloudWatch** dashboards, alarms, and log groups
+- **Lambda** function for canary auto-rollback
+- **CodeDeploy** application for automated canary deployments
+- **Optional:** Consul, Nomad, Vault clusters
 
 ---
 
-## 📦 Modules
+## 📦 Modules & Components
 
-Each subdirectory is a standalone Terraform module:
+### Core Infrastructure (`main.tf`)
 
-- **consul/**
+- **RDS PostgreSQL**: Multi-AZ, automated backups, performance insights
+- **S3 Buckets**: Static assets, uploads, ALB logs
+- **ECR Repositories**: Backend and frontend container images
+- **ECS Cluster**: Fargate-based container orchestration
+- **KMS Keys**: Encryption for all resources
+- **IAM Roles**: Task execution, monitoring, deployment
 
-  - Bootstraps a Consul cluster (servers + clients, autoscaling, security groups)
-  - Variables: cluster size, instance types, networking
-  - Outputs: Consul endpoints, join tokens
+### Blue-Green Deployment (`ecs-blue-green.tf`)
 
-- **nomad/**
+- **Blue ECS Service**: Production environment
+- **Green ECS Service**: Standby environment
+- **Target Groups**: Blue and green traffic routing
+- **ALB Listener**: Traffic switching capability
+- **Auto-Scaling**: CPU/memory-based scaling for both environments
+- **CloudWatch Alarms**: Health monitoring
 
-  - Provisions a Nomad cluster (server & client pools)
-  - Variables: desired count, instance sizing, ACL keys
-  - Outputs: Nomad server addresses
+### Canary Deployment (`ecs-canary.tf`)
 
-- **vault/**
+- **Canary ECS Service**: New version deployment
+- **Weighted Routing**: Progressive traffic shift (5% → 10% → 25% → 50% → 100%)
+- **CodeDeploy**: Automated deployment orchestration
+- **Lambda Function**: Automated rollback on failures
+- **Health Alarms**: Error rate, latency, unhealthy hosts
+- **SNS Topics**: Deployment notifications
 
-  - Deploys a Vault HA cluster (init, unseal policies, auto‐unseal config)
-  - Variables: node count, storage backend, seal settings
-  - Outputs: Vault address, root token (sensitive)
+### Monitoring (`monitoring.tf`)
+
+- **CloudWatch Dashboards**: Main overview and canary-specific
+- **Metric Alarms**: CPU, memory, latency, errors, database
+- **Log Groups**: ECS, application, ALB access logs
+- **X-Ray Tracing**: Distributed tracing (optional)
+- **CloudWatch Insights**: Pre-configured log queries
+- **SLI/SLO Metrics**: Availability and latency tracking
+
+### HashiCorp Stack (Optional)
+
+- **consul/**: Service discovery and configuration management
+- **nomad/**: Workload orchestration alternative to ECS
+- **vault/**: Secrets management and encryption
 
 ---
 

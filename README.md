@@ -34,7 +34,8 @@
    - [Users](#users)
    - [Swagger UI](#swagger-ui)
 9. [AWS Deployment](#-aws-deployment)
-   - [Our Stack](#our-stack)
+   - [Production-Ready Deployment Strategies](#production-ready-deployment-strategies)
+   - [Infrastructure Stack](#infrastructure-stack)
    - [Terraform](#terraform)
    - [Vault, Consul, Nomad](#vault-consul-nomad)
    - [Ansible](#ansible)
@@ -690,49 +691,99 @@ Swagger UI is available at `https://petswipe-backend-api.vercel.app/`.
 
 ## ☁️ AWS Deployment
 
-The app is designed to be easily deployable to AWS using services like:
+### Production-Ready Deployment Strategies
 
-- **RDS**: PostgreSQL instance for data
-- **S3**: Bucket for pet photo storage
-- **Elastic Beanstalk** or **ECS** for backend
-- **ECR**: Container registry for Docker images
-- **ECS**: For hosting the backend API using Docker containers
-  - **Fargate**: Serverless compute engine for containers
-- **GHCR**: Backup container registry for Docker images
-- **CloudWatch**: For logging and monitoring
-- **IAM**: For managing permissions
-- **Terraform**: Infrastructure as Code (IaC) for managing AWS resources
-  - _Optional:_ **Consul** for service discovery, **Vault** for secrets management, and **Nomad** for orchestration
-- **GitHub Actions** for CI/CD
-- **Vercel** for frontend
+PetSwipe features **enterprise-grade deployment strategies** for zero-downtime releases:
 
-**Tip**: Use IAM roles for EC2/ECS to grant S3 & RDS access securely!
+#### 🔵🟢 Blue-Green Deployment
+- **Zero-downtime** deployments with instant rollback
+- Two identical environments (Blue & Green)
+- Perfect for major releases and database migrations
+- Rollback time: < 30 seconds
 
-### Our Stack
+#### 🐤 Canary Deployment
+- **Gradual traffic shifting** (5% → 10% → 25% → 50% → 100%)
+- Automated rollback on errors or high latency
+- Real-time health monitoring during rollout
+- Progressive validation with production traffic
 
-Currently, our stack is fully deployed on AWS using the following services:
+📖 **[Full Deployment Guide](docs/DEPLOYMENT.md)** | 🚀 **[Quick Reference](docs/DEPLOYMENT_QUICK_REFERENCE.md)**
 
-1. **AWS RDS**: Manages our PostgreSQL database.
-2. **AWS S3**: Stores pet photos and user avatars.
-   - Backup service: **Supabase Storage**.
-3. **AWS ECS**: Hosts our backend API using Docker containers.
-   - Backup service: **Vercel** (currently, due to AWS pricing issues, we have switched to Vercel for hosting the backend).
-   - **AWS Fargate**: Serverless compute engine for running containers.
-4. **AWS ECR**: Container registry for our Docker images.
-   - Backup service: **GitHub Container Registry (GHCR)**.
-5. **AWS ALB**: Application Load Balancer for routing traffic to our ECS services.
-6. **AWS IAM**: Manages permissions for accessing AWS resources.
-7. **AWS CloudWatch**: For logging and monitoring.
-8. **GitHub Actions**: For CI/CD to build and deploy our Docker images to ECR.
-9. **Vercel**: Hosts our frontend application.
-10. **HashiCorp Stack**: For managing infrastructure and secrets:
-    - **Terraform**: Infrastructure as Code (IaC) for managing AWS resources.
-    - **Consul**: Service discovery and configuration management.
-    - **Vault**: Secrets management for securely storing sensitive information.
-    - **Nomad**: Orchestration for deploying and managing applications across a cluster of machines.
+### Infrastructure Stack
+
+Our production infrastructure is built on AWS with Terraform:
+
+**Compute & Orchestration:**
+- **AWS ECS Fargate**: Serverless container orchestration
+  - Blue, Green, and Canary environments
+  - Auto-scaling based on CPU/memory metrics
+  - Circuit breaker deployment with automated rollback
+- **AWS ECR**: Private Docker registry with vulnerability scanning
+  - Backup: **GitHub Container Registry (GHCR)**
+
+**Networking & Load Balancing:**
+- **Application Load Balancer**: Traffic routing and health checks
+  - Weighted routing for canary deployments
+  - SSL/TLS termination with ACM certificates
+  - HTTP/2 and WebSocket support
+- **Route 53**: DNS management
+- **CloudFront**: CDN for static assets (optional)
+
+**Data & Storage:**
+- **AWS RDS PostgreSQL**: Multi-AZ database with automated backups
+  - Read replicas for scaling
+  - Performance Insights enabled
+  - Point-in-time recovery
+- **AWS S3**: Object storage
+  - Static assets bucket (public)
+  - Uploads bucket (private)
+  - ALB access logs
+  - Lifecycle policies for cost optimization
+  - Backup: **Supabase Storage**
+
+**Monitoring & Observability:**
+- **CloudWatch**: Comprehensive monitoring
+  - Custom dashboards (main + canary-specific)
+  - Metric alarms with SNS notifications
+  - Log aggregation and Insights queries
+  - X-Ray distributed tracing
+- **CloudWatch Alarms**: Proactive alerts
+  - Service health (CPU, memory, errors)
+  - Deployment health (canary metrics)
+  - Database performance
+  - Composite alarms for deployment quality
+
+**Security & Compliance:**
+- **AWS KMS**: Encryption for all resources
+- **AWS WAF**: Web application firewall
+- **AWS Shield**: DDoS protection (Standard)
+- **IAM**: Least-privilege access policies
+- **Security Groups**: Network-level access control
+- **Secrets Manager**: Sensitive configuration management
+
+**CI/CD & Deployment:**
+- **Jenkins**: Automated build and deployment pipelines
+  - Blue-Green pipeline: `Jenkinsfile.bluegreen`
+  - Canary pipeline: `Jenkinsfile.canary`
+  - Main CI pipeline with strategy selection
+- **AWS CodeDeploy**: ECS blue-green deployments
+- **Lambda**: Automated canary rollback function
+- **GitHub Actions**: Backup CI/CD
+- **Terraform**: Infrastructure as Code (100+ resources)
+
+**HashiCorp Stack (Optional):**
+- **Vault**: Secrets management and encryption-as-a-service
+- **Consul**: Service discovery and distributed configuration
+- **Nomad**: Alternative workload orchestration
+
+**Frontend Hosting:**
+- **Vercel**: Next.js application hosting with edge functions
+  - Automatic deployments from Git
+  - Preview deployments for PRs
+  - Global CDN distribution
 
 > [!NOTE]
-> This stack is designed to be flexible and scalable, allowing us to easily add or remove services as needed. The use of Terraform, Consul, Vault, and Nomad provides additional security and flexibility for managing our infrastructure.
+> Our infrastructure is designed for **production-grade reliability, security, and scalability**. The use of blue-green and canary deployments ensures zero-downtime releases with instant rollback capabilities. All infrastructure is version-controlled and reproducible via Terraform.
 
 ### Terraform
 

@@ -150,7 +150,53 @@ pipeline {
         sh 'npx artillery quick --count 20 -n 50 http://localhost:5001/health || true'
       }
     }
+    stage('Deployment Strategy Selection') {
+      steps {
+        script {
+          def deploymentStrategy = input(
+            message: 'Select deployment strategy',
+            parameters: [
+              choice(
+                name: 'STRATEGY',
+                choices: ['blue-green', 'canary', 'skip'],
+                description: 'Choose deployment method'
+              )
+            ]
+          )
+          env.DEPLOYMENT_STRATEGY = deploymentStrategy
+        }
+      }
+    }
+    stage('Blue-Green Deploy') {
+      when {
+        expression { env.DEPLOYMENT_STRATEGY == 'blue-green' }
+      }
+      steps {
+        build job: 'petswipe-bluegreen-deploy',
+          parameters: [
+            string(name: 'IMAGE_TAG', value: "${GIT_COMMIT.substring(0,7)}"),
+            string(name: 'GIT_COMMIT', value: "${GIT_COMMIT}")
+          ],
+          wait: true
+      }
+    }
+    stage('Canary Deploy') {
+      when {
+        expression { env.DEPLOYMENT_STRATEGY == 'canary' }
+      }
+      steps {
+        build job: 'petswipe-canary-deploy',
+          parameters: [
+            string(name: 'IMAGE_TAG', value: "${GIT_COMMIT.substring(0,7)}"),
+            string(name: 'GIT_COMMIT', value: "${GIT_COMMIT}")
+          ],
+          wait: true
+      }
+    }
     stage('Infra Deploy') {
+      when {
+        expression { env.DEPLOYMENT_STRATEGY == 'skip' }
+      }
       steps {
         withCredentials([string(credentialsId: 'deploy-script-b64', variable: 'DEPLOY_B64')]) {
           sh 'echo "$DEPLOY_B64" | base64 --decode > deploy.sh'
@@ -167,7 +213,13 @@ pipeline {
     }
     stage('Done') {
       steps {
-        echo 'PetSwipe CI/CD pipeline complete'
+        script {
+          echo '═══════════════════════════════════════════════════════════'
+          echo '  ✓ PetSwipe CI/CD Pipeline Complete'
+          echo "  Deployment Strategy: ${env.DEPLOYMENT_STRATEGY}"
+          echo "  Image Tag: ${GIT_COMMIT.substring(0,7)}"
+          echo '═══════════════════════════════════════════════════════════'
+        }
       }
     }
   }

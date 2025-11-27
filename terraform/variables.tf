@@ -420,3 +420,24 @@ variable "enable_kms_encryption" {
   type        = bool
   default     = true
 }
+
+# ─── Blue-Green & Canary Deployment Configuration ────────────────────────────
+
+variable "vpc_id" {
+  description = "VPC ID for ALB and target groups"
+  type        = string
+  default     = ""
+}
+
+variable "acm_certificate_arn" {
+  description = "ACM certificate ARN for HTTPS listener"
+  type        = string
+  default     = ""
+}
+
+variable "alert_email" {
+  description = "Email address for deployment alerts"
+  type        = string
+  default     = ""
+  sensitive   = true
+}
