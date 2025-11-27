@@ -1,7 +1,9 @@
 {
   "permissions": {
     "allow": [
-      "Bash(tree:*)"
+      "Bash(tree:*)",
+      "Bash(chmod:*)",
+      "Bash(test:*)"
     ],
     "deny": [],
     "ask": []

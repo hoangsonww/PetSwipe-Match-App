@@ -1,0 +1,688 @@
+#!/usr/bin/env groovy
+// ═══════════════════════════════════════════════════════════════════════════
+// Advanced Jenkins Pipeline with Parallel Execution and Optimization
+// Includes: Matrix builds, caching, artifact management, advanced testing
+// ═══════════════════════════════════════════════════════════════════════════
+
+@Library('shared-pipeline-library') _
+
+pipeline {
+  agent {
+    kubernetes {
+      yaml """
+apiVersion: v1
+kind: Pod
+metadata:
+  labels:
+    jenkins: agent
+spec:
+  containers:
+  - name: node
+    image: node:18
+    command:
+    - cat
+    tty: true
+  - name: terraform
+    image: hashicorp/terraform:latest
+    command:
+    - cat
+    tty: true
+  - name: security-scanner
+    image: aquasec/trivy:latest
+    command:
+    - cat
+    tty: true
+"""
+    }
+  }
+
+  options {
+    timestamps()
+    timeout(time: 3, unit: 'HOURS')
+    buildDiscarder(logRotator(
+      numToKeepStr: '50',
+      daysToKeepStr: '90',
+      artifactDaysToKeepStr: '30',
+      artifactNumToKeepStr: '20'
+    ))
+    disableConcurrentBuilds()
+    skipDefaultCheckout()
+  }
+
+  environment {
+    NODE_VERSION           = '18'
+    AWS_REGION             = credentials('aws-region')
+    AWS_ACCOUNT_ID         = credentials('aws-account-id')
+    PROJECT                = 'petswipe'
+    IMAGE_TAG              = "${GIT_COMMIT.substring(0,7)}"
+    CACHE_KEY              = "${env.BRANCH_NAME}-${env.BUILD_NUMBER}"
+    SLACK_CHANNEL          = '#deployments'
+    ENABLE_CACHE           = 'true'
+    PARALLEL_TEST_SHARDS   = '4'
+  }
+
+  stages {
+    stage('Checkout & Setup') {
+      steps {
+        script {
+          checkout scm
+
+          // Display pipeline info
+          echo """
+═══════════════════════════════════════════════════════════
+  ADVANCED CI/CD PIPELINE
+  Project: ${PROJECT}
+  Branch: ${env.BRANCH_NAME}
+  Commit: ${GIT_COMMIT}
+  Build: ${env.BUILD_NUMBER}
+═══════════════════════════════════════════════════════════
+          """
+        }
+      }
+    }
+
+    stage('Dependency Installation with Caching') {
+      parallel {
+        stage('Backend Dependencies') {
+          steps {
+            container('node') {
+              script {
+                // Check cache
+                def cacheExists = sh(
+                  script: "test -f backend/node_modules/.cache-marker && echo 'exists' || echo 'none'",
+                  returnStdout: true
+                ).trim()
+
+                if (cacheExists == 'none' || env.ENABLE_CACHE == 'false') {
+                  echo 'Installing backend dependencies...'
+                  dir('backend') {
+                    sh 'npm ci --legacy-peer-deps --prefer-offline'
+                    sh 'touch node_modules/.cache-marker'
+                  }
+                } else {
+                  echo 'Using cached backend dependencies'
+                }
+
+                // Archive for later stages
+                stash name: 'backend-deps', includes: 'backend/node_modules/**'
+              }
+            }
+          }
+        }
+
+        stage('Frontend Dependencies') {
+          steps {
+            container('node') {
+              script {
+                def cacheExists = sh(
+                  script: "test -f frontend/node_modules/.cache-marker && echo 'exists' || echo 'none'",
+                  returnStdout: true
+                ).trim()
+
+                if (cacheExists == 'none' || env.ENABLE_CACHE == 'false') {
+                  echo 'Installing frontend dependencies...'
+                  dir('frontend') {
+                    sh 'npm ci --legacy-peer-deps --prefer-offline'
+                    sh 'touch node_modules/.cache-marker'
+                  }
+                } else {
+                  echo 'Using cached frontend dependencies'
+                }
+
+                stash name: 'frontend-deps', includes: 'frontend/node_modules/**'
+              }
+            }
+          }
+        }
+      }
+    }
+
+    stage('Code Quality & Security') {
+      parallel {
+        stage('ESLint') {
+          steps {
+            container('node') {
+              unstash 'backend-deps'
+              unstash 'frontend-deps'
+
+              sh 'npx eslint "backend/**/*.{js,ts}" "frontend/**/*.{js,ts}" --format json -o eslint-report.json || true'
+
+              recordIssues(
+                enabledForFailure: true,
+                tool: esLint(pattern: 'eslint-report.json'),
+                qualityGates: [[threshold: 10, type: 'TOTAL', unstable: true]]
+              )
+            }
+          }
+        }
+
+        stage('SonarQube Analysis') {
+          when {
+            branch 'master'
+          }
+          steps {
+            container('node') {
+              withSonarQubeEnv('SonarQube') {
+                sh """
+                  npx sonar-scanner \
+                    -Dsonar.projectKey=${PROJECT} \
+                    -Dsonar.sources=backend,frontend \
+                    -Dsonar.exclusions=**/node_modules/**,**/dist/**,**/build/** \
+                    -Dsonar.javascript.lcov.reportPaths=coverage/lcov.info
+                """
+              }
+            }
+          }
+        }
+
+        stage('Dependency Vulnerabilities') {
+          steps {
+            container('node') {
+              sh 'npm audit --audit-level=moderate --json > npm-audit.json || true'
+              sh 'npx snyk test --json > snyk-report.json || true'
+
+              archiveArtifacts artifacts: 'npm-audit.json,snyk-report.json', allowEmptyArchive: true
+            }
+          }
+        }
+
+        stage('Secret Scanning') {
+          steps {
+            container('security-scanner') {
+              sh '''
+                wget -qO- https://github.com/zricethezav/gitleaks/releases/download/v8.18.0/gitleaks_8.18.0_linux_x64.tar.gz | tar xvz
+                ./gitleaks detect --source . --verbose --report-format json --report-path gitleaks-report.json || true
+              '''
+
+              archiveArtifacts artifacts: 'gitleaks-report.json', allowEmptyArchive: true
+            }
+          }
+        }
+
+        stage('License Compliance') {
+          steps {
+            container('node') {
+              sh 'npx license-checker --production --json --out licenses.json || true'
+
+              archiveArtifacts artifacts: 'licenses.json', allowEmptyArchive: true
+            }
+          }
+        }
+      }
+    }
+
+    stage('Parallel Testing') {
+      parallel {
+        stage('Backend Unit Tests') {
+          steps {
+            container('node') {
+              unstash 'backend-deps'
+
+              dir('backend') {
+                sh 'npm run test -- --coverage --reporters=default --reporters=jest-junit'
+              }
+
+              junit 'backend/junit.xml'
+              publishCoverage adapters: [coberturaAdapter('backend/coverage/cobertura-coverage.xml')]
+            }
+          }
+        }
+
+        stage('Frontend Unit Tests') {
+          steps {
+            container('node') {
+              unstash 'frontend-deps'
+
+              dir('frontend') {
+                sh 'npm test -- --coverage --reporters=default --reporters=jest-junit'
+              }
+
+              junit 'frontend/junit.xml'
+              publishCoverage adapters: [coberturaAdapter('frontend/coverage/cobertura-coverage.xml')]
+            }
+          }
+        }
+
+        stage('Integration Tests - Shard 1') {
+          steps {
+            container('node') {
+              sh 'npm run test:integration -- --shard=1/${PARALLEL_TEST_SHARDS}'
+            }
+          }
+        }
+
+        stage('Integration Tests - Shard 2') {
+          steps {
+            container('node') {
+              sh 'npm run test:integration -- --shard=2/${PARALLEL_TEST_SHARDS}'
+            }
+          }
+        }
+
+        stage('Integration Tests - Shard 3') {
+          steps {
+            container('node') {
+              sh 'npm run test:integration -- --shard=3/${PARALLEL_TEST_SHARDS}'
+            }
+          }
+        }
+
+        stage('Integration Tests - Shard 4') {
+          steps {
+            container('node') {
+              sh 'npm run test:integration -- --shard=4/${PARALLEL_TEST_SHARDS}'
+            }
+          }
+        }
+
+        stage('API Contract Tests') {
+          steps {
+            container('node') {
+              sh 'npx @pact-foundation/pact-node verify || true'
+            }
+          }
+        }
+
+        stage('Visual Regression Tests') {
+          steps {
+            container('node') {
+              unstash 'frontend-deps'
+
+              dir('frontend') {
+                sh 'npx percy exec -- npm run test:visual || true'
+              }
+            }
+          }
+        }
+      }
+    }
+
+    stage('E2E Tests - Distributed') {
+      matrix {
+        axes {
+          axis {
+            name 'BROWSER'
+            values 'chromium', 'firefox', 'webkit'
+          }
+          axis {
+            name 'VIEWPORT'
+            values 'desktop', 'tablet', 'mobile'
+          }
+        }
+
+        stages {
+          stage('Run E2E Tests') {
+            steps {
+              container('node') {
+                unstash 'frontend-deps'
+
+                script {
+                  def viewportConfig = [
+                    desktop: '1920x1080',
+                    tablet: '768x1024',
+                    mobile: '375x667'
+                  ]
+
+                  sh """
+                    npx playwright test \
+                      --browser=${BROWSER} \
+                      --viewport=${viewportConfig[VIEWPORT]} \
+                      --reporter=html,junit \
+                      --output=playwright-results/${BROWSER}-${VIEWPORT} || true
+                  """
+                }
+
+                junit 'playwright-results/**/results.xml'
+              }
+            }
+          }
+        }
+      }
+    }
+
+    stage('Build Applications') {
+      parallel {
+        stage('Backend Build') {
+          steps {
+            container('node') {
+              unstash 'backend-deps'
+
+              dir('backend') {
+                sh 'npm run build'
+                sh 'tar -czf backend-dist.tar.gz dist/'
+              }
+
+              archiveArtifacts artifacts: 'backend/backend-dist.tar.gz'
+              stash name: 'backend-build', includes: 'backend/dist/**'
+            }
+          }
+        }
+
+        stage('Frontend Build') {
+          steps {
+            container('node') {
+              unstash 'frontend-deps'
+
+              dir('frontend') {
+                sh '''
+                  REACT_APP_VERSION=${IMAGE_TAG} \
+                  REACT_APP_BUILD_NUMBER=${BUILD_NUMBER} \
+                  npm run build
+                '''
+                sh 'tar -czf frontend-dist.tar.gz build/'
+              }
+
+              archiveArtifacts artifacts: 'frontend/frontend-dist.tar.gz'
+              stash name: 'frontend-build', includes: 'frontend/build/**'
+            }
+          }
+        }
+      }
+    }
+
+    stage('Infrastructure Validation') {
+      when {
+        anyOf {
+          changeset "terraform/**"
+          branch 'master'
+        }
+      }
+
+      steps {
+        container('terraform') {
+          dir('terraform') {
+            sh 'terraform fmt -check -recursive'
+            sh 'terraform init -backend=false'
+            sh 'terraform validate'
+          }
+        }
+
+        container('security-scanner') {
+          dir('terraform') {
+            sh 'tfsec . --soft-fail --format json > tfsec-report.json || true'
+          }
+
+          archiveArtifacts artifacts: 'terraform/tfsec-report.json', allowEmptyArchive: true
+        }
+
+        sh 'chmod +x scripts/infrastructure-test.sh'
+        sh 'DRY_RUN=true ./scripts/infrastructure-test.sh || true'
+      }
+    }
+
+    stage('Performance Testing') {
+      when {
+        branch 'master'
+      }
+
+      steps {
+        container('node') {
+          script {
+            // Start backend service
+            dir('backend') {
+              sh 'npm start &'
+              sleep 10
+            }
+
+            // Run Artillery load tests
+            sh '''
+              npx artillery run \
+                --output performance-report.json \
+                tests/performance/load-test.yml
+            '''
+
+            sh '''
+              npx artillery report \
+                --output performance-report.html \
+                performance-report.json
+            '''
+
+            archiveArtifacts artifacts: 'performance-report.*'
+            publishHTML([
+              reportName: 'Performance Report',
+              reportDir: '.',
+              reportFiles: 'performance-report.html',
+              keepAll: true
+            ])
+          }
+        }
+      }
+    }
+
+    stage('Accessibility Testing') {
+      steps {
+        container('node') {
+          unstash 'frontend-build'
+
+          sh '''
+            npx @axe-core/cli frontend/build \
+              --save accessibility-report.json \
+              --stdout || true
+          '''
+
+          archiveArtifacts artifacts: 'accessibility-report.json', allowEmptyArchive: true
+        }
+      }
+    }
+
+    stage('Container Image Security Scan') {
+      steps {
+        container('security-scanner') {
+          sh '''
+            trivy image \
+              --severity HIGH,CRITICAL \
+              --format json \
+              --output trivy-backend-report.json \
+              ghcr.io/${GHCR_USER}/petswipe-app-backend:${IMAGE_TAG} || true
+          '''
+
+          sh '''
+            trivy image \
+              --severity HIGH,CRITICAL \
+              --format json \
+              --output trivy-frontend-report.json \
+              ghcr.io/${GHCR_USER}/petswipe-app-frontend:${IMAGE_TAG} || true
+          '''
+
+          archiveArtifacts artifacts: 'trivy-*-report.json', allowEmptyArchive: true
+        }
+      }
+    }
+
+    stage('Deployment Gate') {
+      when {
+        branch 'master'
+      }
+
+      steps {
+        script {
+          def qualityGate = waitForQualityGate()
+
+          if (qualityGate.status != 'OK') {
+            error "Quality gate failed: ${qualityGate.status}"
+          }
+
+          timeout(time: 10, unit: 'MINUTES') {
+            input message: 'Approve deployment to production?',
+                  ok: 'Deploy',
+                  submitter: 'admin,release-manager'
+          }
+        }
+      }
+    }
+
+    stage('Deploy') {
+      when {
+        branch 'master'
+      }
+
+      steps {
+        script {
+          def deploymentStrategy = input(
+            message: 'Select deployment strategy',
+            parameters: [
+              choice(
+                name: 'STRATEGY',
+                choices: ['blue-green', 'canary', 'rolling'],
+                description: 'Deployment method'
+              )
+            ]
+          )
+
+          parallel(
+            'Primary Region': {
+              deployToRegion('us-east-1', deploymentStrategy)
+            },
+            'DR Region': {
+              deployToRegion('us-west-2', deploymentStrategy)
+            }
+          )
+        }
+      }
+    }
+
+    stage('Post-Deployment Verification') {
+      when {
+        branch 'master'
+      }
+
+      steps {
+        script {
+          // Smoke tests
+          sh './scripts/smoke-tests.sh'
+
+          // Verify metrics
+          verifyMetrics()
+
+          // Run chaos experiments (if enabled)
+          if (env.ENABLE_CHAOS == 'true') {
+            sh 'DRY_RUN=true ./scripts/chaos-engineering.sh kill-task'
+          }
+        }
+      }
+    }
+  }
+
+  post {
+    always {
+      // Collect all reports
+      archiveArtifacts artifacts: '**/*report*.json,**/*report*.html', allowEmptyArchive: true
+
+      // Publish test results
+      junit testResults: '**/junit.xml', allowEmptyResults: true
+
+      // Clean workspace
+      cleanWs(
+        deleteDirs: true,
+        patterns: [
+          [pattern: 'node_modules', type: 'EXCLUDE'],
+          [pattern: '.cache', type: 'EXCLUDE']
+        ]
+      )
+    }
+
+    success {
+      script {
+        notifySuccess()
+      }
+    }
+
+    failure {
+      script {
+        notifyFailure()
+      }
+    }
+
+    unstable {
+      script {
+        notifyUnstable()
+      }
+    }
+  }
+}
+
+// ─── Helper Functions ────────────────────────────────────────────────────────
+
+def deployToRegion(region, strategy) {
+  echo "Deploying to ${region} using ${strategy} strategy"
+
+  withAWS(region: region, credentials: 'aws-creds') {
+    if (strategy == 'blue-green') {
+      sh "AWS_REGION=${region} ./scripts/blue-green-deploy.sh"
+    } else if (strategy == 'canary') {
+      sh "AWS_REGION=${region} ./scripts/canary-deploy.sh"
+    } else {
+      sh "AWS_REGION=${region} ./scripts/rolling-deploy.sh"
+    }
+  }
+}
+
+def verifyMetrics() {
+  def metrics = [
+    'TargetResponseTime',
+    'HTTPCode_Target_5XX_Count',
+    'UnHealthyHostCount'
+  ]
+
+  metrics.each { metric ->
+    def value = sh(
+      script: """
+        aws cloudwatch get-metric-statistics \
+          --namespace AWS/ApplicationELB \
+          --metric-name ${metric} \
+          --start-time \$(date -u -d '5 minutes ago' +%Y-%m-%dT%H:%M:%S) \
+          --end-time \$(date -u +%Y-%m-%dT%H:%M:%S) \
+          --period 300 \
+          --statistics Average \
+          --region ${AWS_REGION} \
+          --query 'Datapoints[0].Average' \
+          --output text
+      """,
+      returnStdout: true
+    ).trim()
+
+    echo "${metric}: ${value}"
+  }
+}
+
+def notifySuccess() {
+  slackSend(
+    channel: env.SLACK_CHANNEL,
+    color: 'good',
+    message: """
+✓ *SUCCESS*: Build #${env.BUILD_NUMBER}
+Project: ${PROJECT}
+Branch: ${env.BRANCH_NAME}
+Commit: ${GIT_COMMIT.substring(0,7)}
+Duration: ${currentBuild.durationString}
+    """
+  )
+}
+
+def notifyFailure() {
+  slackSend(
+    channel: env.SLACK_CHANNEL,
+    color: 'danger',
+    message: """
+✗ *FAILED*: Build #${env.BUILD_NUMBER}
+Project: ${PROJECT}
+Branch: ${env.BRANCH_NAME}
+Commit: ${GIT_COMMIT.substring(0,7)}
+Duration: ${currentBuild.durationString}
+    """
+  )
+}
+
+def notifyUnstable() {
+  slackSend(
+    channel: env.SLACK_CHANNEL,
+    color: 'warning',
+    message: """
+⚠ *UNSTABLE*: Build #${env.BUILD_NUMBER}
+Project: ${PROJECT}
+Branch: ${env.BRANCH_NAME}
+Commit: ${GIT_COMMIT.substring(0,7)}
+Duration: ${currentBuild.durationString}
+    """
+  )
+}

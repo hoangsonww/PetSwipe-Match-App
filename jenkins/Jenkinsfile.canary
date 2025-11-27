@@ -1,0 +1,404 @@
+#!/usr/bin/env groovy
+// ═══════════════════════════════════════════════════════════════════════════
+// Jenkins Pipeline for Canary Deployment
+// Gradual traffic shifting with automated rollback
+// ═══════════════════════════════════════════════════════════════════════════
+
+pipeline {
+  agent any
+
+  environment {
+    AWS_REGION           = credentials('aws-region')
+    AWS_ACCOUNT_ID       = credentials('aws-account-id')
+    PROJECT              = 'petswipe'
+    ENVIRONMENT          = 'production'
+    IMAGE_TAG            = "${GIT_COMMIT.substring(0,7)}"
+    ECR_BACKEND_REPO     = "${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/petswipe-backend"
+    CANARY_STAGES        = '5,10,25,50,100'
+    STAGE_DURATION       = '300'  // 5 minutes per stage
+    ERROR_THRESHOLD      = '5.0'
+    LATENCY_THRESHOLD    = '1000'
+    AUTO_PROMOTE         = 'false'
+  }
+
+  options {
+    timestamps()
+    timeout(time: 4, unit: 'HOURS')  // Longer timeout for gradual rollout
+    buildDiscarder(logRotator(numToKeepStr: '30', daysToKeepStr: '90'))
+    disableConcurrentBuilds()
+  }
+
+  stages {
+    stage('Preflight Checks') {
+      steps {
+        script {
+          echo "═══════════════════════════════════════════════════════════"
+          echo "  CANARY DEPLOYMENT PIPELINE"
+          echo "  Project: ${PROJECT}"
+          echo "  Environment: ${ENVIRONMENT}"
+          echo "  Image Tag: ${IMAGE_TAG}"
+          echo "  Canary Stages: ${CANARY_STAGES}"
+          echo "═══════════════════════════════════════════════════════════"
+
+          sh 'aws --version'
+          sh 'docker --version'
+          sh 'node -v'
+          sh 'aws sts get-caller-identity'
+        }
+      }
+    }
+
+    stage('Lint & Test') {
+      parallel {
+        stage('Backend Tests') {
+          steps {
+            dir('backend') {
+              sh 'npm ci --legacy-peer-deps'
+              sh 'npm run lint'
+              sh 'npm test'
+            }
+          }
+        }
+
+        stage('Frontend Tests') {
+          steps {
+            dir('frontend') {
+              sh 'npm ci --legacy-peer-deps'
+              sh 'npm run lint'
+              sh 'npm test'
+            }
+          }
+        }
+      }
+    }
+
+    stage('Security & Compliance') {
+      parallel {
+        stage('Dependency Audit') {
+          steps {
+            sh 'npm audit --audit-level=high || true'
+          }
+        }
+
+        stage('SAST Scanning') {
+          steps {
+            sh 'npx semgrep --config=auto --timeout 60 backend/ frontend/ || true'
+          }
+        }
+
+        stage('License Check') {
+          steps {
+            sh 'npx license-checker --production || true'
+          }
+        }
+      }
+    }
+
+    stage('Build Backend Image') {
+      steps {
+        script {
+          echo "Building backend image: ${ECR_BACKEND_REPO}:${IMAGE_TAG}"
+          sh """
+            docker build \
+              -t ${ECR_BACKEND_REPO}:${IMAGE_TAG} \
+              -t ${ECR_BACKEND_REPO}:canary \
+              --build-arg BUILD_DATE=\$(date -u +'%Y-%m-%dT%H:%M:%SZ') \
+              --build-arg VCS_REF=${GIT_COMMIT} \
+              --build-arg VERSION=${IMAGE_TAG} \
+              -f backend/Dockerfile \
+              backend/
+          """
+        }
+      }
+    }
+
+    stage('Container Security Scan') {
+      steps {
+        script {
+          echo "Scanning image for vulnerabilities..."
+          sh """
+            trivy image \
+              --severity HIGH,CRITICAL \
+              --exit-code 1 \
+              --no-progress \
+              ${ECR_BACKEND_REPO}:${IMAGE_TAG}
+          """
+        }
+      }
+    }
+
+    stage('Push to ECR') {
+      steps {
+        withCredentials([aws(accessKeyVariable: 'AWS_ACCESS_KEY_ID', secretKeyVariable: 'AWS_SECRET_ACCESS_KEY', credentialsId: 'aws-creds')]) {
+          script {
+            sh """
+              aws ecr get-login-password --region ${AWS_REGION} | \
+                docker login --username AWS --password-stdin ${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com
+
+              docker push ${ECR_BACKEND_REPO}:${IMAGE_TAG}
+              docker push ${ECR_BACKEND_REPO}:canary
+            """
+          }
+        }
+      }
+    }
+
+    stage('Deploy Canary - 5%') {
+      steps {
+        withCredentials([aws(accessKeyVariable: 'AWS_ACCESS_KEY_ID', secretKeyVariable: 'AWS_SECRET_ACCESS_KEY', credentialsId: 'aws-creds')]) {
+          script {
+            echo "Deploying canary with 5% traffic..."
+            sh """
+              export AWS_REGION=${AWS_REGION}
+              export PROJECT=${PROJECT}
+              export ENVIRONMENT=${ENVIRONMENT}
+              export IMAGE_TAG=${IMAGE_TAG}
+              export CANARY_STAGES=5
+              export STAGE_DURATION=${STAGE_DURATION}
+              export ERROR_THRESHOLD=${ERROR_THRESHOLD}
+              export LATENCY_THRESHOLD=${LATENCY_THRESHOLD}
+              export AUTO_PROMOTE=true
+
+              chmod +x scripts/canary-deploy.sh
+              timeout 600 scripts/canary-deploy.sh || exit 1
+            """
+          }
+        }
+      }
+    }
+
+    stage('Monitor Canary 5%') {
+      steps {
+        script {
+          echo "Monitoring 5% canary for ${STAGE_DURATION} seconds..."
+          sleep(time: STAGE_DURATION.toInteger(), unit: 'SECONDS')
+
+          // Check metrics
+          sh """
+            aws cloudwatch get-metric-statistics \
+              --namespace AWS/ApplicationELB \
+              --metric-name HTTPCode_Target_5XX_Count \
+              --dimensions Name=TargetGroup,Value=\$(aws elbv2 describe-target-groups \
+                --names ${PROJECT}-${ENVIRONMENT}-canary-tg \
+                --query 'TargetGroups[0].TargetGroupArn' \
+                --output text --region ${AWS_REGION} | sed 's/.*targetgroup\\///') \
+              --start-time \$(date -u -d '5 minutes ago' +%Y-%m-%dT%H:%M:%S) \
+              --end-time \$(date -u +%Y-%m-%dT%H:%M:%S) \
+              --period 60 \
+              --statistics Sum \
+              --region ${AWS_REGION}
+          """
+        }
+      }
+    }
+
+    stage('Approval - 10%') {
+      when {
+        expression { AUTO_PROMOTE == 'false' }
+      }
+      steps {
+        input(
+          message: 'Promote to 10% traffic?',
+          ok: 'Proceed',
+          submitter: 'admin,devops'
+        )
+      }
+    }
+
+    stage('Deploy Canary - 10%') {
+      steps {
+        withCredentials([aws(accessKeyVariable: 'AWS_ACCESS_KEY_ID', secretKeyVariable: 'AWS_SECRET_ACCESS_KEY', credentialsId: 'aws-creds')]) {
+          script {
+            sh """
+              export CANARY_STAGES=10
+              timeout 600 scripts/canary-deploy.sh || exit 1
+            """
+          }
+        }
+      }
+    }
+
+    stage('Monitor Canary 10%') {
+      steps {
+        script {
+          echo "Monitoring 10% canary..."
+          sleep(time: STAGE_DURATION.toInteger(), unit: 'SECONDS')
+        }
+      }
+    }
+
+    stage('Approval - 25%') {
+      when {
+        expression { AUTO_PROMOTE == 'false' }
+      }
+      steps {
+        input(
+          message: 'Promote to 25% traffic?',
+          ok: 'Proceed',
+          submitter: 'admin,devops'
+        )
+      }
+    }
+
+    stage('Deploy Canary - 25%') {
+      steps {
+        withCredentials([aws(accessKeyVariable: 'AWS_ACCESS_KEY_ID', secretKeyVariable: 'AWS_SECRET_ACCESS_KEY', credentialsId: 'aws-creds')]) {
+          script {
+            sh """
+              export CANARY_STAGES=25
+              timeout 600 scripts/canary-deploy.sh || exit 1
+            """
+          }
+        }
+      }
+    }
+
+    stage('Monitor Canary 25%') {
+      steps {
+        script {
+          echo "Monitoring 25% canary..."
+          sleep(time: STAGE_DURATION.toInteger(), unit: 'SECONDS')
+        }
+      }
+    }
+
+    stage('Approval - 50%') {
+      when {
+        expression { AUTO_PROMOTE == 'false' }
+      }
+      steps {
+        input(
+          message: 'Promote to 50% traffic?',
+          ok: 'Proceed',
+          submitter: 'admin,devops'
+        )
+      }
+    }
+
+    stage('Deploy Canary - 50%') {
+      steps {
+        withCredentials([aws(accessKeyVariable: 'AWS_ACCESS_KEY_ID', secretKeyVariable: 'AWS_SECRET_ACCESS_KEY', credentialsId: 'aws-creds')]) {
+          script {
+            sh """
+              export CANARY_STAGES=50
+              timeout 600 scripts/canary-deploy.sh || exit 1
+            """
+          }
+        }
+      }
+    }
+
+    stage('Monitor Canary 50%') {
+      steps {
+        script {
+          echo "Monitoring 50% canary..."
+          sleep(time: STAGE_DURATION.toInteger(), unit: 'SECONDS')
+        }
+      }
+    }
+
+    stage('Final Approval - 100%') {
+      steps {
+        input(
+          message: 'Fully promote canary to 100%?',
+          ok: 'Proceed',
+          submitter: 'admin,devops,release-manager'
+        )
+      }
+    }
+
+    stage('Deploy Canary - 100%') {
+      steps {
+        withCredentials([aws(accessKeyVariable: 'AWS_ACCESS_KEY_ID', secretKeyVariable: 'AWS_SECRET_ACCESS_KEY', credentialsId: 'aws-creds')]) {
+          script {
+            sh """
+              export CANARY_STAGES=100
+              export AUTO_PROMOTE=true
+              timeout 600 scripts/canary-deploy.sh || exit 1
+            """
+          }
+        }
+      }
+    }
+
+    stage('Post-Deployment Verification') {
+      steps {
+        script {
+          echo "Running post-deployment verification..."
+
+          // Smoke tests
+          sh """
+            LB_DNS=\$(aws elbv2 describe-load-balancers \
+              --query "LoadBalancers[?contains(LoadBalancerName, '${PROJECT}')].DNSName | [0]" \
+              --output text --region ${AWS_REGION})
+
+            # Health check
+            curl -f "https://\${LB_DNS}/health" || exit 1
+
+            # API check
+            curl -f "https://\${LB_DNS}/api/pets?limit=1" || exit 1
+          """
+
+          // Load test
+          sh """
+            npx artillery quick \
+              --count 100 \
+              --num 1000 \
+              "https://\${LB_DNS}/api/pets" || true
+          """
+        }
+      }
+    }
+
+    stage('Cleanup') {
+      steps {
+        script {
+          echo "Deployment complete, cleaning up..."
+          // Cleanup handled by canary-deploy.sh
+        }
+      }
+    }
+  }
+
+  post {
+    success {
+      script {
+        echo "═══════════════════════════════════════════════════════════"
+        echo "  ✓ CANARY DEPLOYMENT SUCCESSFUL"
+        echo "  Image Tag: ${IMAGE_TAG}"
+        echo "  Fully deployed to ${ENVIRONMENT}"
+        echo "═══════════════════════════════════════════════════════════"
+
+        sh """
+          aws sns publish \
+            --topic-arn arn:aws:sns:${AWS_REGION}:${AWS_ACCOUNT_ID}:${PROJECT}-${ENVIRONMENT}-deployment-alerts \
+            --subject "✓ Canary Deployment Successful - ${IMAGE_TAG}" \
+            --message "Canary deployment of ${IMAGE_TAG} completed successfully with gradual traffic shift: 5% → 10% → 25% → 50% → 100%" \
+            --region ${AWS_REGION} || true
+        """
+      }
+    }
+
+    failure {
+      script {
+        echo "═══════════════════════════════════════════════════════════"
+        echo "  ✗ CANARY DEPLOYMENT FAILED"
+        echo "  Image Tag: ${IMAGE_TAG}"
+        echo "  Automatic rollback initiated"
+        echo "═══════════════════════════════════════════════════════════"
+
+        sh """
+          aws sns publish \
+            --topic-arn arn:aws:sns:${AWS_REGION}:${AWS_ACCOUNT_ID}:${PROJECT}-${ENVIRONMENT}-deployment-alerts \
+            --subject "✗ Canary Deployment Failed - ${IMAGE_TAG}" \
+            --message "Canary deployment of ${IMAGE_TAG} failed and was automatically rolled back. Manual investigation required." \
+            --region ${AWS_REGION} || true
+        """
+      }
+    }
+
+    always {
+      cleanWs()
+    }
+  }
+}

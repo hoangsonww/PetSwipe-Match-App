@@ -1,0 +1,354 @@
+#!/usr/bin/env groovy
+// ═══════════════════════════════════════════════════════════════════════════
+// Jenkins Pipeline for Blue-Green Deployment
+// Zero-downtime deployments with instant rollback capability
+// ═══════════════════════════════════════════════════════════════════════════
+
+pipeline {
+  agent any
+
+  environment {
+    AWS_REGION            = credentials('aws-region')
+    AWS_ACCOUNT_ID        = credentials('aws-account-id')
+    PROJECT               = 'petswipe'
+    ENVIRONMENT           = 'production'
+    IMAGE_TAG             = "${GIT_COMMIT.substring(0,7)}"
+    ECR_BACKEND_REPO      = "${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/petswipe-backend"
+    HEALTH_CHECK_TIMEOUT  = '300'
+    SMOKE_TEST_DURATION   = '60'
+    AUTO_PROMOTE          = 'false'  // Require manual approval
+  }
+
+  options {
+    timestamps()
+    timeout(time: 2, unit: 'HOURS')
+    buildDiscarder(logRotator(numToKeepStr: '30', daysToKeepStr: '90'))
+    disableConcurrentBuilds()
+  }
+
+  stages {
+    stage('Preflight Checks') {
+      steps {
+        script {
+          echo "═══════════════════════════════════════════════════════════"
+          echo "  BLUE-GREEN DEPLOYMENT PIPELINE"
+          echo "  Project: ${PROJECT}"
+          echo "  Environment: ${ENVIRONMENT}"
+          echo "  Image Tag: ${IMAGE_TAG}"
+          echo "═══════════════════════════════════════════════════════════"
+
+          sh 'aws --version'
+          sh 'docker --version'
+          sh 'node -v'
+          sh 'aws sts get-caller-identity'
+        }
+      }
+    }
+
+    stage('Lint & Test') {
+      parallel {
+        stage('Backend Lint') {
+          steps {
+            dir('backend') {
+              sh 'npm ci --legacy-peer-deps'
+              sh 'npm run lint'
+            }
+          }
+        }
+
+        stage('Backend Tests') {
+          steps {
+            dir('backend') {
+              sh 'npm ci --legacy-peer-deps'
+              sh 'npm test'
+            }
+          }
+        }
+
+        stage('Frontend Lint') {
+          steps {
+            dir('frontend') {
+              sh 'npm ci --legacy-peer-deps'
+              sh 'npm run lint'
+            }
+          }
+        }
+
+        stage('Frontend Tests') {
+          steps {
+            dir('frontend') {
+              sh 'npm ci --legacy-peer-deps'
+              sh 'npm test'
+            }
+          }
+        }
+      }
+    }
+
+    stage('Security Scan') {
+      parallel {
+        stage('Dependency Audit') {
+          steps {
+            sh 'npm audit --audit-level=high || true'
+          }
+        }
+
+        stage('Code Scanning') {
+          steps {
+            sh 'npx semgrep --config=auto --timeout 60 backend/ frontend/ || true'
+          }
+        }
+
+        stage('Secret Detection') {
+          steps {
+            sh 'docker run --rm -v $(pwd):/scan trufflesecurity/trufflehog:latest filesystem /scan --json || true'
+          }
+        }
+      }
+    }
+
+    stage('Build Docker Images') {
+      parallel {
+        stage('Build Backend') {
+          steps {
+            script {
+              echo "Building backend image: ${ECR_BACKEND_REPO}:${IMAGE_TAG}"
+              sh """
+                docker build \
+                  -t ${ECR_BACKEND_REPO}:${IMAGE_TAG} \
+                  -t ${ECR_BACKEND_REPO}:latest \
+                  --build-arg BUILD_DATE=\$(date -u +'%Y-%m-%dT%H:%M:%SZ') \
+                  --build-arg VCS_REF=${GIT_COMMIT} \
+                  --build-arg VERSION=${IMAGE_TAG} \
+                  -f backend/Dockerfile \
+                  backend/
+              """
+            }
+          }
+        }
+
+        stage('Build Frontend') {
+          steps {
+            dir('frontend') {
+              sh 'npm ci --legacy-peer-deps'
+              sh 'npm run build'
+            }
+          }
+        }
+      }
+    }
+
+    stage('Image Security Scan') {
+      steps {
+        script {
+          echo "Scanning Docker image for vulnerabilities..."
+          sh """
+            trivy image \
+              --severity HIGH,CRITICAL \
+              --exit-code 0 \
+              --no-progress \
+              ${ECR_BACKEND_REPO}:${IMAGE_TAG} || true
+          """
+        }
+      }
+    }
+
+    stage('Push to ECR') {
+      steps {
+        withCredentials([aws(accessKeyVariable: 'AWS_ACCESS_KEY_ID', secretKeyVariable: 'AWS_SECRET_ACCESS_KEY', credentialsId: 'aws-creds')]) {
+          script {
+            sh """
+              aws ecr get-login-password --region ${AWS_REGION} | \
+                docker login --username AWS --password-stdin ${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com
+
+              docker push ${ECR_BACKEND_REPO}:${IMAGE_TAG}
+              docker push ${ECR_BACKEND_REPO}:latest
+            """
+          }
+        }
+      }
+    }
+
+    stage('Deploy to Inactive Environment') {
+      steps {
+        withCredentials([aws(accessKeyVariable: 'AWS_ACCESS_KEY_ID', secretKeyVariable: 'AWS_SECRET_ACCESS_KEY', credentialsId: 'aws-creds')]) {
+          script {
+            echo "Deploying to inactive environment (Blue-Green)..."
+            sh """
+              export AWS_REGION=${AWS_REGION}
+              export PROJECT=${PROJECT}
+              export ENVIRONMENT=${ENVIRONMENT}
+              export IMAGE_TAG=${IMAGE_TAG}
+              export HEALTH_CHECK_TIMEOUT=${HEALTH_CHECK_TIMEOUT}
+              export SMOKE_TEST_DURATION=${SMOKE_TEST_DURATION}
+              export AUTO_PROMOTE=false
+
+              chmod +x scripts/blue-green-deploy.sh
+              ./scripts/blue-green-deploy.sh
+            """
+          }
+        }
+      }
+    }
+
+    stage('Integration Tests') {
+      steps {
+        script {
+          echo "Running integration tests against inactive environment..."
+          sh """
+            # Get the inactive environment endpoint
+            INACTIVE_ENV=\$(scripts/get-inactive-env.sh)
+            LB_DNS=\$(aws elbv2 describe-load-balancers \
+              --query "LoadBalancers[?contains(LoadBalancerName, '${PROJECT}')].DNSName | [0]" \
+              --output text --region ${AWS_REGION})
+
+            # Run tests with test traffic header
+            export TEST_ENDPOINT="https://\${LB_DNS}"
+            export TEST_HEADER="X-Test-Environment: \${INACTIVE_ENV}"
+
+            npm run test:integration || true
+          """
+        }
+      }
+    }
+
+    stage('Load Testing') {
+      steps {
+        script {
+          echo "Running load tests against inactive environment..."
+          sh """
+            LB_DNS=\$(aws elbv2 describe-load-balancers \
+              --query "LoadBalancers[?contains(LoadBalancerName, '${PROJECT}')].DNSName | [0]" \
+              --output text --region ${AWS_REGION})
+
+            npx artillery quick \
+              --count 50 \
+              --num 100 \
+              --header "X-Test-Environment: green" \
+              "https://\${LB_DNS}/health" || true
+          """
+        }
+      }
+    }
+
+    stage('Manual Approval') {
+      steps {
+        script {
+          def userInput = input(
+            id: 'PromoteToProduction',
+            message: 'Promote to production?',
+            parameters: [
+              choice(
+                name: 'PROMOTE',
+                choices: ['Proceed', 'Rollback', 'Abort'],
+                description: 'Choose deployment action'
+              )
+            ]
+          )
+
+          if (userInput == 'Rollback') {
+            error("User requested rollback")
+          } else if (userInput == 'Abort') {
+            error("Deployment aborted by user")
+          }
+        }
+      }
+    }
+
+    stage('Traffic Switch') {
+      steps {
+        withCredentials([aws(accessKeyVariable: 'AWS_ACCESS_KEY_ID', secretKeyVariable: 'AWS_SECRET_ACCESS_KEY', credentialsId: 'aws-creds')]) {
+          script {
+            echo "Switching production traffic..."
+            sh """
+              export AWS_REGION=${AWS_REGION}
+              export PROJECT=${PROJECT}
+              export ENVIRONMENT=${ENVIRONMENT}
+              export AUTO_PROMOTE=true
+
+              scripts/blue-green-deploy.sh
+            """
+          }
+        }
+      }
+    }
+
+    stage('Post-Deployment Monitoring') {
+      steps {
+        script {
+          echo "Monitoring new production environment..."
+          sleep(time: 120, unit: 'SECONDS')
+
+          // Check CloudWatch metrics
+          sh """
+            aws cloudwatch get-metric-statistics \
+              --namespace AWS/ApplicationELB \
+              --metric-name TargetResponseTime \
+              --dimensions Name=LoadBalancer,Value=\$(aws elbv2 describe-load-balancers \
+                --query "LoadBalancers[?contains(LoadBalancerName, '${PROJECT}')].LoadBalancerArn | [0]" \
+                --output text --region ${AWS_REGION} | sed 's/.*loadbalancer\\///') \
+              --start-time \$(date -u -d '5 minutes ago' +%Y-%m-%dT%H:%M:%S) \
+              --end-time \$(date -u +%Y-%m-%dT%H:%M:%S) \
+              --period 60 \
+              --statistics Average \
+              --region ${AWS_REGION}
+          """
+        }
+      }
+    }
+
+    stage('Cleanup Old Environment') {
+      steps {
+        script {
+          echo "Scaling down old environment..."
+          // Old environment already scaled down by blue-green-deploy.sh
+          echo "Cleanup complete"
+        }
+      }
+    }
+  }
+
+  post {
+    success {
+      script {
+        echo "═══════════════════════════════════════════════════════════"
+        echo "  ✓ BLUE-GREEN DEPLOYMENT SUCCESSFUL"
+        echo "  Image Tag: ${IMAGE_TAG}"
+        echo "  Environment: ${ENVIRONMENT}"
+        echo "═══════════════════════════════════════════════════════════"
+
+        // Send success notification
+        sh """
+          aws sns publish \
+            --topic-arn arn:aws:sns:${AWS_REGION}:${AWS_ACCOUNT_ID}:${PROJECT}-${ENVIRONMENT}-deployment-alerts \
+            --subject "✓ Blue-Green Deployment Successful" \
+            --message "Deployment of ${IMAGE_TAG} to ${ENVIRONMENT} completed successfully." \
+            --region ${AWS_REGION} || true
+        """
+      }
+    }
+
+    failure {
+      script {
+        echo "═══════════════════════════════════════════════════════════"
+        echo "  ✗ BLUE-GREEN DEPLOYMENT FAILED"
+        echo "  Image Tag: ${IMAGE_TAG}"
+        echo "  Environment: ${ENVIRONMENT}"
+        echo "═══════════════════════════════════════════════════════════"
+
+        // Send failure notification
+        sh """
+          aws sns publish \
+            --topic-arn arn:aws:sns:${AWS_REGION}:${AWS_ACCOUNT_ID}:${PROJECT}-${ENVIRONMENT}-deployment-alerts \
+            --subject "✗ Blue-Green Deployment Failed" \
+            --message "Deployment of ${IMAGE_TAG} to ${ENVIRONMENT} failed. Manual intervention required." \
+            --region ${AWS_REGION} || true
+        """
+      }
+    }
+
+    always {
+      cleanWs()
+    }
+  }
+}

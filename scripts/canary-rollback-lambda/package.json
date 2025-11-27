@@ -1,0 +1,17 @@
+{
+  "name": "canary-rollback-lambda",
+  "version": "1.0.0",
+  "description": "Automated canary deployment rollback Lambda function",
+  "main": "index.js",
+  "scripts": {
+    "package": "zip -r ../canary-rollback.zip index.js package.json node_modules/"
+  },
+  "dependencies": {
+    "aws-sdk": "^2.1000.0"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "author": "PetSwipe DevOps Team",
+  "license": "MIT"
+}
