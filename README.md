@@ -707,6 +707,12 @@ PetSwipe features **enterprise-grade deployment strategies** for zero-downtime r
 - Real-time health monitoring during rollout
 - Progressive validation with production traffic
 
+#### ⚖️ Predicted Scaling & Auto-Scaling
+
+- Scale based on CPU, memory, and request metrics
+- Scheduled scaling for predictable traffic patterns
+- Load testing prior to deployment for capacity planning
+
 📖 **[Full Deployment Guide](docs/DEPLOYMENT.md)** | 🚀 **[Quick Reference](docs/DEPLOYMENT_QUICK_REFERENCE.md)**
 
 ### Infrastructure Stack
