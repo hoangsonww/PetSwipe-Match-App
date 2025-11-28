@@ -1,0 +1,15 @@
+{
+  "name": "gitops-sync-lambda",
+  "version": "1.0.0",
+  "description": "Lambda function to trigger ArgoCD sync on deployment events",
+  "main": "index.js",
+  "scripts": {
+    "build": "zip -r ../gitops-sync.zip .",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "dependencies": {
+    "aws-sdk": "^2.1498.0"
+  },
+  "author": "",
+  "license": "MIT"
+}
