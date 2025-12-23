@@ -797,8 +797,8 @@ const Landing: NextPage = () => {
               Shelter operations that run smoother
             </h2>
             <p className="mt-4 text-gray-600">
-              A dedicated partner console helps shelters publish listings, manage
-              inquiries, and close adoptions with less overhead.
+              A dedicated partner console helps shelters publish listings,
+              manage inquiries, and close adoptions with less overhead.
             </p>
             <div className="mt-6 grid gap-3 text-sm text-gray-600">
               {[

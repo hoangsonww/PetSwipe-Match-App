@@ -193,9 +193,7 @@
   ],
   "schemaVersion": 27,
   "style": "dark",
-  "tags": [
-    "pawswipe"
-  ],
+  "tags": ["pawswipe"],
   "templating": {
     "list": []
   },

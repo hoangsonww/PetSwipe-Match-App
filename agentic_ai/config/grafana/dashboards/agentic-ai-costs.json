@@ -23,15 +23,17 @@
       "gridPos": { "h": 6, "w": 6, "x": 0, "y": 0 },
       "id": 1,
       "options": {
-        "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
+        "reduceOptions": {
+          "calcs": ["lastNotNull"],
+          "fields": "",
+          "values": false
+        },
         "orientation": "auto",
         "showThresholdLabels": false,
         "showThresholdMarkers": true
       },
       "pluginVersion": "9.5.2",
-      "targets": [
-        { "expr": "sum(agentic_ai_cost_usd_total)", "refId": "A" }
-      ],
+      "targets": [{ "expr": "sum(agentic_ai_cost_usd_total)", "refId": "A" }],
       "title": "Total AI Cost (USD)",
       "type": "stat"
     },
@@ -40,10 +42,17 @@
       "gridPos": { "h": 6, "w": 6, "x": 6, "y": 0 },
       "id": 2,
       "options": {
-        "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false }
+        "reduceOptions": {
+          "calcs": ["lastNotNull"],
+          "fields": "",
+          "values": false
+        }
       },
       "targets": [
-        { "expr": "sum(agentic_ai_tokens_total{token_type=\"total\"})", "refId": "A" }
+        {
+          "expr": "sum(agentic_ai_tokens_total{token_type=\"total\"})",
+          "refId": "A"
+        }
       ],
       "title": "Total Tokens",
       "type": "stat"
