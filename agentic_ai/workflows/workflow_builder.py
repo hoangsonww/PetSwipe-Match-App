@@ -118,6 +118,50 @@ class WorkflowBuilder:
         return pipeline
 
     @staticmethod
+    def build_profile_workflow(config: Dict[str, Any]) -> AssemblyLinePipeline:
+        """
+        Build a workflow for user profiling.
+
+        Pipeline flow:
+        1. User Profiler - Analyze user preferences
+        2. Monitoring Agent - Track performance
+        """
+        pipeline = AssemblyLinePipeline(
+            name="ProfileWorkflow",
+            config=config
+        )
+
+        pipeline.add_agent(UserProfilerAgent(config))
+        pipeline.add_agent(MonitoringAgent(config))
+        pipeline.build()
+
+        return pipeline
+
+    @staticmethod
+    def build_match_workflow(config: Dict[str, Any]) -> AssemblyLinePipeline:
+        """
+        Build a workflow for user-pet matching.
+
+        Pipeline flow:
+        1. User Profiler - Analyze user preferences
+        2. Pet Analyzer - Analyze available pets
+        3. Matching Agent - Match users with pets
+        4. Monitoring Agent - Track performance
+        """
+        pipeline = AssemblyLinePipeline(
+            name="MatchWorkflow",
+            config=config
+        )
+
+        pipeline.add_agent(UserProfilerAgent(config))
+        pipeline.add_agent(PetAnalyzerAgent(config))
+        pipeline.add_agent(MatchingAgent(config))
+        pipeline.add_agent(MonitoringAgent(config))
+        pipeline.build()
+
+        return pipeline
+
+    @staticmethod
     def build_custom_workflow(
         name: str,
         agents: List[str],

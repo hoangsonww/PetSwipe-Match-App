@@ -8,10 +8,10 @@ using AI-powered analysis and natural language processing.
 
 from typing import Dict, Any
 from .base_agent import BaseAgent, AgentState
-from langchain.chat_models import ChatOpenAI
 from langchain.prompts import ChatPromptTemplate
-from langchain.schema import HumanMessage, SystemMessage
+from langchain.schema import SystemMessage
 import json
+from ..utils.llm import build_chat_llm
 
 
 class PetAnalyzerAgent(BaseAgent):
@@ -33,17 +33,20 @@ class PetAnalyzerAgent(BaseAgent):
         )
 
         # Initialize LangChain LLM
-        self.llm = ChatOpenAI(
-            model=config.get("model", "gpt-4o-mini"),
-            temperature=config.get("temperature", 0.7),
-            api_key=config.get("openai_api_key")
-        )
+        self.llm = build_chat_llm(config, "pet_analyzer", default_temperature=0.7)
 
         # Define analysis prompt template
         self.analysis_prompt = ChatPromptTemplate.from_messages([
             SystemMessage(content="""You are an expert pet analyst. Analyze pet profiles
             and extract key features including personality traits, care requirements,
-            compatibility factors, and behavioral characteristics. Return structured JSON."""),
+            compatibility factors, and behavioral characteristics. Return structured JSON.
+
+            Required JSON keys:
+            - personality_traits (list of strings)
+            - care_requirements (list of strings)
+            - compatibility_factors (list of strings)
+            - summary (string)
+            """),
             ("human", "Analyze this pet profile:\n{pet_data}")
         ])
 

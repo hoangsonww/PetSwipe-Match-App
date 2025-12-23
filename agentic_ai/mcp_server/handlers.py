@@ -18,17 +18,22 @@ class RequestHandler:
     Handles MCP requests and routes them to appropriate workflows.
     """
 
-    def __init__(self, config: Dict[str, Any]):
+    def __init__(self, config: Dict[str, Any], engine: Any = None):
         self.config = config
         self.logger = logging.getLogger("mcp_handler")
         self.protocol = MCPProtocol()
+        self.engine = engine
 
         # Initialize workflows
-        self.workflows = {
-            "recommendation": WorkflowBuilder.build_recommendation_workflow(config),
-            "conversation": WorkflowBuilder.build_conversation_workflow(config),
-            "analysis": WorkflowBuilder.build_analysis_workflow(config)
-        }
+        self.workflows = {}
+        if not self.engine:
+            self.workflows = {
+                "recommendation": WorkflowBuilder.build_recommendation_workflow(config),
+                "conversation": WorkflowBuilder.build_conversation_workflow(config),
+                "analysis": WorkflowBuilder.build_analysis_workflow(config),
+                "profile": WorkflowBuilder.build_profile_workflow(config),
+                "match": WorkflowBuilder.build_match_workflow(config),
+            }
 
     async def handle_request(self, request: Dict[str, Any]) -> Dict[str, Any]:
         """
@@ -55,6 +60,10 @@ class RequestHandler:
                 return await self._handle_chat(request)
             elif request_type == "analyze_pet":
                 return await self._handle_pet_analysis(request)
+            elif request_type == "profile_user":
+                return await self._handle_user_profile(request)
+            elif request_type == "match_pets":
+                return await self._handle_match(request)
             elif request_type == "health":
                 return await self._handle_health_check(request)
             elif request_type == "metrics":
@@ -89,8 +98,11 @@ class RequestHandler:
                 f"Workflow not found: {workflow_name}"
             )
 
-        workflow = self.workflows[workflow_name]
-        result = await workflow.execute(input_data)
+        if self.engine:
+            result = await self.engine._execute(workflow_name, input_data)
+        else:
+            workflow = self.workflows[workflow_name]
+            result = await workflow.execute(input_data)
 
         return self.protocol.create_success_response(
             request.get("id"),
@@ -106,15 +118,16 @@ class RequestHandler:
         swipe_history = request.get("data", {}).get("swipe_history", [])
         pet_candidates = request.get("data", {}).get("pet_candidates", [])
 
-        workflow = self.workflows["recommendation"]
-
         input_data = {
             "user": user_data,
             "swipe_history": swipe_history,
             "pet_candidates": pet_candidates
         }
-
-        result = await workflow.execute(input_data)
+        if self.engine:
+            result = await self.engine._execute("recommendation", input_data)
+        else:
+            workflow = self.workflows["recommendation"]
+            result = await workflow.execute(input_data)
 
         return self.protocol.create_success_response(
             request.get("id"),
@@ -129,14 +142,15 @@ class RequestHandler:
         message = request.get("data", {}).get("message", "")
         context = request.get("data", {}).get("context", {})
 
-        workflow = self.workflows["conversation"]
-
         input_data = {
             "message": message,
             "context": context
         }
-
-        result = await workflow.execute(input_data)
+        if self.engine:
+            result = await self.engine._execute("conversation", input_data)
+        else:
+            workflow = self.workflows["conversation"]
+            result = await workflow.execute(input_data)
 
         return self.protocol.create_success_response(
             request.get("id"),
@@ -153,16 +167,68 @@ class RequestHandler:
         """Handle pet analysis request."""
         pet_data = request.get("data", {}).get("pet", {})
 
-        workflow = self.workflows["analysis"]
-
         input_data = {"pet": pet_data}
-
-        result = await workflow.execute(input_data)
+        if self.engine:
+            result = await self.engine._execute("analysis", input_data)
+        else:
+            workflow = self.workflows["analysis"]
+            result = await workflow.execute(input_data)
 
         return self.protocol.create_success_response(
             request.get("id"),
             {
                 "analysis": result.get("data", {}).get("pet_analysis", {}),
+                "metadata": result.get("metadata", {})
+            }
+        )
+
+    async def _handle_user_profile(
+        self,
+        request: Dict[str, Any]
+    ) -> Dict[str, Any]:
+        """Handle user profiling request."""
+        user_data = request.get("data", {}).get("user", {})
+        swipe_history = request.get("data", {}).get("swipe_history", [])
+
+        input_data = {"user": user_data, "swipe_history": swipe_history}
+        if self.engine:
+            result = await self.engine._execute("profile", input_data)
+        else:
+            workflow = self.workflows["profile"]
+            result = await workflow.execute(input_data)
+
+        return self.protocol.create_success_response(
+            request.get("id"),
+            {
+                "user_profile": result.get("data", {}).get("user_profile", {}),
+                "metadata": result.get("metadata", {})
+            }
+        )
+
+    async def _handle_match(
+        self,
+        request: Dict[str, Any]
+    ) -> Dict[str, Any]:
+        """Handle match request."""
+        user_data = request.get("data", {}).get("user", {})
+        swipe_history = request.get("data", {}).get("swipe_history", [])
+        pet_candidates = request.get("data", {}).get("pet_candidates", [])
+
+        input_data = {
+            "user": user_data,
+            "swipe_history": swipe_history,
+            "pet_candidates": pet_candidates,
+        }
+        if self.engine:
+            result = await self.engine._execute("match", input_data)
+        else:
+            workflow = self.workflows["match"]
+            result = await workflow.execute(input_data)
+
+        return self.protocol.create_success_response(
+            request.get("id"),
+            {
+                "matches": result.get("data", {}).get("matches", []),
                 "metadata": result.get("metadata", {})
             }
         )
@@ -192,8 +258,12 @@ class RequestHandler:
         """Handle metrics request."""
         metrics = {}
 
-        for name, workflow in self.workflows.items():
-            metrics[name] = workflow.get_metrics()
+        if self.engine:
+            for name, workflow in self.engine.workflows.items():
+                metrics[name] = workflow.get_metrics()
+        else:
+            for name, workflow in self.workflows.items():
+                metrics[name] = workflow.get_metrics()
 
         return self.protocol.create_success_response(
             request.get("id"),

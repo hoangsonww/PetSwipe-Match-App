@@ -8,9 +8,9 @@ collaborative filtering, and content-based filtering techniques.
 
 from typing import Dict, Any, List
 from .base_agent import BaseAgent, AgentState
-from langchain.chat_models import ChatOpenAI
 from langchain.prompts import ChatPromptTemplate
 import json
+from ..utils.llm import build_chat_llm
 
 
 class RecommendationAgent(BaseAgent):
@@ -31,16 +31,13 @@ class RecommendationAgent(BaseAgent):
             config=config
         )
 
-        self.llm = ChatOpenAI(
-            model=config.get("model", "gpt-4o-mini"),
-            temperature=config.get("temperature", 0.8),
-            api_key=config.get("openai_api_key")
-        )
+        self.llm = build_chat_llm(config, "recommendation", default_temperature=0.8)
 
         self.recommendation_prompt = ChatPromptTemplate.from_messages([
             ("system", """You are a pet recommendation expert. Generate personalized
             recommendations with detailed explanations. Consider user preferences,
-            personality, lifestyle, and match scores. Return structured JSON."""),
+            personality, lifestyle, and match scores. Return structured JSON with:
+            { "recommendations": [ { "pet": {...}, "score": float, "reasons": [string] } ] }"""),
             ("human", "Generate recommendations for:\nUser: {user_data}\nMatches: {matches}")
         ])
 

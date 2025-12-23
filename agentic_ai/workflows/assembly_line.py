@@ -14,6 +14,14 @@ import asyncio
 import logging
 
 from ..agents.base_agent import BaseAgent, AgentState
+from ..utils.context import (
+    set_agent,
+    set_request_id,
+    set_workflow,
+    reset_agent,
+    reset_request_id,
+    reset_workflow,
+)
 
 
 class AssemblyLinePipeline:
@@ -116,44 +124,48 @@ class AssemblyLinePipeline:
 
             self.logger.info(f"Executing agent: {agent_name}")
             start_time = datetime.now()
+            agent_token = set_agent(agent_name)
 
-            # Create agent state
-            agent_state = AgentState(
-                agent_name=agent_name,
-                timestamp=start_time,
-                data=state.get("data", {}),
-                metadata=state.get("metadata", {}),
-                errors=state.get("errors", [])
-            )
+            try:
+                # Create agent state
+                agent_state = AgentState(
+                    agent_name=agent_name,
+                    timestamp=start_time,
+                    data=state.get("data", {}),
+                    metadata=state.get("metadata", {}),
+                    errors=state.get("errors", [])
+                )
 
-            # Process through agent
-            result_state = await agent.process(agent_state)
+                # Process through agent
+                result_state = await agent.process(agent_state)
 
-            # Calculate processing time
-            processing_time = (datetime.now() - start_time).total_seconds()
+                # Calculate processing time
+                processing_time = (datetime.now() - start_time).total_seconds()
 
-            # Update state
-            state["data"] = result_state.data
-            state["metadata"] = result_state.metadata
-            state["errors"] = result_state.errors
+                # Update state
+                state["data"] = result_state.data
+                state["metadata"] = result_state.metadata
+                state["errors"] = result_state.errors
 
-            # Track agent execution
-            if "agent_results" not in state:
-                state["agent_results"] = []
+                # Track agent execution
+                if "agent_results" not in state:
+                    state["agent_results"] = []
 
-            state["agent_results"].append({
-                "agent": agent_name,
-                "success": len(result_state.errors) == 0,
-                "processing_time": processing_time,
-                "timestamp": result_state.timestamp.isoformat(),
-                "errors": result_state.errors
-            })
+                state["agent_results"].append({
+                    "agent": agent_name,
+                    "success": len(result_state.errors) == 0,
+                    "processing_time": processing_time,
+                    "timestamp": result_state.timestamp.isoformat(),
+                    "errors": result_state.errors
+                })
 
-            self.logger.info(
-                f"Agent {agent_name} completed in {processing_time:.2f}s"
-            )
+                self.logger.info(
+                    f"Agent {agent_name} completed in {processing_time:.2f}s"
+                )
 
-            return state
+                return state
+            finally:
+                reset_agent(agent_token)
 
         return node_function
 
@@ -186,10 +198,19 @@ class AssemblyLinePipeline:
             "agent_results": [],
             "pipeline_id": f"{self.name}_{start_time.timestamp()}"
         }
+        workflow_token = set_workflow(self.name)
+        request_token = set_request_id(initial_state["pipeline_id"])
 
         try:
-            # Execute the graph
-            final_state = await self.compiled_graph.ainvoke(initial_state)
+            # Execute the graph with optional timeout
+            timeout = self._get_timeout()
+            if timeout:
+                final_state = await asyncio.wait_for(
+                    self.compiled_graph.ainvoke(initial_state),
+                    timeout=timeout
+                )
+            else:
+                final_state = await self.compiled_graph.ainvoke(initial_state)
 
             # Calculate total time
             total_time = (datetime.now() - start_time).total_seconds()
@@ -228,6 +249,14 @@ class AssemblyLinePipeline:
                 "total_time": (datetime.now() - start_time).total_seconds(),
                 "timestamp": datetime.now().isoformat()
             }
+        finally:
+            reset_workflow(workflow_token)
+            reset_request_id(request_token)
+
+    def _get_timeout(self) -> Optional[int]:
+        workflows_cfg = self.config.get("workflows", {})
+        key = self.name.replace("Workflow", "").lower()
+        return workflows_cfg.get(key, {}).get("timeout")
 
     async def execute_batch(
         self,

@@ -8,9 +8,10 @@ for improved pet matching and recommendations.
 
 from typing import Dict, Any, List
 from .base_agent import BaseAgent, AgentState
-from langchain.chat_models import ChatOpenAI
 from langchain.prompts import ChatPromptTemplate
 import numpy as np
+import json
+from ..utils.llm import build_chat_llm
 
 
 class UserProfilerAgent(BaseAgent):
@@ -31,16 +32,13 @@ class UserProfilerAgent(BaseAgent):
             config=config
         )
 
-        self.llm = ChatOpenAI(
-            model=config.get("model", "gpt-4o-mini"),
-            temperature=config.get("temperature", 0.5),
-            api_key=config.get("openai_api_key")
-        )
+        self.llm = build_chat_llm(config, "user_profiler", default_temperature=0.5)
 
         self.profile_prompt = ChatPromptTemplate.from_messages([
             ("system", """Analyze user behavior and preferences to build a comprehensive profile.
             Consider swipe patterns, liked pets, time of day activity, and interaction frequency.
-            Return structured JSON with user preferences and insights."""),
+            Return structured JSON with:
+            { "pet_types": [string], "lifestyle": [string], "notes": string }"""),
             ("human", "User data:\n{user_data}")
         ])
 
@@ -158,12 +156,20 @@ class UserProfilerAgent(BaseAgent):
         messages = self.profile_prompt.format_messages(user_data=formatted_data)
         response = await self.llm.apredict_messages(messages)
 
-        # Parse response or use swipe analysis as fallback
+        ai_insights = response.content
+        parsed = {}
+        try:
+            parsed = json.loads(ai_insights)
+        except json.JSONDecodeError:
+            parsed = {}
+
         preferences = {
-            "pet_types": swipe_analysis.get("preferred_types", []),
+            "pet_types": parsed.get("pet_types", swipe_analysis.get("preferred_types", [])),
             "user_behavior": swipe_analysis.get("patterns", {}),
             "like_ratio": swipe_analysis.get("like_ratio", 0.0),
-            "ai_insights": response.content
+            "lifestyle": parsed.get("lifestyle", []),
+            "notes": parsed.get("notes", ""),
+            "ai_insights": ai_insights,
         }
 
         return preferences

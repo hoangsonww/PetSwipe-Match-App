@@ -10,10 +10,13 @@ import asyncio
 import logging
 from datetime import datetime
 import json
+import yaml
 
 from .handlers import RequestHandler
 from .protocol import MCPProtocol
 from ..workflows import AssemblyLinePipeline, WorkflowBuilder
+from ..utils.config import load_config
+from ..service.engine import AgenticEngine
 
 
 class MCPServer:
@@ -37,7 +40,8 @@ class MCPServer:
 
         # Initialize components
         self.protocol = MCPProtocol()
-        self.handler = RequestHandler(config)
+        self.engine = AgenticEngine(config)
+        self.handler = RequestHandler(config, engine=self.engine)
 
         # Server state
         self.server = None
@@ -86,6 +90,8 @@ class MCPServer:
         if self.server:
             self.server.close()
             await self.server.wait_closed()
+
+        await self.engine.close()
 
         self.logger.info("MCP server stopped")
 
@@ -210,10 +216,11 @@ async def main():
     args = parser.parse_args()
 
     # Load configuration
-    config = {}
+    config = load_config()
     if args.config:
         with open(args.config, "r") as f:
-            config = json.load(f)
+            override = yaml.safe_load(f) or {}
+        config = _merge_dicts(config, override)
 
     # Start server
     server = MCPServer(host=args.host, port=args.port, config=config)
@@ -226,3 +233,14 @@ async def main():
 
 if __name__ == "__main__":
     asyncio.run(main())
+
+
+def _merge_dicts(base: Dict[str, Any], override: Dict[str, Any]) -> Dict[str, Any]:
+    """Deep-merge dictionaries."""
+    merged = dict(base)
+    for key, value in override.items():
+        if isinstance(value, dict) and isinstance(merged.get(key), dict):
+            merged[key] = _merge_dicts(merged[key], value)
+        else:
+            merged[key] = value
+    return merged
