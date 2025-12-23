@@ -2,6 +2,9 @@
   "name": "petswipe-frontend",
   "version": "0.1.0",
   "private": false,
+  "engines": {
+    "node": ">=20.9.0"
+  },
   "scripts": {
     "dev": "next dev --turbopack",
     "build": "next build",
