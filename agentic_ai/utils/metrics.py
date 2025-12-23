@@ -37,6 +37,18 @@ class MetricsCollector:
             "Number of active requests"
         )
 
+        # Cost tracking
+        self.cost_total = Counter(
+            "agentic_ai_cost_usd_total",
+            "Total AI cost in USD",
+            ["workflow", "agent", "model"]
+        )
+        self.tokens_total = Counter(
+            "agentic_ai_tokens_total",
+            "Total AI tokens",
+            ["workflow", "agent", "model", "token_type"]
+        )
+
     def record_request(self, workflow: str, status: str) -> None:
         """Record a request."""
         self.request_counter.labels(workflow=workflow, status=status).inc()
@@ -56,3 +68,30 @@ class MetricsCollector:
     def decrement_active_requests(self) -> None:
         """Decrement active requests."""
         self.active_requests.dec()
+
+    def record_cost(
+        self,
+        workflow: str,
+        agent: str,
+        model: str,
+        prompt_tokens: int,
+        completion_tokens: int,
+        total_tokens: int,
+        cached_tokens: int,
+        cost_usd: float,
+    ) -> None:
+        """Record token usage and cost."""
+        self.cost_total.labels(workflow=workflow, agent=agent, model=model).inc(cost_usd)
+        self.tokens_total.labels(
+            workflow=workflow, agent=agent, model=model, token_type="prompt"
+        ).inc(prompt_tokens)
+        self.tokens_total.labels(
+            workflow=workflow, agent=agent, model=model, token_type="completion"
+        ).inc(completion_tokens)
+        self.tokens_total.labels(
+            workflow=workflow, agent=agent, model=model, token_type="total"
+        ).inc(total_tokens)
+        if cached_tokens:
+            self.tokens_total.labels(
+                workflow=workflow, agent=agent, model=model, token_type="cached"
+            ).inc(cached_tokens)

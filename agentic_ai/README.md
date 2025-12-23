@@ -9,7 +9,7 @@
 [![AWS](https://img.shields.io/badge/AWS-Supported-orange.svg)](https://aws.amazon.com/)
 [![Azure](https://img.shields.io/badge/Azure-Supported-blue.svg)](https://azure.microsoft.com/)
 [![Docker](https://img.shields.io/badge/Docker-Ready-blue.svg)](https://www.docker.com/)
-[![License](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+[![License](https://img.shields.io/badge/License-MIT-yellow.svg)](../LICENSE)
 
 ---
 
@@ -539,20 +539,55 @@ agents:
     enabled: true
     model: "gpt-4o-mini"
   # ... more agent configs
+
+costs:
+  enabled: true
+  export_path: "./logs/ai_costs.jsonl"
+  require_known_models: true
+  models:
+    gpt-4o-mini:
+      input_per_1k: 0.00015
+      output_per_1k: 0.0006
+    gemini-3-pro-preview:
+      tiers:
+        - max_prompt_tokens: 200000
+          input_per_1k: 0.002
+          cached_input_per_1k: 0.0002
+          output_per_1k: 0.012
+        - min_prompt_tokens: 200001
+          input_per_1k: 0.004
+          cached_input_per_1k: 0.0004
+          output_per_1k: 0.018
+    gpt-realtime:
+      modalities:
+        text:
+          input_per_1k: 0.004
+          cached_input_per_1k: 0.0004
+          output_per_1k: 0.016
+        audio:
+          input_per_1k: 0.032
+          cached_input_per_1k: 0.0004
+          output_per_1k: 0.064
+    claude-sonnet-4.5:
+      input_per_1k: 0.003
+      cache_write_5m_per_1k: 0.00375
+      cache_write_1h_per_1k: 0.006
+      cached_input_per_1k: 0.0003
+      output_per_1k: 0.015
 ```
 
 ---
 
 ## 🚀 Usage
 
-### Starting the MCP Server
+### Starting the API Server
 
 ```bash
 # Activate virtual environment
 source venv/bin/activate
 
 # Start the server
-python -m mcp_server.server --host 0.0.0.0 --port 8765
+python -m agentic_ai.api.server
 
 # Or with Docker
 docker-compose up
@@ -584,7 +619,7 @@ result = await pipeline.execute({
 recommendations = result["data"]["recommendations"]
 ```
 
-### Using the WebSocket API
+### Using the WebSocket (MCP) API
 
 ```python
 import asyncio
@@ -592,7 +627,7 @@ import websockets
 import json
 
 async def get_recommendations():
-    uri = "ws://localhost:8765"
+    uri = "ws://localhost:8765/mcp"
 
     async with websockets.connect(uri) as websocket:
         request = {
@@ -613,6 +648,18 @@ async def get_recommendations():
 
 # Run
 recommendations = asyncio.run(get_recommendations())
+```
+
+### Using the REST API
+
+```bash
+curl -X POST http://localhost:8765/v1/recommendations \
+  -H "Content-Type: application/json" \
+  -d '{
+    "user": {"id": "user-1", "bio": "I love dogs"},
+    "swipe_history": [],
+    "pet_candidates": []
+  }'
 ```
 
 ---
@@ -770,7 +817,7 @@ Response:
 ```json
 {
   "status": "healthy",
-  "workflows": ["recommendation", "conversation", "analysis"]
+  "workflows": ["recommendation", "conversation", "analysis", "profile", "match"]
 }
 ```
 
@@ -786,6 +833,10 @@ The system collects the following metrics:
 - **Performance Metrics**: Processing time, agent execution time
 - **Resource Metrics**: CPU usage, memory usage, active connections
 - **Business Metrics**: Recommendations generated, matches created
+- **Cost Metrics**: Token usage and USD cost by workflow, agent, and model
+  - Detailed entries are also written to `logs/ai_costs.jsonl` when enabled
+  - Pricing supports tiers (`tiers`) and modality-based rates (`modalities`)
+  - Unit pricing supported via `unit_cost`/`unit_costs` (pass `unit_count` + `unit_tier`)
 
 ### Prometheus Integration
 
@@ -794,7 +845,7 @@ The system collects the following metrics:
 scrape_configs:
   - job_name: 'agentic-ai'
     static_configs:
-      - targets: ['localhost:9090']
+      - targets: ['localhost:8765']
 ```
 
 ### Grafana Dashboards
@@ -806,6 +857,17 @@ Pre-configured dashboards:
 - Agent Performance
 - Error Tracking
 - Request Analytics
+- Cost & Token Usage
+
+### Cost Tracking Endpoints
+
+```bash
+# Summary (optionally scoped by minutes)
+curl http://localhost:8765/v1/costs/summary?since_minutes=60
+
+# Recent cost entries
+curl http://localhost:8765/v1/costs/recent?limit=50
+```
 
 ---
 

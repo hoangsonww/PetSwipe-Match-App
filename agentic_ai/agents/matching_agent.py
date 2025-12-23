@@ -30,8 +30,10 @@ class MatchingAgent(BaseAgent):
             config=config
         )
 
-        self.min_score_threshold = config.get("min_score_threshold", 0.5)
-        self.max_matches = config.get("max_matches", 20)
+        agent_cfg = config.get("agents", {}).get("matching", {})
+        self.min_score_threshold = agent_cfg.get("min_score_threshold", 0.5)
+        self.max_matches = agent_cfg.get("max_matches", 20)
+        self.randomness_weight = agent_cfg.get("randomness_weight", 0.1)
 
     async def process(self, state: AgentState) -> AgentState:
         """
@@ -95,8 +97,6 @@ class MatchingAgent(BaseAgent):
             List of matches with scores
         """
         matches = []
-        user_embeddings = np.array(user_profile.get("embeddings", []))
-
         for pet in pet_candidates:
             # Calculate compatibility score
             score = self._calculate_compatibility(user_profile, pet)
@@ -150,7 +150,11 @@ class MatchingAgent(BaseAgent):
         scores.append(care_score * 0.2)  # 20% weight
 
         # Random factor for variety
-        scores.append(np.random.uniform(0.5, 1.0) * 0.1)  # 10% weight
+        if self.randomness_weight > 0:
+            seed_source = str(user_profile.get("id") or user_profile.get("email") or "")
+            seed = abs(hash(seed_source + str(pet.get("id", "")))) % (2**32)
+            rng = np.random.default_rng(seed)
+            scores.append(rng.uniform(0.5, 1.0) * self.randomness_weight)
 
         return sum(scores)
 

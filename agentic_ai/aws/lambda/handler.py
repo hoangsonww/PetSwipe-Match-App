@@ -12,9 +12,10 @@ from typing import Dict, Any
 
 # Import agentic AI components
 import sys
-sys.path.append('/opt/python')
+sys.path.append("/opt/python")
 
-from workflows import WorkflowBuilder
+from agentic_ai.utils.config import load_config
+from agentic_ai.workflows import WorkflowBuilder
 
 
 # Configure logging
@@ -22,12 +23,21 @@ logger = logging.getLogger()
 logger.setLevel(logging.INFO)
 
 # Initialize workflows (cold start)
-config = {
-    "model": os.environ.get("MODEL", "gpt-4o-mini"),
-    "temperature": float(os.environ.get("TEMPERATURE", "0.7")),
-    "openai_api_key": os.environ.get("OPENAI_API_KEY"),
-    "min_score_threshold": float(os.environ.get("MIN_SCORE_THRESHOLD", "0.5"))
-}
+config = load_config()
+
+model_override = os.environ.get("MODEL")
+if model_override:
+    config.setdefault("models", {})["default_model"] = model_override
+
+temperature_override = os.environ.get("TEMPERATURE")
+if temperature_override:
+    config.setdefault("models", {})["temperature"] = float(temperature_override)
+
+min_score_override = os.environ.get("MIN_SCORE_THRESHOLD")
+if min_score_override:
+    config.setdefault("agents", {}).setdefault("matching", {})[
+        "min_score_threshold"
+    ] = float(min_score_override)
 
 workflows = {
     "recommendation": WorkflowBuilder.build_recommendation_workflow(config),

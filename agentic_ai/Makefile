@@ -16,7 +16,7 @@ install: ## Install dependencies
 	$(PIP) install -r requirements.txt
 
 dev: ## Run in development mode
-	$(PYTHON) -m mcp_server.server --host 0.0.0.0 --port 8765
+	$(PYTHON) -m agentic_ai.api.server
 
 build: ## Build Docker image
 	$(DOCKER) build -t petswipe/agentic-ai:latest .

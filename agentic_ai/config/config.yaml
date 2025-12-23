@@ -5,6 +5,7 @@
 server:
   host: "0.0.0.0"
   port: 8765
+  mcp_path: "/mcp"
   workers: 4
   timeout: 300
 
@@ -13,7 +14,12 @@ models:
   default_model: "gpt-4o-mini"
   temperature: 0.7
   max_tokens: 2048
+  request_timeout: 30
+  max_retries: 2
   fallback_model: "gpt-3.5-turbo"
+
+secrets:
+  openai_api_key: ""
 
 # Agent Configuration
 agents:
@@ -31,6 +37,7 @@ agents:
     enabled: true
     min_score_threshold: 0.5
     max_matches: 20
+    randomness_weight: 0.1
 
   recommendation:
     enabled: true
@@ -75,6 +82,20 @@ workflows:
       - monitoring
     timeout: 30
 
+  profile:
+    agents:
+      - user_profiler
+      - monitoring
+    timeout: 30
+
+  match:
+    agents:
+      - user_profiler
+      - pet_analyzer
+      - matching
+      - monitoring
+    timeout: 60
+
 # Storage Configuration
 storage:
   type: "local" # Options: local, s3, azure_blob
@@ -118,13 +139,617 @@ monitoring:
 # Security Configuration
 security:
   api_key_required: false
+  api_key: ""
+  api_key_header: "X-API-Key"
   rate_limiting:
     enabled: true
-    requests_per_minute: 60
+    requests_per_minute: 120
   cors:
     enabled: true
     allowed_origins:
       - "*"
+
+# Cost Tracking Configuration
+costs:
+  enabled: true
+  export_path: "./logs/ai_costs.jsonl"
+  max_entries: 20000
+  default_model: "gpt-4o-mini"
+  require_known_models: true
+  models:
+    gpt-5.2:
+      input_per_1k: 0.00175
+      cached_input_per_1k: 0.000175
+      output_per_1k: 0.014
+    gpt-5.1:
+      input_per_1k: 0.00125
+      cached_input_per_1k: 0.000125
+      output_per_1k: 0.01
+    gpt-5:
+      input_per_1k: 0.00125
+      cached_input_per_1k: 0.000125
+      output_per_1k: 0.01
+    gpt-5-mini:
+      input_per_1k: 0.00025
+      cached_input_per_1k: 0.000025
+      output_per_1k: 0.002
+    gpt-5-nano:
+      input_per_1k: 0.00005
+      cached_input_per_1k: 0.000005
+      output_per_1k: 0.0004
+    gpt-5.2-chat-latest:
+      input_per_1k: 0.00175
+      cached_input_per_1k: 0.000175
+      output_per_1k: 0.014
+    gpt-5.1-chat-latest:
+      input_per_1k: 0.00125
+      cached_input_per_1k: 0.000125
+      output_per_1k: 0.01
+    gpt-5-chat-latest:
+      input_per_1k: 0.00125
+      cached_input_per_1k: 0.000125
+      output_per_1k: 0.01
+    gpt-5.1-codex-max:
+      input_per_1k: 0.00125
+      cached_input_per_1k: 0.000125
+      output_per_1k: 0.01
+    gpt-5.1-codex:
+      input_per_1k: 0.00125
+      cached_input_per_1k: 0.000125
+      output_per_1k: 0.01
+    gpt-5-codex:
+      input_per_1k: 0.00125
+      cached_input_per_1k: 0.000125
+      output_per_1k: 0.01
+    gpt-5.2-pro:
+      input_per_1k: 0.021
+      output_per_1k: 0.168
+    gpt-5-pro:
+      input_per_1k: 0.015
+      output_per_1k: 0.12
+    gpt-4.1:
+      input_per_1k: 0.002
+      cached_input_per_1k: 0.0005
+      output_per_1k: 0.008
+    gpt-4.1-mini:
+      input_per_1k: 0.0004
+      cached_input_per_1k: 0.0001
+      output_per_1k: 0.0016
+    gpt-4.1-nano:
+      input_per_1k: 0.0001
+      cached_input_per_1k: 0.000025
+      output_per_1k: 0.0004
+    gpt-4o:
+      input_per_1k: 0.0025
+      cached_input_per_1k: 0.00125
+      output_per_1k: 0.01
+    gpt-4o-2024-05-13:
+      input_per_1k: 0.005
+      output_per_1k: 0.015
+    gpt-4o-mini:
+      input_per_1k: 0.00015
+      cached_input_per_1k: 0.000075
+      output_per_1k: 0.0006
+    gpt-realtime:
+      modalities:
+        text:
+          input_per_1k: 0.004
+          cached_input_per_1k: 0.0004
+          output_per_1k: 0.016
+        audio:
+          input_per_1k: 0.032
+          cached_input_per_1k: 0.0004
+          output_per_1k: 0.064
+    gpt-realtime-mini:
+      modalities:
+        text:
+          input_per_1k: 0.0006
+          cached_input_per_1k: 0.00006
+          output_per_1k: 0.0024
+        audio:
+          input_per_1k: 0.01
+          cached_input_per_1k: 0.0003
+          output_per_1k: 0.02
+    gpt-4o-realtime-preview:
+      modalities:
+        text:
+          input_per_1k: 0.005
+          cached_input_per_1k: 0.0025
+          output_per_1k: 0.02
+        audio:
+          input_per_1k: 0.04
+          cached_input_per_1k: 0.0025
+          output_per_1k: 0.08
+    gpt-4o-mini-realtime-preview:
+      modalities:
+        text:
+          input_per_1k: 0.0006
+          cached_input_per_1k: 0.0003
+          output_per_1k: 0.0024
+        audio:
+          input_per_1k: 0.01
+          cached_input_per_1k: 0.0003
+          output_per_1k: 0.02
+    gpt-audio:
+      modalities:
+        text:
+          input_per_1k: 0.0025
+          output_per_1k: 0.01
+        audio:
+          input_per_1k: 0.032
+          output_per_1k: 0.064
+    gpt-audio-mini:
+      modalities:
+        text:
+          input_per_1k: 0.0006
+          output_per_1k: 0.0024
+        audio:
+          input_per_1k: 0.01
+          output_per_1k: 0.02
+    gpt-4o-audio-preview:
+      modalities:
+        text:
+          input_per_1k: 0.0025
+          output_per_1k: 0.01
+        audio:
+          input_per_1k: 0.04
+          output_per_1k: 0.08
+    gpt-4o-mini-audio-preview:
+      modalities:
+        text:
+          input_per_1k: 0.00015
+          output_per_1k: 0.0006
+        audio:
+          input_per_1k: 0.01
+          output_per_1k: 0.02
+    o1:
+      input_per_1k: 0.015
+      cached_input_per_1k: 0.0075
+      output_per_1k: 0.06
+    o1-pro:
+      input_per_1k: 0.15
+      output_per_1k: 0.6
+    o3-pro:
+      input_per_1k: 0.02
+      output_per_1k: 0.08
+    o3:
+      input_per_1k: 0.002
+      cached_input_per_1k: 0.0005
+      output_per_1k: 0.008
+    o3-deep-research:
+      input_per_1k: 0.01
+      cached_input_per_1k: 0.0025
+      output_per_1k: 0.04
+    o4-mini:
+      input_per_1k: 0.0011
+      cached_input_per_1k: 0.000275
+      output_per_1k: 0.0044
+    o4-mini-deep-research:
+      input_per_1k: 0.002
+      cached_input_per_1k: 0.0005
+      output_per_1k: 0.008
+    o3-mini:
+      input_per_1k: 0.0011
+      cached_input_per_1k: 0.00055
+      output_per_1k: 0.0044
+    o1-mini:
+      input_per_1k: 0.0011
+      cached_input_per_1k: 0.00055
+      output_per_1k: 0.0044
+    gpt-5.1-codex-mini:
+      input_per_1k: 0.00025
+      cached_input_per_1k: 0.000025
+      output_per_1k: 0.002
+    codex-mini-latest:
+      input_per_1k: 0.0015
+      cached_input_per_1k: 0.000375
+      output_per_1k: 0.006
+    gpt-5-search-api:
+      input_per_1k: 0.00125
+      cached_input_per_1k: 0.000125
+      output_per_1k: 0.01
+    gpt-4o-mini-search-preview:
+      input_per_1k: 0.00015
+      output_per_1k: 0.0006
+    gpt-4o-search-preview:
+      input_per_1k: 0.0025
+      output_per_1k: 0.01
+    computer-use-preview:
+      input_per_1k: 0.003
+      output_per_1k: 0.012
+    gpt-image-1.5:
+      modalities:
+        text:
+          input_per_1k: 0.005
+          cached_input_per_1k: 0.00125
+          output_per_1k: 0.01
+        image:
+          input_per_1k: 0.008
+          cached_input_per_1k: 0.002
+          output_per_1k: 0.032
+          unit_label: image
+          unit_costs:
+            low_1024x1024: 0.009
+            medium_1024x1024: 0.034
+            high_1024x1024: 0.133
+            low_1024x1536: 0.013
+            medium_1024x1536: 0.05
+            high_1024x1536: 0.2
+            low_1536x1024: 0.013
+            medium_1536x1024: 0.05
+            high_1536x1024: 0.2
+    chatgpt-image-latest:
+      modalities:
+        text:
+          input_per_1k: 0.005
+          cached_input_per_1k: 0.00125
+          output_per_1k: 0.01
+        image:
+          input_per_1k: 0.008
+          cached_input_per_1k: 0.002
+          output_per_1k: 0.032
+          unit_label: image
+          unit_costs:
+            low_1024x1024: 0.009
+            medium_1024x1024: 0.034
+            high_1024x1024: 0.133
+            low_1024x1536: 0.013
+            medium_1024x1536: 0.05
+            high_1024x1536: 0.2
+            low_1536x1024: 0.013
+            medium_1536x1024: 0.05
+            high_1536x1024: 0.2
+    gpt-image-1:
+      modalities:
+        text:
+          input_per_1k: 0.005
+          cached_input_per_1k: 0.00125
+          output_per_1k: 0.0
+        image:
+          input_per_1k: 0.01
+          cached_input_per_1k: 0.0025
+          output_per_1k: 0.04
+          unit_label: image
+          unit_costs:
+            low_1024x1024: 0.011
+            medium_1024x1024: 0.042
+            high_1024x1024: 0.167
+            low_1024x1536: 0.016
+            medium_1024x1536: 0.063
+            high_1024x1536: 0.25
+            low_1536x1024: 0.016
+            medium_1536x1024: 0.063
+            high_1536x1024: 0.25
+    gpt-image-1-mini:
+      modalities:
+        text:
+          input_per_1k: 0.002
+          cached_input_per_1k: 0.0002
+          output_per_1k: 0.0
+        image:
+          input_per_1k: 0.0025
+          cached_input_per_1k: 0.00025
+          output_per_1k: 0.008
+          unit_label: image
+          unit_costs:
+            low_1024x1024: 0.005
+            medium_1024x1024: 0.011
+            high_1024x1024: 0.036
+            low_1024x1536: 0.006
+            medium_1024x1536: 0.015
+            high_1024x1536: 0.052
+            low_1536x1024: 0.006
+            medium_1536x1024: 0.015
+            high_1536x1024: 0.052
+    gpt-3.5-turbo:
+      input_per_1k: 0.0005
+      output_per_1k: 0.0015
+    gpt-3.5-turbo-0125:
+      input_per_1k: 0.0005
+      output_per_1k: 0.0015
+    gpt-3.5-turbo-1106:
+      input_per_1k: 0.001
+      output_per_1k: 0.002
+    gpt-3.5-turbo-0613:
+      input_per_1k: 0.0015
+      output_per_1k: 0.002
+    gpt-3.5-0301:
+      input_per_1k: 0.0015
+      output_per_1k: 0.002
+    gpt-3.5-turbo-instruct:
+      input_per_1k: 0.0015
+      output_per_1k: 0.002
+    gpt-3.5-turbo-16k-0613:
+      input_per_1k: 0.003
+      output_per_1k: 0.004
+    gpt-4-turbo-2024-04-09:
+      input_per_1k: 0.01
+      output_per_1k: 0.03
+    gpt-4-0125-preview:
+      input_per_1k: 0.01
+      output_per_1k: 0.03
+    gpt-4-1106-preview:
+      input_per_1k: 0.01
+      output_per_1k: 0.03
+    gpt-4-1106-vision-preview:
+      input_per_1k: 0.01
+      output_per_1k: 0.03
+    gpt-4-0613:
+      input_per_1k: 0.03
+      output_per_1k: 0.06
+    gpt-4-0314:
+      input_per_1k: 0.03
+      output_per_1k: 0.06
+    gpt-4-32k:
+      input_per_1k: 0.06
+      output_per_1k: 0.12
+    davinci-002:
+      input_per_1k: 0.002
+      output_per_1k: 0.002
+    babbage-002:
+      input_per_1k: 0.0004
+      output_per_1k: 0.0004
+    text-embedding-3-small:
+      input_per_1k: 0.00002
+      output_per_1k: 0.0
+    text-embedding-3-large:
+      input_per_1k: 0.00013
+      output_per_1k: 0.0
+    text-embedding-ada-002:
+      input_per_1k: 0.0001
+      output_per_1k: 0.0
+    gemini-3-pro-preview:
+      tiers:
+        - max_prompt_tokens: 200000
+          input_per_1k: 0.002
+          cached_input_per_1k: 0.0002
+          output_per_1k: 0.012
+        - min_prompt_tokens: 200001
+          input_per_1k: 0.004
+          cached_input_per_1k: 0.0004
+          output_per_1k: 0.018
+    gemini-3-flash-preview:
+      modalities:
+        text:
+          input_per_1k: 0.0005
+          cached_input_per_1k: 0.00005
+          output_per_1k: 0.003
+        audio:
+          input_per_1k: 0.001
+          cached_input_per_1k: 0.0001
+          output_per_1k: 0.003
+    gemini-3-pro-image-preview:
+      modalities:
+        text:
+          tiers:
+            - max_prompt_tokens: 200000
+              input_per_1k: 0.002
+              cached_input_per_1k: 0.0002
+              output_per_1k: 0.012
+            - min_prompt_tokens: 200001
+              input_per_1k: 0.004
+              cached_input_per_1k: 0.0004
+              output_per_1k: 0.018
+        image:
+          input_per_1k: 0.0
+          output_per_1k: 0.12
+    gemini-2.5-pro:
+      tiers:
+        - max_prompt_tokens: 200000
+          input_per_1k: 0.00125
+          cached_input_per_1k: 0.000125
+          output_per_1k: 0.01
+        - min_prompt_tokens: 200001
+          input_per_1k: 0.0025
+          cached_input_per_1k: 0.00025
+          output_per_1k: 0.015
+    gemini-2.5-flash:
+      modalities:
+        text:
+          input_per_1k: 0.0003
+          cached_input_per_1k: 0.00003
+          output_per_1k: 0.0025
+        audio:
+          input_per_1k: 0.001
+          cached_input_per_1k: 0.0001
+          output_per_1k: 0.0025
+    gemini-2.5-flash-preview-09-2025:
+      modalities:
+        text:
+          input_per_1k: 0.0003
+          cached_input_per_1k: 0.00003
+          output_per_1k: 0.0025
+        audio:
+          input_per_1k: 0.001
+          cached_input_per_1k: 0.0001
+          output_per_1k: 0.0025
+    gemini-2.5-flash-lite:
+      modalities:
+        text:
+          input_per_1k: 0.0001
+          cached_input_per_1k: 0.00001
+          output_per_1k: 0.0004
+        audio:
+          input_per_1k: 0.0003
+          cached_input_per_1k: 0.00003
+          output_per_1k: 0.0004
+    gemini-2.5-flash-lite-preview-09-2025:
+      modalities:
+        text:
+          input_per_1k: 0.0001
+          cached_input_per_1k: 0.00001
+          output_per_1k: 0.0004
+        audio:
+          input_per_1k: 0.0003
+          cached_input_per_1k: 0.00003
+          output_per_1k: 0.0004
+    gemini-2.5-flash-native-audio-preview-12-2025:
+      modalities:
+        text:
+          input_per_1k: 0.0005
+          output_per_1k: 0.002
+        audio:
+          input_per_1k: 0.003
+          output_per_1k: 0.012
+    gemini-2.5-flash-image:
+      input_per_1k: 0.0003
+      output_per_1k: 0.03
+    gemini-2.5-flash-preview-tts:
+      input_per_1k: 0.0005
+      output_per_1k: 0.01
+    gemini-2.5-pro-preview-tts:
+      input_per_1k: 0.001
+      output_per_1k: 0.02
+    gemini-2.0-flash:
+      modalities:
+        text:
+          input_per_1k: 0.0001
+          cached_input_per_1k: 0.000025
+          output_per_1k: 0.0004
+        audio:
+          input_per_1k: 0.0007
+          cached_input_per_1k: 0.000175
+          output_per_1k: 0.0004
+    gemini-2.0-flash-lite:
+      input_per_1k: 0.000075
+      output_per_1k: 0.0003
+    gemini-embedding-001:
+      input_per_1k: 0.00015
+      output_per_1k: 0.0
+    gemini-robotics-er-1.5-preview:
+      modalities:
+        text:
+          input_per_1k: 0.0003
+          output_per_1k: 0.0025
+        audio:
+          input_per_1k: 0.001
+          output_per_1k: 0.0025
+    gemini-2.5-computer-use-preview-10-2025:
+      tiers:
+        - max_prompt_tokens: 200000
+          input_per_1k: 0.00125
+          output_per_1k: 0.01
+        - min_prompt_tokens: 200001
+          input_per_1k: 0.0025
+          output_per_1k: 0.015
+    gemma-3:
+      input_per_1k: 0.0
+      output_per_1k: 0.0
+    gemma-3n:
+      input_per_1k: 0.0
+      output_per_1k: 0.0
+    claude-opus-4.5:
+      input_per_1k: 0.005
+      cache_write_5m_per_1k: 0.00625
+      cache_write_1h_per_1k: 0.01
+      cached_input_per_1k: 0.0005
+      output_per_1k: 0.025
+    claude-opus-4.1:
+      input_per_1k: 0.015
+      cache_write_5m_per_1k: 0.01875
+      cache_write_1h_per_1k: 0.03
+      cached_input_per_1k: 0.0015
+      output_per_1k: 0.075
+    claude-opus-4:
+      input_per_1k: 0.015
+      cache_write_5m_per_1k: 0.01875
+      cache_write_1h_per_1k: 0.03
+      cached_input_per_1k: 0.0015
+      output_per_1k: 0.075
+    claude-sonnet-4.5:
+      input_per_1k: 0.003
+      cache_write_5m_per_1k: 0.00375
+      cache_write_1h_per_1k: 0.006
+      cached_input_per_1k: 0.0003
+      output_per_1k: 0.015
+    claude-sonnet-4:
+      input_per_1k: 0.003
+      cache_write_5m_per_1k: 0.00375
+      cache_write_1h_per_1k: 0.006
+      cached_input_per_1k: 0.0003
+      output_per_1k: 0.015
+    claude-sonnet-3.7:
+      input_per_1k: 0.003
+      cache_write_5m_per_1k: 0.00375
+      cache_write_1h_per_1k: 0.006
+      cached_input_per_1k: 0.0003
+      output_per_1k: 0.015
+    claude-haiku-4.5:
+      input_per_1k: 0.001
+      cache_write_5m_per_1k: 0.00125
+      cache_write_1h_per_1k: 0.002
+      cached_input_per_1k: 0.0001
+      output_per_1k: 0.005
+    claude-haiku-3.5:
+      input_per_1k: 0.0008
+      cache_write_5m_per_1k: 0.001
+      cache_write_1h_per_1k: 0.0016
+      cached_input_per_1k: 0.00008
+      output_per_1k: 0.004
+    claude-opus-3:
+      input_per_1k: 0.015
+      cache_write_5m_per_1k: 0.01875
+      cache_write_1h_per_1k: 0.03
+      cached_input_per_1k: 0.0015
+      output_per_1k: 0.075
+    claude-haiku-3:
+      input_per_1k: 0.00025
+      cache_write_5m_per_1k: 0.0003
+      cache_write_1h_per_1k: 0.0005
+      cached_input_per_1k: 0.00003
+      output_per_1k: 0.00125
+    sora-2:
+      unit_label: second
+      unit_cost: 0.10
+    sora-2-pro:
+      unit_label: second
+      unit_costs:
+        portrait_720p: 0.30
+        landscape_720p: 0.30
+        portrait_1024p: 0.50
+        landscape_1024p: 0.50
+    imagen-4.0-fast-generate-001:
+      unit_label: image
+      unit_cost: 0.02
+    imagen-4.0-generate-001:
+      unit_label: image
+      unit_cost: 0.04
+    imagen-4.0-ultra-generate-001:
+      unit_label: image
+      unit_cost: 0.06
+    imagen-3.0-generate-002:
+      unit_label: image
+      unit_cost: 0.03
+    veo-3.1-generate-preview:
+      unit_label: second
+      unit_cost: 0.40
+    veo-3.1-fast-generate-preview:
+      unit_label: second
+      unit_cost: 0.15
+    veo-3.0-generate-001:
+      unit_label: second
+      unit_cost: 0.40
+    veo-3.0-fast-generate-001:
+      unit_label: second
+      unit_cost: 0.15
+    veo-2.0-generate-001:
+      unit_label: second
+      unit_cost: 0.35
+    dall-e-3:
+      unit_label: image
+      unit_costs:
+        standard_1024x1024: 0.04
+        standard_1024x1536: 0.08
+        standard_1536x1024: 0.08
+        hd_1024x1024: 0.08
+        hd_1024x1536: 0.12
+        hd_1536x1024: 0.12
+    dall-e-2:
+      unit_label: image
+      unit_costs:
+        standard_256x256: 0.016
+        standard_512x512: 0.018
+        standard_1024x1024: 0.02
 
 # Feature Flags
 features:

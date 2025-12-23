@@ -3,8 +3,8 @@ Test cases for workflows.
 """
 
 import pytest
-from workflows import AssemblyLinePipeline, WorkflowBuilder
-from agents import PetAnalyzerAgent, MonitoringAgent
+from agentic_ai.workflows import AssemblyLinePipeline, WorkflowBuilder
+from agentic_ai.agents import PetAnalyzerAgent, MonitoringAgent
 
 
 @pytest.fixture
@@ -14,7 +14,14 @@ def config():
         "model": "gpt-4o-mini",
         "temperature": 0.7,
         "openai_api_key": "test-key",
-        "min_score_threshold": 0.5
+        "min_score_threshold": 0.5,
+        "costs": {
+            "enabled": True,
+            "require_known_models": True,
+            "models": {
+                "gpt-4o-mini": {"input_per_1k": 0.00015, "output_per_1k": 0.0006}
+            }
+        }
     }
 
 

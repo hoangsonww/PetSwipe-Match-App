@@ -3,8 +3,8 @@ Test cases for agents.
 """
 
 import pytest
-from agents import BaseAgent, PetAnalyzerAgent, UserProfilerAgent
-from agents.base_agent import AgentState
+from agentic_ai.agents import PetAnalyzerAgent, UserProfilerAgent
+from agentic_ai.agents.base_agent import AgentState
 from datetime import datetime
 
 
@@ -14,7 +14,14 @@ def config():
     return {
         "model": "gpt-4o-mini",
         "temperature": 0.7,
-        "openai_api_key": "test-key"
+        "openai_api_key": "test-key",
+        "costs": {
+            "enabled": True,
+            "require_known_models": True,
+            "models": {
+                "gpt-4o-mini": {"input_per_1k": 0.00015, "output_per_1k": 0.0006}
+            }
+        }
     }
 
 

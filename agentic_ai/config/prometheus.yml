@@ -1,0 +1,8 @@
+global:
+  scrape_interval: 15s
+
+scrape_configs:
+  - job_name: "agentic-ai"
+    metrics_path: /metrics
+    static_configs:
+      - targets: ["agentic-ai:8765"]

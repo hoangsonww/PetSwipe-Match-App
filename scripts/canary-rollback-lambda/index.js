@@ -5,7 +5,7 @@
  * ═══════════════════════════════════════════════════════════════════════════
  */
 
-const AWS = require('aws-sdk');
+const AWS = require("aws-sdk");
 
 const elbv2 = new AWS.ELBv2();
 const ecs = new AWS.ECS();
@@ -23,8 +23,8 @@ const SNS_TOPIC_ARN = process.env.SNS_TOPIC_ARN;
  * Main Lambda handler
  */
 exports.handler = async (event) => {
-  console.log('Canary Rollback Lambda triggered');
-  console.log('Event:', JSON.stringify(event, null, 2));
+  console.log("Canary Rollback Lambda triggered");
+  console.log("Event:", JSON.stringify(event, null, 2));
 
   try {
     // Parse SNS message
@@ -38,39 +38,38 @@ exports.handler = async (event) => {
     console.log(`Reason: ${alarmReason}`);
 
     // Only proceed if alarm is in ALARM state
-    if (alarmState !== 'ALARM') {
-      console.log('Alarm is not in ALARM state, skipping rollback');
+    if (alarmState !== "ALARM") {
+      console.log("Alarm is not in ALARM state, skipping rollback");
       return {
         statusCode: 200,
-        body: JSON.stringify({ message: 'No action needed' })
+        body: JSON.stringify({ message: "No action needed" }),
       };
     }
 
     // Step 1: Set traffic to 100% blue, 0% canary
-    console.log('Step 1: Reverting traffic to 100% blue...');
+    console.log("Step 1: Reverting traffic to 100% blue...");
     await revertTraffic();
 
     // Step 2: Scale down canary service
-    console.log('Step 2: Scaling down canary service...');
+    console.log("Step 2: Scaling down canary service...");
     await scaleDownCanary();
 
     // Step 3: Send notification
-    console.log('Step 3: Sending rollback notification...');
+    console.log("Step 3: Sending rollback notification...");
     await sendNotification(alarmName, alarmReason);
 
-    console.log('Canary rollback completed successfully');
+    console.log("Canary rollback completed successfully");
 
     return {
       statusCode: 200,
       body: JSON.stringify({
-        message: 'Canary rollback completed',
+        message: "Canary rollback completed",
         alarm: alarmName,
-        reason: alarmReason
-      })
+        reason: alarmReason,
+      }),
     };
-
   } catch (error) {
-    console.error('Error during canary rollback:', error);
+    console.error("Error during canary rollback:", error);
 
     // Send error notification
     await sendErrorNotification(error);
@@ -78,9 +77,9 @@ exports.handler = async (event) => {
     return {
       statusCode: 500,
       body: JSON.stringify({
-        message: 'Canary rollback failed',
-        error: error.message
-      })
+        message: "Canary rollback failed",
+        error: error.message,
+      }),
     };
   }
 };
@@ -93,32 +92,32 @@ async function revertTraffic() {
     RuleArn: LISTENER_RULE_ARN,
     Actions: [
       {
-        Type: 'forward',
+        Type: "forward",
         ForwardConfig: {
           TargetGroups: [
             {
               TargetGroupArn: BLUE_TG_ARN,
-              Weight: 100
+              Weight: 100,
             },
             {
               TargetGroupArn: CANARY_TG_ARN,
-              Weight: 0
-            }
+              Weight: 0,
+            },
           ],
           TargetGroupStickinessConfig: {
             Enabled: true,
-            DurationSeconds: 3600
-          }
-        }
-      }
-    ]
+            DurationSeconds: 3600,
+          },
+        },
+      },
+    ],
   };
 
   try {
     await elbv2.modifyRule(params).promise();
-    console.log('Traffic reverted to 100% blue');
+    console.log("Traffic reverted to 100% blue");
   } catch (error) {
-    console.error('Error reverting traffic:', error);
+    console.error("Error reverting traffic:", error);
     throw error;
   }
 }
@@ -130,14 +129,14 @@ async function scaleDownCanary() {
   const params = {
     cluster: CLUSTER_NAME,
     service: CANARY_SERVICE_NAME,
-    desiredCount: 0
+    desiredCount: 0,
   };
 
   try {
     await ecs.updateService(params).promise();
-    console.log('Canary service scaled down to 0');
+    console.log("Canary service scaled down to 0");
   } catch (error) {
-    console.error('Error scaling down canary:', error);
+    console.error("Error scaling down canary:", error);
     throw error;
   }
 }
@@ -163,15 +162,15 @@ Timestamp: ${new Date().toISOString()}
 
   const params = {
     TopicArn: SNS_TOPIC_ARN,
-    Subject: '🚨 Canary Deployment Rolled Back',
-    Message: message
+    Subject: "🚨 Canary Deployment Rolled Back",
+    Message: message,
   };
 
   try {
     await sns.publish(params).promise();
-    console.log('Notification sent successfully');
+    console.log("Notification sent successfully");
   } catch (error) {
-    console.error('Error sending notification:', error);
+    console.error("Error sending notification:", error);
     // Don't throw - notification failure shouldn't fail the rollback
   }
 }
@@ -195,13 +194,13 @@ Timestamp: ${new Date().toISOString()}
 
   const params = {
     TopicArn: SNS_TOPIC_ARN,
-    Subject: '❌ Canary Rollback Failed - Manual Intervention Required',
-    Message: message
+    Subject: "❌ Canary Rollback Failed - Manual Intervention Required",
+    Message: message,
   };
 
   try {
     await sns.publish(params).promise();
   } catch (notificationError) {
-    console.error('Error sending error notification:', notificationError);
+    console.error("Error sending error notification:", notificationError);
   }
 }

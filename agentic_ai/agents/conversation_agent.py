@@ -8,10 +8,10 @@ and provides contextual assistance using RAG and conversational AI.
 
 from typing import Dict, Any, List
 from .base_agent import BaseAgent, AgentState
-from langchain.chat_models import ChatOpenAI
 from langchain.prompts import ChatPromptTemplate
 from langchain.schema import HumanMessage, SystemMessage, AIMessage
 from langchain.memory import ConversationBufferMemory
+from ..utils.llm import build_chat_llm
 
 
 class ConversationAgent(BaseAgent):
@@ -32,10 +32,9 @@ class ConversationAgent(BaseAgent):
             config=config
         )
 
-        self.llm = ChatOpenAI(
-            model=config.get("model", "gpt-4o-mini"),
-            temperature=config.get("temperature", 0.7),
-            api_key=config.get("openai_api_key")
+        self.llm = build_chat_llm(config, "conversation", default_temperature=0.7)
+        self.max_history = (
+            config.get("agents", {}).get("conversation", {}).get("max_history", 20)
         )
 
         # Initialize conversation memory
@@ -171,6 +170,15 @@ class ConversationAgent(BaseAgent):
         """
         self.memory.chat_memory.add_user_message(user_message)
         self.memory.chat_memory.add_ai_message(response)
+        self._trim_memory()
+
+    def _trim_memory(self) -> None:
+        """Trim memory to configured max history."""
+        if self.max_history <= 0:
+            return
+        messages = self.memory.chat_memory.messages
+        if len(messages) > self.max_history:
+            self.memory.chat_memory.messages = messages[-self.max_history :]
 
     def _get_history(self) -> List[Dict[str, str]]:
         """
