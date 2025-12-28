@@ -1,5 +1,6 @@
 # PetSwipe Monitoring & Observability
 
+> [!TIP]
 > Comprehensive monitoring, observability, and alerting system for PetSwipe
 
 This directory contains the monitoring and observability configuration for the PetSwipe application using Prometheus, Grafana, and AWS CloudWatch.
