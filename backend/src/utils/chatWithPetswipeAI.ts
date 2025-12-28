@@ -11,21 +11,70 @@ type GeminiModelListResponse = {
     supportedGenerationMethods?: string[];
   }>;
 };
+type GeminiModelAttemptError = {
+  model: string;
+  message: string;
+  status?: number;
+  statusText?: string;
+  errorDetails?: unknown;
+};
 
 const GEMINI_MODELS_ENDPOINT =
   "https://generativelanguage.googleapis.com/v1/models";
 const GEMINI_MODELS_CACHE_TTL_MS = 5 * 60 * 1000;
+const DEFAULT_GEMINI_MODEL_FALLBACKS = [
+  "gemini-2.0-flash",
+  "gemini-2.0-flash-lite",
+  "gemini-1.5-flash",
+  "gemini-1.5-flash-8b",
+];
 
-let cachedGeminiModels: { models: string[]; fetchedAt: number } | null = null;
+let cachedGeminiModels: {
+  models: string[];
+  fetchedAt: number;
+  allowPro: boolean;
+} | null = null;
+let modelRotationIndex = 0;
+
+function normalizeModelName(name: string) {
+  return name.replace(/^models\//, "").trim();
+}
 
 function isProGeminiModel(name: string) {
   return /(^|-)pro($|-)/.test(name);
 }
 
-async function fetchGeminiModels(apiKey: string) {
+function parseModelList(value?: string) {
+  if (!value) return [];
+  return value
+    .split(",")
+    .map((modelName) => normalizeModelName(modelName))
+    .filter(Boolean);
+}
+
+function filterGeminiModels(models: string[], allowPro: boolean) {
+  const filtered = models
+    .map((name) => normalizeModelName(name))
+    .filter((name) => name.startsWith("gemini-"))
+    .filter((name) => !name.includes("embedding"))
+    .filter((name) => allowPro || !isProGeminiModel(name));
+
+  return Array.from(new Set(filtered));
+}
+
+function rotateModels(models: string[]) {
+  if (models.length <= 1) return models;
+  modelRotationIndex = (modelRotationIndex + 1) % models.length;
+  return models
+    .slice(modelRotationIndex)
+    .concat(models.slice(0, modelRotationIndex));
+}
+
+async function fetchGeminiModels(apiKey: string, allowPro: boolean) {
   const now = Date.now();
   if (
     cachedGeminiModels &&
+    cachedGeminiModels.allowPro === allowPro &&
     now - cachedGeminiModels.fetchedAt < GEMINI_MODELS_CACHE_TTL_MS
   ) {
     return cachedGeminiModels.models;
@@ -39,23 +88,17 @@ async function fetchGeminiModels(apiKey: string) {
   }
 
   const data = (await response.json()) as GeminiModelListResponse;
-  const models =
+  const models = filterGeminiModels(
     data.models
       ?.filter((model) =>
         model.supportedGenerationMethods?.includes("generateContent"),
       )
       .map((model) => model.name)
-      .filter((name): name is string => Boolean(name))
-      .filter((name) => name.startsWith("models/gemini-"))
-      .map((name) => name.replace(/^models\//, ""))
-      .filter((name) => !name.includes("embedding"))
-      .filter((name) => !isProGeminiModel(name)) ?? [];
+      .filter((name): name is string => Boolean(name)) ?? [],
+    allowPro,
+  );
 
-  if (models.length === 0) {
-    throw new Error("No eligible Gemini models returned from the API.");
-  }
-
-  cachedGeminiModels = { models, fetchedAt: now };
+  cachedGeminiModels = { models, fetchedAt: now, allowPro };
   return models;
 }
 
@@ -67,6 +110,8 @@ export async function chatWithPetswipeAI(
   const apiKey = process.env.GOOGLE_AI_API_KEY;
   if (!apiKey) throw new Error("GOOGLE_AI_API_KEY is missing");
   const genAI = new GoogleGenerativeAI(apiKey);
+  const allowProModels = process.env.GEMINI_ALLOW_PRO_MODELS === "true";
+  const modelAllowlist = parseModelList(process.env.GEMINI_MODEL_ALLOWLIST);
   const systemInstruction = `
     You are **PetSwipe Assistant**, an expert on pet adoption and animal welfare.
     Give empathetic, actionable answers about adopting, fostering and caring for pets.
@@ -90,8 +135,30 @@ export async function chatWithPetswipeAI(
     Respond in the same language the user writes in.
   `;
 
-  const modelsToTry = await fetchGeminiModels(apiKey);
-  const errors: Error[] = [];
+  let modelsToTry: string[] = [];
+  if (modelAllowlist.length > 0) {
+    modelsToTry = filterGeminiModels(modelAllowlist, allowProModels);
+  } else {
+    try {
+      modelsToTry = await fetchGeminiModels(apiKey, allowProModels);
+    } catch (error) {
+      modelsToTry = [];
+    }
+  }
+
+  if (modelAllowlist.length === 0 && modelsToTry.length < 2) {
+    modelsToTry = filterGeminiModels(
+      modelsToTry.concat(DEFAULT_GEMINI_MODEL_FALLBACKS),
+      allowProModels,
+    );
+  }
+
+  if (modelsToTry.length === 0) {
+    throw new Error("No eligible Gemini models were available to try.");
+  }
+
+  modelsToTry = rotateModels(modelsToTry);
+  const errors: GeminiModelAttemptError[] = [];
 
   for (const modelName of modelsToTry) {
     try {
@@ -135,12 +202,34 @@ export async function chatWithPetswipeAI(
 
       return response.response.text();
     } catch (error) {
-      errors.push(error instanceof Error ? error : new Error(String(error)));
+      const err = error instanceof Error ? error : new Error(String(error));
+      const status =
+        typeof (error as { status?: unknown })?.status === "number"
+          ? (error as { status: number }).status
+          : undefined;
+      const statusText =
+        typeof (error as { statusText?: unknown })?.statusText === "string"
+          ? (error as { statusText: string }).statusText
+          : undefined;
+      const errorDetails = (error as { errorDetails?: unknown })?.errorDetails;
+      errors.push({
+        model: modelName,
+        message: err.message,
+        status,
+        statusText,
+        errorDetails,
+      });
     }
   }
 
-  throw (
-    errors[errors.length - 1] ??
-    new Error("No Gemini models were available to try.")
-  );
+  if (errors.length === 0) {
+    const emptyError = new Error("No Gemini models were available to try.");
+    (emptyError as { status?: number }).status = 503;
+    throw emptyError;
+  }
+
+  const aggregatedError = new Error("All Gemini model attempts failed.");
+  (aggregatedError as { status?: number }).status = 502;
+  (aggregatedError as { details?: GeminiModelAttemptError[] }).details = errors;
+  throw aggregatedError;
 }
