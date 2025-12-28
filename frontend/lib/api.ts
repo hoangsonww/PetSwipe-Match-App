@@ -63,6 +63,39 @@ export interface Swipe {
   swipedAt: string;
 }
 
+/**
+ * A conversation between a user and shelter about a specific pet.
+ */
+export interface Conversation {
+  id: string;
+  pet: {
+    id: string;
+    name: string;
+    photoUrl?: string;
+    shelterName: string;
+  };
+  lastMessageAt?: string;
+  unreadCount: number;
+  lastMessage?: {
+    content: string;
+    sender: "user" | "shelter";
+    createdAt: string;
+  } | null;
+}
+
+/**
+ * A message in a conversation.
+ */
+export interface Message {
+  id: string;
+  content: string;
+  sender: "user" | "shelter";
+  senderEmail?: string;
+  imageUrl?: string;
+  isRead: boolean;
+  createdAt: string;
+}
+
 /* -------------------------------------------------------------------------- */
 /* Helper: persist JWT to mitigate Safari cookie issues                       */
 /* -------------------------------------------------------------------------- */
@@ -391,6 +424,64 @@ export const swipeApi = {
    */
   listAllSwipes: async (): Promise<Swipe[]> => {
     const res = await api.get<Swipe[]>("/swipes");
+    return res.data;
+  },
+};
+
+/* -------------------------------------------------------------------------- */
+/* Conversation API                                                           */
+/* -------------------------------------------------------------------------- */
+export const conversationApi = {
+  /**
+   * List all conversations for the authenticated user.
+   * @returns array of Conversation objects
+   */
+  listConversations: async (): Promise<Conversation[]> => {
+    const res = await api.get<Conversation[]>("/conversations");
+    return res.data;
+  },
+
+  /**
+   * Get messages in a specific conversation.
+   * @param conversationId the conversation's UUID
+   * @returns array of Message objects
+   */
+  getMessages: async (conversationId: string): Promise<Message[]> => {
+    const res = await api.get<Message[]>(`/conversations/${conversationId}/messages`);
+    return res.data;
+  },
+
+  /**
+   * Send a message in a conversation.
+   * @param conversationId the conversation's UUID
+   * @param content the message content
+   * @param imageUrl optional image attachment URL
+   * @returns the created Message
+   */
+  sendMessage: async (
+    conversationId: string,
+    content: string,
+    imageUrl?: string
+  ): Promise<Message> => {
+    const res = await api.post<Message>(`/conversations/${conversationId}/messages`, {
+      content,
+      imageUrl,
+    });
+    return res.data;
+  },
+
+  /**
+   * Create a new conversation about a pet.
+   * @param petId the pet's UUID
+   * @returns the created conversation data
+   */
+  createConversation: async (petId: string): Promise<{
+    id: string;
+    petId: string;
+    petName: string;
+    shelterName: string;
+  }> => {
+    const res = await api.post("/conversations", { petId });
     return res.data;
   },
 };
