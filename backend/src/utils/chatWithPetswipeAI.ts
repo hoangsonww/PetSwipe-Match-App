@@ -5,6 +5,60 @@ import {
   HarmCategory,
 } from "@google/generative-ai";
 
+type GeminiModelListResponse = {
+  models?: Array<{
+    name?: string;
+    supportedGenerationMethods?: string[];
+  }>;
+};
+
+const GEMINI_MODELS_ENDPOINT =
+  "https://generativelanguage.googleapis.com/v1/models";
+const GEMINI_MODELS_CACHE_TTL_MS = 5 * 60 * 1000;
+
+let cachedGeminiModels: { models: string[]; fetchedAt: number } | null = null;
+
+function isProGeminiModel(name: string) {
+  return /(^|-)pro($|-)/.test(name);
+}
+
+async function fetchGeminiModels(apiKey: string) {
+  const now = Date.now();
+  if (
+    cachedGeminiModels &&
+    now - cachedGeminiModels.fetchedAt < GEMINI_MODELS_CACHE_TTL_MS
+  ) {
+    return cachedGeminiModels.models;
+  }
+
+  const response = await fetch(`${GEMINI_MODELS_ENDPOINT}?key=${apiKey}`);
+  if (!response.ok) {
+    throw new Error(
+      `Failed to fetch Gemini models: ${response.status} ${response.statusText}`,
+    );
+  }
+
+  const data = (await response.json()) as GeminiModelListResponse;
+  const models =
+    data.models
+      ?.filter((model) =>
+        model.supportedGenerationMethods?.includes("generateContent"),
+      )
+      .map((model) => model.name)
+      .filter((name): name is string => Boolean(name))
+      .filter((name) => name.startsWith("models/gemini-"))
+      .map((name) => name.replace(/^models\//, ""))
+      .filter((name) => !name.includes("embedding"))
+      .filter((name) => !isProGeminiModel(name)) ?? [];
+
+  if (models.length === 0) {
+    throw new Error("No eligible Gemini models returned from the API.");
+  }
+
+  cachedGeminiModels = { models, fetchedAt: now };
+  return models;
+}
+
 export async function chatWithPetswipeAI(
   history: Array<{ role: string; parts: { text: string }[] }>,
   latestUserMessage: string,
@@ -36,41 +90,57 @@ export async function chatWithPetswipeAI(
     Respond in the same language the user writes in.
   `;
 
-  const model = genAI.getGenerativeModel({
-    model: "gemini-2.0-flash-lite",
-    systemInstruction,
-  });
+  const modelsToTry = await fetchGeminiModels(apiKey);
+  const errors: Error[] = [];
 
-  const chat = model.startChat({
-    generationConfig: <GenerationConfig>{
-      temperature: 0.9,
-      topP: 0.95,
-      topK: 64,
-      maxOutputTokens: 8192,
-    },
-    safetySettings: [
-      {
-        category: HarmCategory.HARM_CATEGORY_HARASSMENT,
-        threshold: HarmBlockThreshold.BLOCK_NONE,
-      },
-      {
-        category: HarmCategory.HARM_CATEGORY_HATE_SPEECH,
-        threshold: HarmBlockThreshold.BLOCK_NONE,
-      },
-      {
-        category: HarmCategory.HARM_CATEGORY_SEXUALLY_EXPLICIT,
-        threshold: HarmBlockThreshold.BLOCK_NONE,
-      },
-      {
-        category: HarmCategory.HARM_CATEGORY_DANGEROUS_CONTENT,
-        threshold: HarmBlockThreshold.BLOCK_NONE,
-      },
-    ],
-    history,
-  });
+  for (const modelName of modelsToTry) {
+    try {
+      const model = genAI.getGenerativeModel({
+        model: modelName,
+        systemInstruction,
+      });
 
-  const response = await chat.sendMessage(latestUserMessage);
-  if (!response.response?.text) throw new Error("Gemini returned no text");
+      const chat = model.startChat({
+        generationConfig: <GenerationConfig>{
+          temperature: 0.9,
+          topP: 0.95,
+          topK: 64,
+          maxOutputTokens: 8192,
+        },
+        safetySettings: [
+          {
+            category: HarmCategory.HARM_CATEGORY_HARASSMENT,
+            threshold: HarmBlockThreshold.BLOCK_NONE,
+          },
+          {
+            category: HarmCategory.HARM_CATEGORY_HATE_SPEECH,
+            threshold: HarmBlockThreshold.BLOCK_NONE,
+          },
+          {
+            category: HarmCategory.HARM_CATEGORY_SEXUALLY_EXPLICIT,
+            threshold: HarmBlockThreshold.BLOCK_NONE,
+          },
+          {
+            category: HarmCategory.HARM_CATEGORY_DANGEROUS_CONTENT,
+            threshold: HarmBlockThreshold.BLOCK_NONE,
+          },
+        ],
+        history,
+      });
 
-  return response.response.text();
+      const response = await chat.sendMessage(latestUserMessage);
+      if (!response.response?.text) {
+        throw new Error(`Gemini returned no text for model ${modelName}`);
+      }
+
+      return response.response.text();
+    } catch (error) {
+      errors.push(error instanceof Error ? error : new Error(String(error)));
+    }
+  }
+
+  throw (
+    errors[errors.length - 1] ??
+    new Error("No Gemini models were available to try.")
+  );
 }
