@@ -120,6 +120,69 @@ const wrapBareLatex = (text: string) =>
     )
     .join("\n");
 
+const formatErrorDetail = (detail: unknown) => {
+  if (detail == null) return "Unknown error";
+  if (typeof detail === "string") return detail;
+  if (typeof detail === "number" || typeof detail === "boolean") {
+    return String(detail);
+  }
+  if (Array.isArray(detail)) {
+    return detail.map((item) => formatErrorDetail(item)).join("; ");
+  }
+  if (typeof detail === "object") {
+    const record = detail as Record<string, unknown>;
+    const label: string[] = [];
+    if (typeof record.model === "string") label.push(record.model);
+    if (typeof record.status === "number") label.push(String(record.status));
+    if (typeof record.statusText === "string") label.push(record.statusText);
+    const prefix = label.length > 0 ? `[${label.join(" ")}] ` : "";
+    const message =
+      typeof record.message === "string"
+        ? record.message
+        : JSON.stringify(detail);
+    if (record.errorDetails) {
+      const extra =
+        typeof record.errorDetails === "string"
+          ? record.errorDetails
+          : JSON.stringify(record.errorDetails);
+      return `${prefix}${message}\n${extra}`;
+    }
+    return `${prefix}${message}`;
+  }
+  return String(detail);
+};
+
+const formatErrorBullet = (detail: unknown) =>
+  formatErrorDetail(detail)
+    .split("\n")
+    .map((line, index) => (index === 0 ? `- ${line}` : `  ${line}`))
+    .join("\n");
+
+const buildErrorText = (data: any, status: number) => {
+  const baseMessage =
+    typeof data?.message === "string"
+      ? data.message
+      : `Request failed (${status}).`;
+  const rawDetails = data?.details ?? data?.errorDetails;
+  const details = Array.isArray(rawDetails)
+    ? rawDetails
+    : rawDetails
+      ? [rawDetails]
+      : [];
+  if (details.length === 0) return baseMessage;
+  return [baseMessage, "", "Details:", ...details.map(formatErrorBullet)].join(
+    "\n",
+  );
+};
+
+const readJson = async (res: Response) => {
+  try {
+    return await res.json();
+  } catch {
+    return null;
+  }
+};
+
 const DraggableChatbot: React.FC = () => {
   // Show trigger only when there's a VALID token
   const [authed, setAuthed] = useState(false);
@@ -294,15 +357,29 @@ const DraggableChatbot: React.FC = () => {
         localStorage.removeItem("jwt");
         return;
       }
-      const data = await res.json();
+      const data = await readJson(res);
+      if (!res.ok) {
+        setMsgs((m) => [
+          ...m,
+          { sender: "model", text: buildErrorText(data, res.status) },
+        ]);
+        return;
+      }
+      const replyText =
+        typeof data?.text === "string" && data.text.trim().length > 0
+          ? data.text
+          : null;
+      const fallbackText =
+        typeof data?.message === "string" ? data.message : "(no reply)";
       setMsgs((m) => [
         ...m,
-        { sender: "model", text: data.text || "(no reply)" },
+        { sender: "model", text: replyText ?? fallbackText },
       ]);
-    } catch {
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Unknown error";
       setMsgs((m) => [
         ...m,
-        { sender: "model", text: "Sorry, something went wrong." },
+        { sender: "model", text: `Request failed: ${message}` },
       ]);
     } finally {
       clearTimeout(timer);
