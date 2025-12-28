@@ -31,6 +31,9 @@ export interface Pet {
   id: string;
   name: string;
   type: string;
+  ageMonths?: number;
+  approxBreed?: string;
+  adoptableStatus?: string;
   description?: string;
   photoUrl?: string;
   shelterName: string;
@@ -40,6 +43,39 @@ export interface Pet {
   swipes: Swipe[];
   createdAt: string;
   updatedAt: string;
+}
+
+/**
+ * Represents a pet in a personalized deck with scoring.
+ */
+export interface DeckItem {
+  id: string;
+  name: string;
+  type: string;
+  ageMonths?: number;
+  breed?: string;
+  photoUrl?: string;
+  shelterName?: string;
+  shelterContact?: string;
+  shelterAddress?: string;
+  description?: string;
+  score: number;
+  rank: number;
+  createdAt: string;
+}
+
+/**
+ * Response from the personalized deck API.
+ */
+export interface DeckResponse {
+  items: DeckItem[];
+  meta: {
+    limit: number;
+    generatedAt: string;
+    strategy: string;
+    totalCandidates?: number;
+    cacheHit?: boolean;
+  };
 }
 
 /**
@@ -260,7 +296,33 @@ export const petApi = {
   },
 
   /**
-   * List all pets.
+   * Get a personalized, diverse deck of pets using the relevance engine.
+   * @param limit number of pets to return (1-100, default 30)
+   * @param petType optional filter by pet type ("Dog", "Cat", etc.)
+   * @param minAge optional minimum age in months
+   * @param maxAge optional maximum age in months
+   * @returns personalized deck with scored and ranked pets
+   */
+  getDeck: async (params?: {
+    limit?: number;
+    petType?: string;
+    minAge?: number;
+    maxAge?: number;
+  }): Promise<DeckResponse> => {
+    const searchParams = new URLSearchParams();
+    if (params?.limit) searchParams.set("limit", params.limit.toString());
+    if (params?.petType) searchParams.set("petType", params.petType);
+    if (params?.minAge) searchParams.set("minAge", params.minAge.toString());
+    if (params?.maxAge) searchParams.set("maxAge", params.maxAge.toString());
+    
+    const query = searchParams.toString();
+    const url = query ? `/pets/deck?${query}` : "/pets/deck";
+    const res = await api.get<DeckResponse>(url);
+    return res.data;
+  },
+
+  /**
+   * List all pets (legacy endpoint).
    * @returns an array of Pet objects
    */
   listPets: async (): Promise<Pet[]> => {
