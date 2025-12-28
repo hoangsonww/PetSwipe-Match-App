@@ -376,8 +376,7 @@ const DraggableChatbot: React.FC = () => {
         { sender: "model", text: replyText ?? fallbackText },
       ]);
     } catch (error) {
-      const message =
-        error instanceof Error ? error.message : "Unknown error";
+      const message = error instanceof Error ? error.message : "Unknown error";
       setMsgs((m) => [
         ...m,
         { sender: "model", text: `Request failed: ${message}` },
