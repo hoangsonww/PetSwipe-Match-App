@@ -63,6 +63,16 @@ export interface Swipe {
   swipedAt: string;
 }
 
+/**
+ * A favorite is a pet bookmarked by a user.
+ */
+export interface Favorite {
+  id: string;
+  user: AppUser;
+  pet: Pet;
+  favoritedAt: string;
+}
+
 /* -------------------------------------------------------------------------- */
 /* Helper: persist JWT to mitigate Safari cookie issues                       */
 /* -------------------------------------------------------------------------- */
@@ -392,6 +402,28 @@ export const swipeApi = {
   listAllSwipes: async (): Promise<Swipe[]> => {
     const res = await api.get<Swipe[]>("/swipes");
     return res.data;
+  },
+};
+
+/* -------------------------------------------------------------------------- */
+/* Favorites API                                                               */
+/* -------------------------------------------------------------------------- */
+export const favoriteApi = {
+  /** Add a pet to the user's favorites */
+  add: async (petId: string): Promise<Favorite> => {
+    const res = await api.post<Favorite>("/favorites", { petId });
+    return res.data;
+  },
+
+  /** List the user's favorite pets */
+  list: async (): Promise<Favorite[]> => {
+    const res = await api.get<Favorite[]>("/favorites");
+    return res.data;
+  },
+
+  /** Remove a pet from favorites */
+  remove: async (petId: string): Promise<void> => {
+    await api.delete(`/favorites/${petId}`);
   },
 };
 
