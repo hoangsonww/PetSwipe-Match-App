@@ -20,6 +20,7 @@ export interface AppUser {
   avatarUrl?: string | null;
   matches: Match[];
   swipes: Swipe[];
+  adoptionJourneys?: AdoptionJourney[];
   createdAt: string;
   updatedAt: string;
 }
@@ -61,6 +62,33 @@ export interface Swipe {
   pet: Pet;
   liked: boolean;
   swipedAt: string;
+}
+
+export type JourneyStatus =
+  | "DISCOVERY"
+  | "APPLICATION_SUBMITTED"
+  | "MEET_AND_GREET"
+  | "HOME_PREP"
+  | "ADOPTED";
+
+export interface AdoptionTask {
+  id: string;
+  title: string;
+  description?: string | null;
+  completed: boolean;
+  completedAt?: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface AdoptionJourney {
+  id: string;
+  pet: Pet;
+  status: JourneyStatus;
+  notes?: string | null;
+  tasks: AdoptionTask[];
+  createdAt: string;
+  updatedAt: string;
 }
 
 /* -------------------------------------------------------------------------- */
@@ -392,6 +420,69 @@ export const swipeApi = {
   listAllSwipes: async (): Promise<Swipe[]> => {
     const res = await api.get<Swipe[]>("/swipes");
     return res.data;
+  },
+};
+
+/* -------------------------------------------------------------------------- */
+/* Adoption Journey API                                                       */
+/* -------------------------------------------------------------------------- */
+export const journeyApi = {
+  /**
+   * Fetch all adoption journeys for the authenticated user.
+   */
+  listMyJourneys: async (): Promise<AdoptionJourney[]> => {
+    const res = await api.get<AdoptionJourney[]>("/journeys/me");
+    return res.data;
+  },
+
+  /**
+   * Update an adoption journey's status or notes.
+   */
+  updateJourney: async (
+    journeyId: string,
+    payload: { status?: JourneyStatus; notes?: string | null },
+  ): Promise<AdoptionJourney> => {
+    const res = await api.patch<AdoptionJourney>(
+      `/journeys/${journeyId}`,
+      payload,
+    );
+    return res.data;
+  },
+
+  /**
+   * Add a custom task to a journey.
+   */
+  addTask: async (
+    journeyId: string,
+    payload: { title: string; description?: string },
+  ): Promise<AdoptionTask> => {
+    const res = await api.post<AdoptionTask>(
+      `/journeys/${journeyId}/tasks`,
+      payload,
+    );
+    return res.data;
+  },
+
+  /**
+   * Update a single task on a journey.
+   */
+  updateTask: async (
+    journeyId: string,
+    taskId: string,
+    payload: { title?: string; description?: string; completed?: boolean },
+  ): Promise<AdoptionTask> => {
+    const res = await api.patch<AdoptionTask>(
+      `/journeys/${journeyId}/tasks/${taskId}`,
+      payload,
+    );
+    return res.data;
+  },
+
+  /**
+   * Delete a task from a journey.
+   */
+  deleteTask: async (journeyId: string, taskId: string): Promise<void> => {
+    await api.delete(`/journeys/${journeyId}/tasks/${taskId}`);
   },
 };
 

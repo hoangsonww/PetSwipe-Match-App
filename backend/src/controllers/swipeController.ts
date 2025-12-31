@@ -2,9 +2,14 @@ import { Request, Response, NextFunction } from "express";
 import { AppDataSource } from "../index";
 import { Swipe } from "../entities/Swipe";
 import { Pet } from "../entities/Pet";
+import { AdoptionJourney, JourneyStatus } from "../entities/AdoptionJourney";
+import { AdoptionTask } from "../entities/AdoptionTask";
+import { DEFAULT_JOURNEY_TASKS } from "../utils/adoptionJourney";
 
 const swipeRepo = () => AppDataSource.getRepository(Swipe);
 const petRepo = () => AppDataSource.getRepository(Pet);
+const journeyRepo = () => AppDataSource.getRepository(AdoptionJourney);
+const taskRepo = () => AppDataSource.getRepository(AdoptionTask);
 
 /**
  * @openapi
@@ -137,6 +142,36 @@ export const recordSwipe = async (
       liked,
     });
     await swipeRepo().save(swipe);
+
+    if (liked) {
+      const existingJourney = await journeyRepo().findOne({
+        where: { user: { id: req.user.id }, pet: { id: petId } },
+      });
+
+      if (!existingJourney) {
+        const initialNotes = pet.shelterContact
+          ? `Reach out to ${pet.shelterName ?? "the shelter"} at ${pet.shelterContact} to get the process started.`
+          : `Start planning how you'll welcome ${pet.name} home.`;
+
+        const journey = journeyRepo().create({
+          user: req.user,
+          pet,
+          status: JourneyStatus.DISCOVERY,
+          notes: initialNotes,
+        });
+        await journeyRepo().save(journey);
+
+        if (DEFAULT_JOURNEY_TASKS.length > 0) {
+          const tasks = DEFAULT_JOURNEY_TASKS.map((task) =>
+            taskRepo().create({
+              ...task,
+              journey,
+            }),
+          );
+          await taskRepo().save(tasks);
+        }
+      }
+    }
 
     res.json(swipe);
   } catch (err) {
