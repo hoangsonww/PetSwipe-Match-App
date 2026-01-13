@@ -4,6 +4,8 @@ import { AppUser } from "../entities/User";
 import { Match } from "../entities/Match";
 import { Swipe } from "../entities/Swipe";
 import { Pet } from "../entities/Pet";
+import { Conversation } from "../entities/Conversation";
+import { Message } from "../entities/Message";
 
 const ormconfig: DataSourceOptions = {
   type: "postgres",
@@ -29,7 +31,7 @@ const ormconfig: DataSourceOptions = {
     idleTimeoutMillis: 30000, // close idle clients after 30s
   },
 
-  entities: [AppUser, Match, Swipe, Pet],
+  entities: [AppUser, Match, Swipe, Pet, Conversation, Message],
 
   // only auto‐sync schema in dev
   synchronize: config.nodeEnv === "development",
