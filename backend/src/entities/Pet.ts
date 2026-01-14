@@ -22,6 +22,22 @@ export class Pet {
   @Column()
   type!: string;
 
+  /** Age in months for more precise scoring */
+  @Column({ type: "integer", nullable: true })
+  ageMonths?: number;
+
+  /** Approximate breed for matching and diversity */
+  @Column({ type: "varchar", length: 100, nullable: true })
+  approxBreed?: string;
+
+  /** Status for filtering adoptable pets */
+  @Column({ type: "varchar", length: 50, default: "available" })
+  adoptableStatus!: string;
+
+  /** Soft deletion flag */
+  @Column({ type: "boolean", default: false })
+  isDeleted!: boolean;
+
   /** breed, color, age etc. */
   @Column({ type: "text", nullable: true })
   description?: string;

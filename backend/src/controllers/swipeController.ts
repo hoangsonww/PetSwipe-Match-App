@@ -2,6 +2,7 @@ import { Request, Response, NextFunction } from "express";
 import { AppDataSource } from "../index";
 import { Swipe } from "../entities/Swipe";
 import { Pet } from "../entities/Pet";
+import { onPetSwiped } from "./deckController";
 
 const swipeRepo = () => AppDataSource.getRepository(Swipe);
 const petRepo = () => AppDataSource.getRepository(Pet);
@@ -137,6 +138,9 @@ export const recordSwipe = async (
       liked,
     });
     await swipeRepo().save(swipe);
+
+    // Update deck cache by removing this pet
+    await onPetSwiped((req.user as any).id, petId);
 
     res.json(swipe);
   } catch (err) {
