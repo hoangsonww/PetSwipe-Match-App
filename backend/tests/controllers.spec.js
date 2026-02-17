@@ -18,6 +18,12 @@ const {
   getProfile,
   uploadAvatarHandler,
 } = require("../src/controllers/userController");
+const {
+  listMyJourneys,
+  updateJourney,
+  addTask: addJourneyTask,
+  deleteTask: deleteJourneyTask,
+} = require("../src/controllers/adoptionJourneyController");
 
 // A tiny Express-like response mock
 function resMock() {
@@ -155,5 +161,41 @@ describe("Controller sanity suite (JS)", () => {
     const res = resMock();
     await uploadAvatarHandler(req, res, () => {});
     expect(res.status).toHaveBeenCalledWith(400);
+  });
+
+  /* ---------- ADOPTION JOURNEYS ---------- */
+
+  test("listMyJourneys unauthorized → 401", async () => {
+    const res = resMock();
+    await listMyJourneys({}, res, () => {});
+    expect(res.status).toHaveBeenCalledWith(401);
+  });
+
+  test("updateJourney invalid status → 400", async () => {
+    const req = {
+      user: { id: "user-123" },
+      params: { journeyId: "journey-1" },
+      body: { status: "NOT_REAL" },
+    };
+    const res = resMock();
+    await updateJourney(req, res, () => {});
+    expect(res.status).toHaveBeenCalledWith(400);
+  });
+
+  test("addTask missing title → 400", async () => {
+    const req = {
+      user: { id: "user-123" },
+      params: { journeyId: "journey-1" },
+      body: {},
+    };
+    const res = resMock();
+    await addJourneyTask(req, res, () => {});
+    expect(res.status).toHaveBeenCalledWith(400);
+  });
+
+  test("deleteTask unauthorized → 401", async () => {
+    const res = resMock();
+    await deleteJourneyTask({ params: {}, user: undefined }, res, () => {});
+    expect(res.status).toHaveBeenCalledWith(401);
   });
 });

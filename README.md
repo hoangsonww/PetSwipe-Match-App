@@ -100,6 +100,9 @@ PetSwipe is a full-stack application with the following features:
   - Deck is generated based on user preferences and past swipes
   - Users will only see pets that they haven't swiped on before, and pets that are most relevant to them
 - **History**: View all swipes & liked (adopted) pets
+- **Adoption Journeys**:
+  - Guided pipeline that turns every liked pet into a progress tracker from discovery to adoption day
+  - Smart checklists, custom tasks, and personal notes keep every shelter conversation and home-prep task organized
 - **Chatbot**:
   - A simple chatbot to answer common questions about the app and pets (e.g. breeds, adoption process, pet care tips, etc.)
   - Powered by **Google AI** and **Retrieval-Augmented Generation (RAG)** for personalized responses

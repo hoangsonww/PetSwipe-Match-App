@@ -6,6 +6,8 @@ function freshRepo() {
     findByIds: jest.fn(),
     save: jest.fn(),
     create: jest.fn((v) => v),
+    remove: jest.fn().mockResolvedValue(undefined),
+    delete: jest.fn(),
     createQueryBuilder: jest.fn(() => ({
       leftJoin: () => ({
         where: () => ({

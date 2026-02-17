@@ -261,5 +261,34 @@ export const components = {
         },
       },
     },
+
+    AdoptionTask: {
+      type: "object",
+      properties: {
+        id: { type: "string", format: "uuid" },
+        title: { type: "string" },
+        description: { type: "string", nullable: true },
+        completed: { type: "boolean" },
+        completedAt: { type: "string", format: "date-time", nullable: true },
+        createdAt: { type: "string", format: "date-time" },
+        updatedAt: { type: "string", format: "date-time" },
+      },
+    },
+
+    AdoptionJourney: {
+      type: "object",
+      properties: {
+        id: { type: "string", format: "uuid" },
+        pet: { $ref: "#/components/schemas/Pet" },
+        status: { type: "string" },
+        notes: { type: "string", nullable: true },
+        tasks: {
+          type: "array",
+          items: { $ref: "#/components/schemas/AdoptionTask" },
+        },
+        createdAt: { type: "string", format: "date-time" },
+        updatedAt: { type: "string", format: "date-time" },
+      },
+    },
   },
 };

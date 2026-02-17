@@ -8,6 +8,7 @@ import {
 } from "typeorm";
 import { Match } from "./Match";
 import { Swipe } from "./Swipe";
+import { AdoptionJourney } from "./AdoptionJourney";
 
 @Entity()
 export class Pet {
@@ -51,6 +52,9 @@ export class Pet {
 
   @OneToMany(() => Swipe, (s) => s.pet)
   swipes!: Swipe[];
+
+  @OneToMany(() => AdoptionJourney, (journey) => journey.pet)
+  adoptionJourneys!: AdoptionJourney[];
 
   @CreateDateColumn()
   createdAt!: Date;
