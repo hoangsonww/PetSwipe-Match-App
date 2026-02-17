@@ -2,6 +2,8 @@ import Link from "next/link";
 import { Github, FileText, ShieldCheck, Heart } from "lucide-react";
 
 export function Footer() {
+  const year = new Date().getFullYear();
+
   return (
     <footer className="bg-[#7097A8] text-white py-6">
       <div className="max-w-4xl mx-auto text-center space-y-2">
@@ -17,7 +19,7 @@ export function Footer() {
               Son Nguyen
             </a>
           </Link>{" "}
-          in 2025 with{" "}
+          in {year} with{" "}
           <Heart className="inline-block h-4 w-4 text-red-400 align-middle" />
         </p>
 

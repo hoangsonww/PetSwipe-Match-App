@@ -360,6 +360,7 @@ const Landing: NextPage = () => {
     [0, 500],
     prefersReducedMotion ? [0, 0] : [0, 150],
   );
+  const year = new Date().getFullYear();
 
   return (
     <>
@@ -1154,13 +1155,33 @@ const Landing: NextPage = () => {
         <div className="absolute -right-32 -bottom-32 h-96 w-96 rounded-full bg-white opacity-10 blur-3xl animate-float-slower" />
         <div className="absolute -left-24 -top-24 h-72 w-72 rounded-full bg-white opacity-10 blur-3xl animate-float-slow" />
         <div className="relative z-10 mx-auto px-6 max-w-3xl">
-          <h2 className="text-3xl md:text-4xl font-extrabold">
+          <motion.h2
+            variants={fadeUp}
+            initial="hidden"
+            whileInView="visible"
+            viewport={{ once: true }}
+            className="text-3xl md:text-4xl font-extrabold"
+          >
             Ready to find your forever friend?
-          </h2>
-          <p className="mt-4 text-lg opacity-90">
+          </motion.h2>
+          <motion.p
+            variants={fadeUp}
+            initial="hidden"
+            whileInView="visible"
+            custom={0.15}
+            viewport={{ once: true }}
+            className="mt-4 text-lg opacity-90"
+          >
             Join thousands who’ve adopted through PetSwipe.
-          </p>
-          <div className="mt-10 flex flex-wrap justify-center gap-4">
+          </motion.p>
+          <motion.div
+            variants={fadeUp}
+            initial="hidden"
+            whileInView="visible"
+            custom={0.3}
+            viewport={{ once: true }}
+            className="mt-10 flex flex-wrap justify-center gap-4"
+          >
             <Link href="/signup" passHref>
               <Button className="px-10 py-4 text-lg bg-white text-[#234851] hover:bg-gray-100 shadow-xl">
                 Create Free Account
@@ -1174,12 +1195,24 @@ const Landing: NextPage = () => {
                 Explore Pets
               </Button>
             </Link>
-          </div>
+          </motion.div>
         </div>
       </section>
-      <footer className="bg-[#fff] py-6 text-[#234851] font-inter">
+      <motion.footer
+        className="bg-[#fff] py-6 text-[#234851] font-inter"
+        variants={fadeUp}
+        initial="hidden"
+        whileInView="visible"
+        viewport={{ once: true }}
+      >
         <div className="max-w-4xl mx-auto text-center space-y-2">
-          <p className="text-sm">
+          <motion.p
+            variants={fadeUp}
+            initial="hidden"
+            whileInView="visible"
+            viewport={{ once: true }}
+            className="text-sm"
+          >
             From{" "}
             <Link href="https://github.com/hoangsonww" legacyBehavior>
               <a
@@ -1190,11 +1223,18 @@ const Landing: NextPage = () => {
                 Son Nguyen
               </a>
             </Link>{" "}
-            in 2025&nbsp;with{" "}
+            in {year} with{" "}
             <Heart className="inline-block h-4 w-4 text-red-400 align-middle" />
-          </p>
+          </motion.p>
 
-          <div className="flex flex-wrap justify-center gap-x-6 gap-y-2">
+          <motion.div
+            variants={fadeUp}
+            initial="hidden"
+            whileInView="visible"
+            custom={0.15}
+            viewport={{ once: true }}
+            className="flex flex-wrap justify-center gap-x-6 gap-y-2"
+          >
             <Link
               href="https://github.com/hoangsonww/PetSwipe-Match-App"
               legacyBehavior
@@ -1220,9 +1260,9 @@ const Landing: NextPage = () => {
                 <span>Privacy&nbsp;Policy</span>
               </a>
             </Link>
-          </div>
+          </motion.div>
         </div>
-      </footer>
+      </motion.footer>
       <style jsx global>{`
         html {
           font-family:

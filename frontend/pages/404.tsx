@@ -28,6 +28,8 @@ const NotFoundPage = () => {
     prefersReducedMotion ? [0, 0] : [0, 150],
   );
 
+  const year = new Date().getFullYear();
+
   return (
     <>
       <Head>
@@ -144,7 +146,7 @@ const NotFoundPage = () => {
                 Son Nguyen
               </a>
             </Link>{" "}
-            in 2025 with{" "}
+            in {year} with{" "}
             <Heart className="inline-block h-4 w-4 text-red-400 align-middle" />
           </p>
           <div className="flex flex-wrap justify-center gap-x-6 gap-y-2">
