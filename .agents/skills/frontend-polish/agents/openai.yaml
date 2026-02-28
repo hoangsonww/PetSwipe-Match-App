@@ -1,0 +1,7 @@
+interface:
+  display_name: "PetSwipe Frontend Polish"
+  short_description: "Refine responsive UI and chart behavior."
+  default_prompt: "Use $frontend-polish to improve this PetSwipe frontend page and keep it polished on desktop and mobile."
+
+policy:
+  allow_implicit_invocation: true

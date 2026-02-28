@@ -11,8 +11,10 @@
 > [!NOTE]
 > Inspired by Tinder UX, but for pets to find their loving humans! 🐶🐱
 
-![TypeScript](https://img.shields.io/badge/TypeScript-3178C6?style=flat-square&logo=typescript&logoColor=white) ![Node.js](https://img.shields.io/badge/Node.js-339933?style=flat-square&logo=nodedotjs&logoColor=white) ![Express](https://img.shields.io/badge/Express-000000?style=flat-square&logo=express&logoColor=white) ![Next.js](https://img.shields.io/badge/Next.js-000000?style=flat-square&logo=nextdotjs&logoColor=white) ![Shell](https://img.shields.io/badge/Shell-4EAA25?style=flat-square&logo=gnubash&logoColor=white) ![Docker](https://img.shields.io/badge/Docker-2496ED?style=flat-square&logo=docker&logoColor=white) ![Shadcn UI](https://img.shields.io/badge/Shadcn/UI-889889?style=flat-square&logo=shadcnui&logoColor=white) ![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-38B2AC?style=flat-square&logo=tailwindcss&logoColor=white) ![Framer Motion](https://img.shields.io/badge/Framer_Motion-000000?style=flat-square&logo=framer&logoColor=white) ![PostgreSQL](https://img.shields.io/badge/PostgreSQL-316192?style=flat-square&logo=postgresql&logoColor=white) ![TypeORM](https://img.shields.io/badge/TypeORM-336791?style=flat-square&logo=typeorm&logoColor=white) ![Supabase](https://img.shields.io/badge/Supabase-3ECF8E?style=flat-square&logo=supabase&logoColor=white) ![Redis](https://img.shields.io/badge/Redis-DC382D?style=flat-square&logo=redis&logoColor=white) ![RabbitMQ](https://img.shields.io/badge/RabbitMQ-FF6600?style=flat-square&logo=rabbitmq&logoColor=white) ![Swagger](https://img.shields.io/badge/Swagger-85EA2D?style=flat-square&logo=swagger&logoColor=black) ![JWT](https://img.shields.io/badge/JWT-000000?style=flat-square&logo=jsonwebtokens&logoColor=white) ![Google AI](https://img.shields.io/badge/Google_AI-4285F4?style=flat-square&logo=google&logoColor=white) ![Google Cloud](https://img.shields.io/badge/Google_Cloud-4242F4?style=flat-square&logo=googlecloud&logoColor=white) ![AWS](https://img.shields.io/badge/AWS-232F3E?style=flat-square&logo=amazonwebservices&logoColor=white) ![AWS S3](https://img.shields.io/badge/AWS_S3-569A31?style=flat-square&logo=amazons3&logoColor=white) ![AWS RDS](https://img.shields.io/badge/AWS_RDS-527FFF?style=flat-square&logo=amazonrds&logoColor=white) ![AWS ECS](https://img.shields.io/badge/AWS_ECS-FF0022?style=flat-square&logo=amazonecs&logoColor=white) ![AWS ECR](https://img.shields.io/badge/AWS_ECR-456789?style=flat-square&logo=amazonec2&logoColor=white) ![AWS ALB](https://img.shields.io/badge/AWS_ALB-FF9900?style=flat-square&logo=awesomewm&logoColor=white) ![AWS IAM](https://img.shields.io/badge/AWS_IAM-F05900?style=flat-square&logo=amazoniam&logoColor=white) ![AWS KMS](https://img.shields.io/badge/AWS_KMS-FF9900?style=flat-square&logo=amazon&logoColor=white) ![AWS CloudWatch](https://img.shields.io/badge/AWS_CloudWatch-232F3E?style=flat-square&logo=amazoncloudwatch&logoColor=white) ![Vercel](https://img.shields.io/badge/Vercel-000000?style=flat-square&logo=vercel&logoColor=white) ![Terraform](https://img.shields.io/badge/Terraform-7B42BC?style=flat-square&logo=terraform&logoColor=white) ![Consul](https://img.shields.io/badge/Consul-DC322F?style=flat-square&logo=consul&logoColor=white) ![Nomad](https://img.shields.io/badge/Nomad-00A8E8?style=flat-square&logo=nomad&logoColor=white) ![Vault](https://img.shields.io/badge/Vault-121F31?style=flat-square&logo=vault&logoColor=white) ![Ansible](https://img.shields.io/badge/Ansible-EE0000?style=flat-square&logo=ansible&logoColor=white) ![Make](https://img.shields.io/badge/Make-777777?style=flat-square&logo=gnu&logoColor=white) ![Playwright](https://img.shields.io/badge/Playwright-2B2D42?style=flat-square&logo=nestjs&logoColor=white) ![Jest](https://img.shields.io/badge/Jest-C21325?style=flat-square&logo=jest&logoColor=white) ![Chai](https://img.shields.io/badge/Chai-A30701?style=flat-square&logo=chai&logoColor=white) ![Mocha](https://img.shields.io/badge/Mocha-8D6748?style=flat-square&logo=mocha&logoColor=white) ![Commitlint](https://img.shields.io/badge/Commitlint-000000?style=flat-square&logo=commitlint&logoColor=white) ![GitHub Actions](https://img.shields.io/badge/GitHub_Actions-2088FF?style=flat-square&logo=githubactions&logoColor=white) ![Prettier](https://img.shields.io/badge/Prettier-F7B93E?style=flat-square&logo=prettier&logoColor=black) ![ESLint](https://img.shields.io/badge/ESLint-4B3263?style=flat-square&logo=eslint&logoColor=white) ![Yelp](https://img.shields.io/badge/Yelp-FF0000?style=flat-square&logo=yelp&logoColor=white) ![GitHub](https://img.shields.io/badge/GitHub-181717?style=flat-square&logo=github&logoColor=white)
-
+![TypeScript](https://img.shields.io/badge/TypeScript-3178C6?style=flat-square&logo=typescript&logoColor=white) ![Node.js](https://img.shields.io/badge/Node.js-339933?style=flat-square&logo=nodedotjs&logoColor=white) ![Express](https://img.shields.io/badge/Express-000000?style=flat-square&logo=express&logoColor=white) ![Next.js](https://img.shields.io/badge/Next.js-000000?style=flat-square&logo=nextdotjs&logoColor=white) ![Shell](https://img.shields.io/badge/Shell-4EAA25?style=flat-square&logo=gnubash&logoColor=white) ![Docker](https://img.shields.io/badge/Docker-2496ED?style=flat-square&logo=docker&logoColor=white) ![Shadcn UI](https://img.shields.io/badge/Shadcn/UI-889889?style=flat-square&logo=shadcnui&logoColor=white) ![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-38B2AC?style=flat-square&logo=tailwindcss&logoColor=white) ![Framer Motion](https://img.shields.io/badge/Framer_Motion-000000?style=flat-square&logo=framer&logoColor=white) ![PostgreSQL](https://img.shields.io/badge/PostgreSQL-316192?style=flat-square&logo=postgresql&logoColor=white) ![TypeORM](https://img.shields.io/badge/TypeORM-336791?style=flat-square&logo=typeorm&logoColor=white) ![Supabase](https://img.shields.io/badge/Supabase-3ECF8E?style=flat-square&logo=supabase&logoColor=white) ![Redis](https://img.shields.io/badge/Redis-DC382D?style=flat-square&logo=redis&logoColor=white) ![RabbitMQ](https://img.shields.io/badge/RabbitMQ-FF6600?style=flat-square&logo=rabbitmq&logoColor=white) ![Swagger](https://img.shields.io/badge/Swagger-85EA2D?style=flat-square&logo=swagger&logoColor=black) ![JWT](https://img.shields.io/badge/JWT-000000?style=flat-square&logo=jsonwebtokens&logoColor=white) ![Google AI](https://img.shields.io/badge/Google_AI-4285F4?style=flat-square&logo=google&logoColor=white) ![Google Cloud](https://img.shields.io/badge/Google_Cloud-4242F4?style=flat-square&logo=googlecloud&logoColor=white) ![AWS](https://img.shields.io/badge/AWS-232F3E?style=flat-square&logo=amazonwebservices&logoColor=white) ![AWS S3](https://img.shields.io/badge/AWS_S3-569A31?style=flat-square&logo=amazons3&logoColor=white) ![AWS RDS](https://img.shields.io/badge/AWS_RDS-527FFF?style=flat-square&logo=amazonrds&logoColor=white) ![AWS ECS](https://img.shields.io/badge/AWS_ECS-FF0022?style=flat-square&logo=amazonecs&logoColor=white) ![AWS ECR](https://img.shields.io/badge/AWS_ECR-456789?style=flat-square&logo=amazonec2&logoColor=white) ![AWS ALB](https://img.shields.io/badge/AWS_ALB-FF9900?style=flat-square&logoColor=white) ![AWS IAM](https://img.shields.io/badge/AWS_IAM-F05900?style=flat-square&logo=amazoniam&logoColor=white) ![AWS KMS](https://img.shields.io/badge/AWS_KMS-FF9900?style=flat-square&logo=amazon&logoColor=white) ![AWS CloudWatch](https://img.shields.io/badge/AWS_CloudWatch-232F3E?style=flat-square&logo=amazoncloudwatch&logoColor=white) ![Vercel](https://img.shields.io/badge/Vercel-000000?style=flat-square&logo=vercel&logoColor=white) ![Terraform](https://img.shields.io/badge/Terraform-7B42BC?style=flat-square&logo=terraform&logoColor=white) ![Consul](https://img.shields.io/badge/Consul-DC322F?style=flat-square&logo=consul&logoColor=white) ![Nomad](https://img.shields.io/badge/Nomad-00A8E8?style=flat-square&logo=nomad&logoColor=white) ![Vault](https://img.shields.io/badge/Vault-121F31?style=flat-square&logo=vault&logoColor=white) ![Ansible](https://img.shields.io/badge/Ansible-EE0000?style=flat-square&logo=ansible&logoColor=white) ![Make](https://img.shields.io/badge/Make-777777?style=flat-square&logo=gnu&logoColor=white) ![Playwright](https://img.shields.io/badge/Playwright-2B2D42?style=flat-square&logo=nestjs&logoColor=white) ![Jest](https://img.shields.io/badge/Jest-C21325?style=flat-square&logo=jest&logoColor=white) ![Chai](https://img.shields.io/badge/Chai-A30701?style=flat-square&logo=chai&logoColor=white) ![Mocha](https://img.shields.io/badge/Mocha-8D6748?style=flat-square&logo=mocha&logoColor=white) ![Commitlint](https://img.shields.io/badge/Commitlint-000000?style=flat-square&logo=commitlint&logoColor=white) ![GitHub Actions](https://img.shields.io/badge/GitHub_Actions-2088FF?style=flat-square&logo=githubactions&logoColor=white) ![Prettier](https://img.shields.io/badge/Prettier-F7B93E?style=flat-square&logo=prettier&logoColor=black) ![ESLint](https://img.shields.io/badge/ESLint-4B3263?style=flat-square&logo=eslint&logoColor=white) ![Yelp](https://img.shields.io/badge/Yelp-FF0000?style=flat-square&logo=yelp&logoColor=white) ![GitHub](https://img.shields.io/badge/GitHub-181717?style=flat-square&logo=github&logoColor=white) ![Prometheus](https://img.shields.io/badge/Prometheus-FF0000?style=flat-square&logo=prometheus&logoColor=white) ![Grafana](https://img.shields.io/badge/Grafana-F46800?style=flat-square&logo=grafana&logoColor=white)
+![React](https://img.shields.io/badge/React-20232A?style=flat-square&logo=react&logoColor=61DAFB) ![Radix UI](https://img.shields.io/badge/Radix_UI-161618?style=flat-square&logo=radixui&logoColor=white) ![SWR](https://img.shields.io/badge/SWR-000000?style=flat-square&logoColor=white) ![Recharts](https://img.shields.io/badge/Recharts-FF6384?style=flat-square&logoColor=white) ![Axios](https://img.shields.io/badge/Axios-5A29E4?style=flat-square&logo=axios&logoColor=white) ![React Hook Form](https://img.shields.io/badge/React_Hook_Form-EC5990?style=flat-square&logo=reacthookform&logoColor=white) ![Zod](https://img.shields.io/badge/Zod-3E67B1?style=flat-square&logoColor=white) ![Lucide](https://img.shields.io/badge/Lucide-18181B?style=flat-square&logoColor=white) ![date-fns](https://img.shields.io/badge/date--fns-770C56?style=flat-square&logoColor=white) ![React Markdown](https://img.shields.io/badge/React_Markdown-000000?style=flat-square&logo=markdown&logoColor=white) ![KaTeX](https://img.shields.io/badge/KaTeX-008080?style=flat-square&logoColor=white) ![next-themes](https://img.shields.io/badge/next--themes-000000?style=flat-square&logo=nextdotjs&logoColor=white) ![Embla Carousel](https://img.shields.io/badge/Embla_Carousel-1F1F1F?style=flat-square&logoColor=white) ![Sonner](https://img.shields.io/badge/Sonner-FF6B6B?style=flat-square&logoColor=white) ![Vaul](https://img.shields.io/badge/Vaul-111111?style=flat-square&logoColor=white) ![Vercel Analytics](https://img.shields.io/badge/Vercel_Analytics-000000?style=flat-square&logo=vercel&logoColor=white)
+![Firebase](https://img.shields.io/badge/Firebase-FFCA28?style=flat-square&logo=firebase&logoColor=black) ![bcryptjs](https://img.shields.io/badge/bcryptjs-4C8BF5?style=flat-square&logoColor=white) ![cookie-parser](https://img.shields.io/badge/cookie--parser-D2691E?style=flat-square&logoColor=white) ![CORS](https://img.shields.io/badge/CORS-005571?style=flat-square&logoColor=white) ![Morgan](https://img.shields.io/badge/Morgan-4B5563?style=flat-square&logoColor=white) ![Multer](https://img.shields.io/badge/Multer-FFB020?style=flat-square&logoColor=black) ![Sharp](https://img.shields.io/badge/Sharp-99CC00?style=flat-square&logoColor=black) ![UUID](https://img.shields.io/badge/UUID-3B82F6?style=flat-square&logoColor=white) ![CSV](https://img.shields.io/badge/CSV-217346?style=flat-square&logoColor=white) ![serverless-http](https://img.shields.io/badge/serverless--http-FD5750?style=flat-square&logo=serverless&logoColor=white) ![Kubernetes](https://img.shields.io/badge/Kubernetes-326CE5?style=flat-square&logo=kubernetes&logoColor=white) ![NGINX](https://img.shields.io/badge/NGINX-009639?style=flat-square&logo=nginx&logoColor=white) ![Jenkins](https://img.shields.io/badge/Jenkins-D24939?style=flat-square&logo=jenkins&logoColor=white) ![GHCR](https://img.shields.io/badge/GHCR-181717?style=flat-square&logo=github&logoColor=white) ![AWS CloudFront](https://img.shields.io/badge/AWS_CloudFront-FF9900?style=flat-square&logo=amazoncloudwatch&logoColor=white) ![AWS CodeDeploy](https://img.shields.io/badge/AWS_CodeDeploy-232F3E?style=flat-square&logo=amazonwebservices&logoColor=white) ![AWS WAF](https://img.shields.io/badge/AWS_WAF-232F3E?style=flat-square&logo=amazonwebservices&logoColor=white) ![AWS Shield](https://img.shields.io/badge/AWS_Shield-232F3E?style=flat-square&logo=amazonwebservices&logoColor=white)
+![Trivy](https://img.shields.io/badge/Trivy-1904DA?style=flat-square&logoColor=white) ![tfsec](https://img.shields.io/badge/tfsec-3D5AFE?style=flat-square&logoColor=white) ![Checkov](https://img.shields.io/badge/Checkov-FCC624?style=flat-square&logoColor=black) ![Infracost](https://img.shields.io/badge/Infracost-DB44B8?style=flat-square&logoColor=white) ![OpenAPI](https://img.shields.io/badge/OpenAPI-6BA539?style=flat-square&logo=openapiinitiative&logoColor=white) ![GitHub Container Registry](https://img.shields.io/badge/GitHub_Container_Registry-181717?style=flat-square&logo=github&logoColor=white)
 ---
 
 ## 📋 Table of Contents
@@ -100,6 +102,15 @@ PetSwipe is a full-stack application with the following features:
   - Deck is generated based on user preferences and past swipes
   - Users will only see pets that they haven't swiped on before, and pets that are most relevant to them
 - **History**: View all swipes & liked (adopted) pets
+- **Adoption Planner**:
+  - Dedicated shortlist decision page with compatibility and readiness scoring for liked pets
+  - Includes paginated pet comparison, home-fit guidance, budget/time estimates, checklist-driven prep, shelter questions, and suggested outreach notes
+- **Preference Insights**:
+  - Dedicated analytics page based on real swipe history
+  - Includes swipe activity charts, decision split, pet-type affinity, shelter momentum, and recommendation blocks that feed back into the planner flow
+- **Pets Map**:
+  - Map page for shelter discovery and geographic browsing
+  - Geocoding now runs through a same-origin proxy with normalized queries, hit/miss caching, in-flight deduplication, lower concurrency, and client-side cache reuse to reduce slow repeated lookups
 - **Chatbot**:
   - A simple chatbot to answer common questions about the app and pets (e.g. breeds, adoption process, pet care tips, etc.)
   - Powered by **Google AI** and **Retrieval-Augmented Generation (RAG)** for personalized responses
@@ -113,6 +124,7 @@ PetSwipe is a full-stack application with the following features:
   - Fully responsive design for mobile and desktop
   - Light and dark mode support
   - Accessible design for all users
+  - Mobile-specific navbar layout with compact quick actions and a dedicated menu panel instead of a squeezed desktop toolbar
 - **Real-time Animations**:
   - Framer Motion for smooth transitions and animations
   - Swipe animations for a more engaging experience
@@ -131,8 +143,8 @@ PetSwipe is built using a modern tech stack, ensuring scalability, maintainabili
 | **Backend & API**       | Node.js, Express, TypeScript, TypeORM, PostgreSQL, OpenAPI (via Swagger), RabbitMQ, Redis |
 | **Data & Storage**      | AWS RDS (PostgreSQL), AWS S3                                                              |
 | **Security & Auth**     | JSON Web Tokens, bcryptjs, cookie-parser                                                  |
-| **DevOps & Deployment** | Docker, AWS ECR & ECS (Fargate), Vercel, GitHub Actions                                   |
-| **Infrastructure**      | Terraform, Consul, Vault, Nomad, AWS IAM, AWS CloudWatch, AWS ALB                         |
+| **DevOps & Deployment** | Docker, Kubernetes, AWS ECR & ECS (Fargate), Vercel, GitHub Actions                       |
+| **Infrastructure**      | Terraform, Kubernetes manifests, Consul, Vault, Nomad, AWS IAM, AWS CloudWatch, AWS ALB   |
 | **AI**                  | Google AI, Retrieval-Augmented Generation (RAG)                                           |
 | **Testing**             | Playwright (frontend), Jest (backend)                                                     |
 
@@ -398,6 +410,21 @@ sequenceDiagram
 
 ## 🏗 User Interface
 
+### Current UX Highlights
+
+- **Navigation**:
+  - Desktop navigation uses icon-first actions for map, pets, insights, and planner with tooltips
+  - Mobile navigation uses a dedicated compact header and a full action panel instead of squeezing the desktop toolbar into small widths
+- **Adoption Planner**:
+  - Compare liked pets in paginated groups of four
+  - Compatibility and readiness gauges, home-fit guidance, transition planning, checklist-driven prep, and action-oriented outreach support
+- **Preference Insights**:
+  - Responsive chart-based analytics with swipe trends, decision split, type affinity, and shelter momentum
+  - Shared chart styling now uses solid tooltips, dark-mode-safe text colors, and mobile-safe sizing
+- **Pets Map**:
+  - Cache-first shelter geocoding pipeline with deduped requests and safer fallbacks for better performance
+  - Query, pet, and miss caches reduce repeated address lookups when users paginate around the map
+
 ### Landing Page
 
 <p align="center">
@@ -448,6 +475,18 @@ sequenceDiagram
 
 <p align="center">
   <img src="docs/img/pets-map.png" alt="Pets Map" width="100%">
+</p>
+
+### Preference Insights
+
+<p align="center">
+  <img src="docs/img/preference-insights.png" alt="Preference Insights" width="100%">
+</p>
+
+### Adoption Planner
+
+<p align="center">
+  <img src="docs/img/adoption-planner.png" alt="Adoption Planner" width="100%">
 </p>
 
 ### Bulk Upload Pets
@@ -689,7 +728,27 @@ Swagger UI is available at `https://petswipe-backend-api.vercel.app/`.
 
 ---
 
-## ☁️ AWS Deployment
+## ☁️ Deployment
+
+### Kubernetes Stack
+
+PetSwipe now ships with a first-class Kubernetes deployment stack under [`k8s/`](k8s/README.md).
+
+- `k8s/base` contains production-oriented manifests for frontend and backend deployments
+- readiness and liveness probes target `/ready`, `/health`, and `/`
+- horizontal autoscaling and PodDisruptionBudgets are included for both workloads
+- ingress is split across `petswipe.example.com` and `api.petswipe.example.com`
+- containers run as non-root users and are ready for EKS, GKE, AKS, or any conformant cluster
+
+Quick start:
+
+```bash
+kubectl apply -k k8s/base
+```
+
+Before applying, replace the placeholder image names, hostnames, database endpoints, and secrets in [`k8s/base`](k8s/base).
+
+### AWS Deployment
 
 ### Production-Ready Deployment Strategies
 
@@ -717,9 +776,13 @@ PetSwipe features **enterprise-grade deployment strategies** for zero-downtime r
 
 ### Infrastructure Stack
 
-Our production infrastructure is built on AWS with Terraform:
+Our production infrastructure can run either on Kubernetes or on AWS-native container services. The repository currently includes Terraform-based AWS infrastructure plus a portable Kubernetes manifest set.
 
 **Compute & Orchestration:**
+- **Kubernetes**: Portable orchestration for EKS, GKE, AKS, or self-managed clusters
+  - Frontend and backend `Deployment` resources
+  - HPAs, PDBs, rolling updates, readiness/liveness probes
+  - TLS ingress with separate web and API hosts
 - **AWS ECS Fargate**: Serverless container orchestration
   - Blue, Green, and Canary environments
   - Auto-scaling based on CPU/memory metrics
@@ -818,7 +881,7 @@ To get started with Terraform:
    terraform apply   # Apply the changes
    ```
 
-This will create all the necessary AWS resources for the app, including RDS, S3, ECS, ECR, IAM roles, and more.
+This will create the necessary AWS resources for the AWS-native deployment path, including RDS, S3, ECS, ECR, IAM roles, and more.
 
 > [!CAUTION]
 > Make sure you have the necessary permissions to create and manage AWS resources. Review the Terraform scripts before applying them to avoid any unintended changes. For more details on how to configure and use Terraform with AWS, check out the [Terraform AWS Provider documentation](https://registry.terraform.io/providers/hashicorp/aws/latest/docs).

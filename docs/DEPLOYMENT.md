@@ -21,6 +21,8 @@
 
 PetSwipe uses advanced deployment strategies to ensure zero-downtime deployments with instant rollback capabilities. The infrastructure is built on AWS ECS Fargate with Terraform for Infrastructure as Code (IaC).
 
+The repository also includes a portable Kubernetes deployment stack under `k8s/` and a production-oriented Docker Compose bundle in `docker-compose.prod.yml` for environment bring-up outside ECS.
+
 ### Key Features
 
 - ✅ **Zero-Downtime Deployments** - Users never experience service interruptions
@@ -218,20 +220,64 @@ export ENVIRONMENT=production
 
 ## Quick Start
 
+### 0. Preflight Validation
+
+```bash
+cp .env.production.example .env.production
+# fill in real values
+
+bash scripts/deploy-preflight.sh .env.production
+```
+
+This preflight now includes Kubernetes placeholder checks for the production overlay.
+
+If you are using the Terraform-managed AWS stack, also prepare the operator files:
+
+```bash
+cp terraform/backend.hcl.example terraform/backend.hcl
+cp terraform/environments/production.tfvars.example terraform/environments/production.tfvars
+
+make tf-preflight ENV=production
+```
+
+### Local Production Bundle
+
+```bash
+docker compose --env-file .env.production \
+  -f docker-compose.yml \
+  -f docker-compose.prod.yml \
+  up -d --wait
+```
+
+### Release Artifact Bundle
+
+```bash
+make release-bundle
+```
+
+### Kubernetes Render Check
+
+```bash
+kubectl kustomize k8s/base
+kubectl kustomize k8s/overlays/production
+make k8s-preflight
+```
+
 ### 1. Infrastructure Setup
 
 ```bash
-# Navigate to terraform directory
+make tf-init
+make tf-plan ENV=production
+make tf-apply ENV=production
+```
+
+Raw Terraform commands are also supported:
+
+```bash
 cd terraform
-
-# Initialize Terraform
-terraform init
-
-# Review planned changes
-terraform plan
-
-# Apply infrastructure
-terraform apply
+terraform init -backend-config=backend.hcl
+terraform plan -var-file=environments/production.tfvars
+terraform apply -var-file=environments/production.tfvars
 ```
 
 ### 2. Build & Push Docker Images
@@ -635,8 +681,8 @@ trivy image petswipe-backend:latest
 
 ✅ **Validate Terraform changes**
 ```bash
-cd terraform
-terraform plan
+make tf-preflight ENV=production
+make tf-plan ENV=production
 ```
 
 ✅ **Database migrations**

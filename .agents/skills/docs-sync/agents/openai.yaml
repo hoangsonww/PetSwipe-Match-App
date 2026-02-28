@@ -1,0 +1,7 @@
+interface:
+  display_name: "PetSwipe Docs Sync"
+  short_description: "Keep docs aligned with real code."
+  default_prompt: "Use $docs-sync to update the PetSwipe docs so they match the current code and deployment behavior."
+
+policy:
+  allow_implicit_invocation: true

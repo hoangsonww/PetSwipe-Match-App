@@ -57,8 +57,13 @@ const LikedSwipesPage: NextPage = () => {
           transition={{ duration: 0.3 }}
           className="text-3xl font-extrabold text-center text-[#234851] my-8 dark:text-[#B6EBE9]"
         >
-          My Adopted Pets
+          My Adopted/Liked Pets
         </motion.h1>
+
+        <p className="mx-auto -mt-4 mb-8 max-w-2xl px-6 text-center text-sm text-neutral-600 dark:text-neutral-300">
+          Remember to contact the shelters for pets you like and be a
+          responsible adopter before making any commitment.
+        </p>
 
         <div className="px-6 pb-12">
           <div className="max-w-2xl mx-auto">
@@ -108,8 +113,13 @@ const LikedSwipesPage: NextPage = () => {
         transition={{ duration: 0.3 }}
         className="text-3xl font-extrabold text-center text-[#234851] my-8 dark:text-[#B6EBE9]"
       >
-        My Adopted Pets
+        My Adopted/Liked Pets
       </motion.h1>
+
+      <p className="mx-auto -mt-4 mb-8 max-w-2xl px-6 text-center text-sm text-neutral-600 dark:text-neutral-300">
+        Remember to contact the shelters for pets you like and be a responsible
+        adopter before making any commitment.
+      </p>
 
       <div className="grid gap-6 px-6 pb-12 sm:grid-cols-2 md:grid-cols-3">
         {swipes.map((swipe) => {

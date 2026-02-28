@@ -54,56 +54,43 @@ terraform/
 
 ## 🛠️ Quickstart
 
-### 1. Configure Variables
-
-Create `terraform.tfvars`:
-
-```hcl
-# Required
-project     = "petswipe"
-environment = "production"
-aws_region  = "us-east-1"
-
-# Network (use your existing VPC)
-vpc_id             = "vpc-xxxxx"
-subnet_ids         = ["subnet-xxxxx", "subnet-yyyyy", "subnet-zzzzz"]
-security_group_ids = ["sg-xxxxx"]
-
-# Database
-db_username         = "petswipe_admin"
-db_password         = "your-secure-password-min-16-chars"
-db_instance_class   = "db.t3.medium"
-db_allocated_storage = 100
-
-# SSL Certificate
-acm_certificate_arn = "arn:aws:acm:us-east-1:xxxxx:certificate/xxxxx"
-
-# Alerts
-alert_email = "devops@petswipe.com"
-
-# ECS
-ecs_desired_count = 4
-ecs_min_capacity  = 2
-ecs_max_capacity  = 20
-```
-
-### 2. Initialize Terraform
+### 1. Create Operator Files
 
 ```bash
-cd terraform
-terraform init
+cp terraform/backend.hcl.example terraform/backend.hcl
+cp terraform/environments/production.tfvars.example terraform/environments/production.tfvars
 ```
 
-### 3. Plan Infrastructure
+Update both files with real values before continuing.
+
+Important:
+
+- `backend.hcl` is intentionally untracked and should point at your real S3/DynamoDB state backend.
+- The `Makefile` uses `terraform/environments/<ENV>.tfvars`.
+- The Terraform `environment` value inside those files must be one of `dev`, `staging`, or `production`.
+
+### 2. Run Terraform Preflight
 
 ```bash
-terraform plan -out=tfplan
+make tf-preflight ENV=production
 ```
 
-### 4. Apply Infrastructure
+### 3. Initialize Terraform
 
 ```bash
-terraform apply tfplan
+make tf-init
+```
+
+### 4. Plan Infrastructure
+
+```bash
+make tf-plan ENV=production
+```
+
+### 5. Apply Infrastructure
+
+```bash
+make tf-apply ENV=production
 ```
 
 This will provision:
@@ -186,11 +173,11 @@ This will provision:
   ```
 
 - **Environments**
-  Use Terraform workspaces (e.g. `dev`, `staging`, `prod`) or duplicate the root directory with different backend configs.
+  The repository standard is file-based environment separation with `terraform/environments/development.tfvars`, `staging.tfvars`, and `production.tfvars`, plus a dedicated `terraform/backend.hcl` per operator context.
 - **Destroy**
 
   ```bash
-  terraform destroy
+  make tf-destroy ENV=production
   ```
 
 - **State locking**
@@ -205,5 +192,14 @@ This will provision:
 3. Open a PR for review
 
 ---
+
+## 🔐 Operator Files
+
+These files are required for a real Terraform deployment and are intentionally gitignored:
+
+- `terraform/backend.hcl`
+- `terraform/environments/*.tfvars`
+
+Only the `.example` templates are committed.
 
 Happy provisioning! 🚀

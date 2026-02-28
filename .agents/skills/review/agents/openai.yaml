@@ -1,0 +1,7 @@
+interface:
+  display_name: "PetSwipe Review"
+  short_description: "Find real bugs, risk, and drift."
+  default_prompt: "Use $review to review this PetSwipe change for bugs, regressions, deployment risk, and missing validation."
+
+policy:
+  allow_implicit_invocation: true

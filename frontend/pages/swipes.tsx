@@ -60,6 +60,11 @@ const SwipesPage: NextPage = () => {
           All My Swipes
         </motion.h1>
 
+        <p className="mx-auto -mt-4 mb-8 max-w-2xl px-6 text-center text-sm text-neutral-600 dark:text-neutral-300">
+          Review your swipes thoughtfully, reach out to shelters when you are
+          genuinely interested, and always be a responsible adopter.
+        </p>
+
         <div className="px-6 pb-12">
           <div className="max-w-2xl mx-auto">
             <div className="rounded-2xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 shadow-sm p-10 text-center">
@@ -112,6 +117,11 @@ const SwipesPage: NextPage = () => {
       >
         All My Swipes
       </motion.h1>
+
+      <p className="mx-auto -mt-4 mb-8 max-w-2xl px-6 text-center text-sm text-neutral-600 dark:text-neutral-300">
+        Review your swipes thoughtfully, reach out to shelters when you are
+        genuinely interested, and always be a responsible adopter.
+      </p>
 
       <div className="grid gap-6 px-6 pb-12 sm:grid-cols-2 md:grid-cols-3">
         {swipes.map((swipe) => {

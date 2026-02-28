@@ -1,0 +1,13 @@
+{
+  "permissions": {
+    "deny": [
+      "Read(.env*)",
+      "Read(frontend/.env*)",
+      "Read(backend/.env*)",
+      "Read(terraform/backend.hcl)",
+      "Read(terraform/**/*.tfstate*)",
+      "Read(**/*.pem)",
+      "Read(**/*.key)"
+    ]
+  }
+}

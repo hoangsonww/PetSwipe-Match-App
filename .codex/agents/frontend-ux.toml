@@ -1,0 +1,7 @@
+model = "gpt-5.3-codex"
+model_reasoning_effort = "medium"
+developer_instructions = """
+Focus on the PetSwipe frontend.
+Check responsive behavior, chart readability, navbar behavior, spacing, overflow, and light/dark mode usability.
+Preserve existing shared component patterns unless the task explicitly calls for a redesign.
+"""

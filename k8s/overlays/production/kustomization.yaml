@@ -1,0 +1,77 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+resources:
+  - ../../base
+
+images:
+  - name: ghcr.io/your-org/petswipe-backend
+    newName: ghcr.io/your-org/petswipe-backend
+    newTag: stable
+  - name: ghcr.io/your-org/petswipe-frontend
+    newName: ghcr.io/your-org/petswipe-frontend
+    newTag: stable
+
+patches:
+  - target:
+      kind: Deployment
+      name: petswipe-backend
+    patch: |-
+      - op: replace
+        path: /spec/replicas
+        value: 3
+  - target:
+      kind: Deployment
+      name: petswipe-frontend
+    patch: |-
+      - op: replace
+        path: /spec/replicas
+        value: 3
+  - target:
+      kind: HorizontalPodAutoscaler
+      name: petswipe-backend
+    patch: |-
+      - op: replace
+        path: /spec/minReplicas
+        value: 3
+      - op: replace
+        path: /spec/maxReplicas
+        value: 15
+  - target:
+      kind: HorizontalPodAutoscaler
+      name: petswipe-frontend
+    patch: |-
+      - op: replace
+        path: /spec/minReplicas
+        value: 3
+      - op: replace
+        path: /spec/maxReplicas
+        value: 12
+  - target:
+      kind: PodDisruptionBudget
+      name: petswipe-backend
+    patch: |-
+      - op: replace
+        path: /spec/minAvailable
+        value: 2
+  - target:
+      kind: PodDisruptionBudget
+      name: petswipe-frontend
+    patch: |-
+      - op: replace
+        path: /spec/minAvailable
+        value: 2
+  - target:
+      kind: Deployment
+      name: petswipe-backend
+    patch: |-
+      - op: replace
+        path: /spec/template/spec/containers/0/imagePullPolicy
+        value: Always
+  - target:
+      kind: Deployment
+      name: petswipe-frontend
+    patch: |-
+      - op: replace
+        path: /spec/template/spec/containers/0/imagePullPolicy
+        value: Always

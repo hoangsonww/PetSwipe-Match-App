@@ -1,0 +1,7 @@
+interface:
+  display_name: "PetSwipe Feature Delivery"
+  short_description: "Ship cross-cutting PetSwipe changes safely."
+  default_prompt: "Use $feature-delivery to implement this PetSwipe change coherently across code, validation, and docs."
+
+policy:
+  allow_implicit_invocation: true

@@ -83,13 +83,16 @@
 .PHONY: help dev build-backend build-frontend docker-build docker-push docker-pull up down clean lint test \
 	load-test infra-test security-scan policy-validate tf-init tf-plan tf-apply tf-destroy deploy \
 	deploy-blue-green deploy-canary db-migrate db-rollback db-backup db-restore slo-status error-budget \
-	dr-test chaos-test ff-list ff-enable ff-disable rotate-secrets invalidate-cache
+	dr-test chaos-test ff-list ff-enable ff-disable rotate-secrets invalidate-cache preflight tf-preflight k8s-preflight \
+	prod-build prod-up prod-down k8s-render k8s-render-prod release-bundle
 
 # Configuration
 ENV ?= development
 TERRAFORM_DIR := ./terraform
 SCRIPTS_DIR := ./scripts
 AWS_REGION ?= us-east-1
+TF_BACKEND_CONFIG ?= backend.hcl
+TF_ENV_FILE := environments/$(ENV).tfvars
 
 # Display help message
 help:
@@ -106,6 +109,9 @@ help:
 	@echo "  make docker-build         → Build & push Docker images"
 	@echo "  make up                   → Start Docker Compose stack"
 	@echo "  make down                 → Stop Docker Compose stack"
+	@echo "  make prod-build           → Build the production compose stack"
+	@echo "  make prod-up              → Start the production compose stack"
+	@echo "  make prod-down            → Stop the production compose stack"
 	@echo ""
 	@echo "🧪 Testing & Quality:"
 	@echo "  make test                 → Run unit tests"
@@ -117,6 +123,7 @@ help:
 	@echo ""
 	@echo "🏗️  Infrastructure:"
 	@echo "  make tf-init              → Initialize Terraform"
+	@echo "  make tf-preflight         → Validate Terraform operator files"
 	@echo "  make tf-plan              → Plan Terraform changes"
 	@echo "  make tf-apply             → Apply Terraform changes"
 	@echo "  make tf-destroy           → Destroy infrastructure (⚠️  DANGEROUS)"
@@ -125,6 +132,11 @@ help:
 	@echo "  make deploy               → Standard deployment"
 	@echo "  make deploy-blue-green    → Blue-green deployment"
 	@echo "  make deploy-canary        → Canary deployment"
+	@echo "  make k8s-preflight        → Validate Kubernetes operator placeholders"
+	@echo "  make k8s-render           → Render Kubernetes base manifests"
+	@echo "  make k8s-render-prod      → Render Kubernetes production overlay"
+	@echo "  make release-bundle       → Build deployable production artifact bundle"
+	@echo "  make preflight            → Validate deployment configuration"
 	@echo ""
 	@echo "🗄️  Database:"
 	@echo "  make db-migrate           → Run migrations"
@@ -186,6 +198,18 @@ up: docker-pull
 down:
 	docker-compose down
 
+prod-build:
+	docker compose --env-file .env.production -f docker-compose.yml -f docker-compose.prod.yml build
+
+prod-up:
+	./pull_and_run.sh
+
+prod-down:
+	docker compose --env-file .env.production -f docker-compose.yml -f docker-compose.prod.yml down
+
+release-bundle:
+	bash $(SCRIPTS_DIR)/release-bundle.sh
+
 # Clean up build artifacts
 clean:
 	rm -rf backend/dist
@@ -208,17 +232,23 @@ test:
 # Initialize Terraform
 tf-init:
 	@echo "Initializing Terraform..."
-	cd $(TERRAFORM_DIR) && terraform init
+	@test -f $(TERRAFORM_DIR)/$(TF_BACKEND_CONFIG) || (echo "Missing $(TERRAFORM_DIR)/$(TF_BACKEND_CONFIG). Copy terraform/backend.hcl.example to terraform/backend.hcl and fill in real values." && exit 1)
+	cd $(TERRAFORM_DIR) && terraform init -backend-config=$(TF_BACKEND_CONFIG)
+
+tf-preflight:
+	bash $(SCRIPTS_DIR)/terraform-preflight.sh $(ENV)
 
 # Plan Terraform changes
 tf-plan:
 	@echo "Planning Terraform changes for $(ENV)..."
-	cd $(TERRAFORM_DIR) && terraform plan -var-file="environments/$(ENV).tfvars"
+	@test -f $(TERRAFORM_DIR)/$(TF_ENV_FILE) || (echo "Missing $(TERRAFORM_DIR)/$(TF_ENV_FILE). Copy terraform/environments/$(ENV).tfvars.example to terraform/environments/$(ENV).tfvars and fill in real values." && exit 1)
+	cd $(TERRAFORM_DIR) && terraform plan -var-file="$(TF_ENV_FILE)"
 
 # Apply Terraform changes
 tf-apply:
 	@echo "Applying Terraform changes for $(ENV)..."
-	cd $(TERRAFORM_DIR) && terraform apply -var-file="environments/$(ENV).tfvars" -auto-approve
+	@test -f $(TERRAFORM_DIR)/$(TF_ENV_FILE) || (echo "Missing $(TERRAFORM_DIR)/$(TF_ENV_FILE). Copy terraform/environments/$(ENV).tfvars.example to terraform/environments/$(ENV).tfvars and fill in real values." && exit 1)
+	cd $(TERRAFORM_DIR) && terraform apply -var-file="$(TF_ENV_FILE)" -auto-approve
 
 # Destroy Terraform infrastructure
 tf-destroy:
@@ -226,7 +256,8 @@ tf-destroy:
 	@read -p "Are you sure? [y/N] " -n 1 -r; \
 	echo; \
 	if [[ $$REPLY =~ ^[Yy]$$ ]]; then \
-		cd $(TERRAFORM_DIR) && terraform destroy -var-file="environments/$(ENV).tfvars"; \
+		test -f $(TERRAFORM_DIR)/$(TF_ENV_FILE) || (echo "Missing $(TERRAFORM_DIR)/$(TF_ENV_FILE). Copy terraform/environments/$(ENV).tfvars.example to terraform/environments/$(ENV).tfvars and fill in real values." && exit 1); \
+		cd $(TERRAFORM_DIR) && terraform destroy -var-file="$(TF_ENV_FILE)"; \
 	fi
 
 # Standard deployment
@@ -244,6 +275,18 @@ deploy-canary:
 	@echo "Executing Canary deployment for $(ENV)..."
 	@read -p "Enter canary traffic percentage (1-100): " PERCENTAGE; \
 	$(SCRIPTS_DIR)/canary-deploy.sh $(ENV) $$PERCENTAGE
+
+preflight:
+	bash $(SCRIPTS_DIR)/deploy-preflight.sh
+
+k8s-preflight:
+	bash $(SCRIPTS_DIR)/k8s-preflight.sh
+
+k8s-render:
+	kubectl kustomize k8s/base
+
+k8s-render-prod:
+	kubectl kustomize k8s/overlays/production
 
 # ═══════════════════════════════════════════════════════════════
 # Testing Commands
@@ -411,5 +454,6 @@ cost-report:
 # Infrastructure cost estimation
 cost-estimate:
 	@echo "Estimating infrastructure costs..."
-	cd $(TERRAFORM_DIR) && terraform plan -var-file="environments/$(ENV).tfvars" -out=plan.tfplan
+	@test -f $(TERRAFORM_DIR)/$(TF_ENV_FILE) || (echo "Missing $(TERRAFORM_DIR)/$(TF_ENV_FILE). Copy terraform/environments/$(ENV).tfvars.example to terraform/environments/$(ENV).tfvars and fill in real values." && exit 1)
+	cd $(TERRAFORM_DIR) && terraform plan -var-file="$(TF_ENV_FILE)" -out=plan.tfplan
 	infracost breakdown --path $(TERRAFORM_DIR)/plan.tfplan

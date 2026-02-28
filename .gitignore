@@ -11,3 +11,9 @@ yarn-error.log*
 .vscode/*
 /backend/node_modules/
 /backend/.env
+/frontend/.env.local
+/.env.production
+/.env.production.local
+/dist/deployment/
+/terraform/backend.hcl
+/terraform/environments/*.tfvars

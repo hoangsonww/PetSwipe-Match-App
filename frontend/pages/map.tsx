@@ -28,12 +28,14 @@ type LatLng = { lat: number; lon: number };
 type GeocodeHit = LatLng & { queryUsed: string; source: "photon" | "proxy" };
 type PointsItem = { pet: Pet; hit: GeocodeHit };
 
-const GLOBAL_QUERY_CACHE_KEY = "petswipe_gc_query_v3";
-const GLOBAL_PET_CACHE_KEY = "petswipe_gc_pet_v3";
+const GLOBAL_QUERY_CACHE_KEY = "petswipe_gc_query_v5";
+const GLOBAL_PET_CACHE_KEY = "petswipe_gc_pet_v5";
+const GLOBAL_MISS_CACHE_KEY = "petswipe_gc_miss_v1";
 const CACHE_TTL_MS = 1000 * 60 * 60 * 24 * 30; // 30 days
+const MISS_CACHE_TTL_MS = 1000 * 60 * 60 * 24 * 7; // 7 days
 
 const DEFAULT_COUNTRY = "USA";
-const CONCURRENCY = 48;
+const CONCURRENCY = 8;
 const PAGE_SIZE_OPTIONS = [24, 48, 96, 192];
 
 // ---------- cache helpers (with TTL) ----------
@@ -58,33 +60,16 @@ function isFresh(ts?: number) {
   return typeof ts === "number" && now() - ts < CACHE_TTL_MS;
 }
 
-// ---------- geocode via Photon (CORS-safe) + optional proxy ----------
+// ---------- geocode via same-origin proxy ----------
 async function geocode(
   q: string,
   signal?: AbortSignal,
 ): Promise<GeocodeHit | null> {
-  // Photon (CORS-friendly, fast)
-  try {
-    const url = `https://photon.komoot.io/api/?q=${encodeURIComponent(q)}&limit=1`;
-    const res = await fetch(url, { signal });
-    if (res.ok) {
-      const json = await res.json();
-      const feat = json?.features?.[0];
-      const coords = feat?.geometry?.coordinates;
-      if (Array.isArray(coords) && coords.length >= 2) {
-        return {
-          lat: coords[1],
-          lon: coords[0],
-          queryUsed: q,
-          source: "photon",
-        };
-      }
-    }
-  } catch {}
-  // Optional proxy (if you created /api/geocode)
   try {
     const res = await fetch(`/api/geocode?q=${encodeURIComponent(q)}`, {
       signal,
+      credentials: "same-origin",
+      headers: { Accept: "application/json" },
     });
     if (res.ok) {
       const data = await res.json();
@@ -227,6 +212,43 @@ function stripZipAndTrim(s: string): string {
     .replace(/\s*,\s*$/, "")
     .trim();
 }
+function normalizeWhitespace(s: string): string {
+  return s
+    .replace(/\s+/g, " ")
+    .replace(/\s*,\s*/g, ", ")
+    .trim();
+}
+function isLikelyBroadQuery(q: string): boolean {
+  const cleaned = normalizeWhitespace(q).replace(/^,+|,+$/g, "");
+  if (!cleaned) return true;
+
+  const parts = cleaned
+    .split(",")
+    .map((part) => part.trim())
+    .filter(Boolean);
+  if (!parts.length) return true;
+
+  if (parts.length === 1) {
+    const [only] = parts;
+    return (
+      only.toLowerCase() === DEFAULT_COUNTRY.toLowerCase() ||
+      US_STATES.has(only.toUpperCase()) ||
+      only.length < 4
+    );
+  }
+
+  return false;
+}
+function uniqQueries(queries: Array<string | undefined>): string[] {
+  return Array.from(
+    new Set(
+      queries
+        .filter((query): query is string => Boolean(query))
+        .map((query) => normalizeWhitespace(query))
+        .filter((query) => !isLikelyBroadQuery(query)),
+    ),
+  );
+}
 function detectCountry(addr: string): string | undefined {
   const parts = addr
     .split(",")
@@ -255,7 +277,6 @@ function candidatesByLevel(pet: Pet): string[][] {
     .replace(/\s+/g, " ")
     .replace(/\n+/g, ", ")
     .trim();
-  const sName = (pet.shelterName || pet.name || "").trim();
   const noZip = sAddr ? stripZipAndTrim(sAddr) : "";
   const foundCountry = sAddr ? detectCountry(sAddr) : undefined;
   const fallbackCountry = foundCountry || DEFAULT_COUNTRY;
@@ -263,22 +284,15 @@ function candidatesByLevel(pet: Pet): string[][] {
 
   const L0 = new Set<string>();
   const L1 = new Set<string>();
-  const L2 = new Set<string>();
-  const L3 = new Set<string>();
 
   if (sAddr) L0.add(sAddr);
   if (noZip && noZip !== sAddr) L0.add(noZip);
-  if (noZip && sName) L0.add(`${sName}, ${noZip}`);
 
   if (city && region)
     L1.add(`${city}, ${region}${foundCountry ? "" : `, ${fallbackCountry}`}`);
+  if (city && !region) L1.add(`${city}, ${fallbackCountry}`);
 
-  if (region) L2.add(`${region}${foundCountry ? "" : `, ${fallbackCountry}`}`);
-  if (sName) L2.add(`${sName}${foundCountry ? "" : `, ${fallbackCountry}`}`);
-
-  L3.add(foundCountry || fallbackCountry);
-
-  return [Array.from(L0), Array.from(L1), Array.from(L2), Array.from(L3)];
+  return [uniqQueries(Array.from(L0)), uniqQueries(Array.from(L1))];
 }
 
 // ---------- pMap with fixed concurrency = 48 ----------
@@ -525,7 +539,7 @@ const MapPage: NextPage = () => {
     boundsRef.current.extend([hit.lat, hit.lon]);
   }, []);
 
-  // Main geocoding pipeline — 48-way parallel and cache-first
+  // Main geocoding pipeline — cache-first, deduped, and rate-limited
   useEffect(() => {
     if (!pagePets.length || !mapRef.current) {
       setPoints([]);
@@ -536,8 +550,13 @@ const MapPage: NextPage = () => {
     // Load caches
     type QueryCache = Record<string, { hit: GeocodeHit; ts: number }>;
     type PetCache = Record<string, { hit: GeocodeHit; ts: number }>;
+    type MissCache = Record<string, { ts: number }>;
     const queryCache = loadCache<QueryCache>(GLOBAL_QUERY_CACHE_KEY, {});
     const petCache = loadCache<PetCache>(GLOBAL_PET_CACHE_KEY, {});
+    const missCache = loadCache<MissCache>(GLOBAL_MISS_CACHE_KEY, {});
+    let queryCacheDirty = false;
+    let petCacheDirty = false;
+    let missCacheDirty = false;
 
     const myRun = ++runIdRef.current;
     const controller = new AbortController();
@@ -584,6 +603,7 @@ const MapPage: NextPage = () => {
         const p = pagePets.find((x) => x.id === pid);
         if (!p) continue;
         petCache[pid] = { hit, ts: now() };
+        petCacheDirty = true;
         addMarker(p, hit);
         setPoints((prev) =>
           prev.find((x) => x.pet.id === pid)
@@ -592,7 +612,6 @@ const MapPage: NextPage = () => {
         );
         unresolved.delete(pid);
       }
-      saveCache(GLOBAL_PET_CACHE_KEY, petCache);
     };
 
     (async () => {
@@ -602,8 +621,8 @@ const MapPage: NextPage = () => {
         total: pagePets.length,
       });
 
-      // Process level by level, but within each level run EXACTLY 48 in parallel.
-      for (let level = 0; level < 4; level++) {
+      // Process the most-specific candidate levels only.
+      for (let level = 0; level < 2; level++) {
         if (runIdRef.current !== myRun) return;
         if (unresolved.size === 0) break;
 
@@ -625,6 +644,12 @@ const MapPage: NextPage = () => {
           if (entry && isFresh(entry.ts)) {
             applyHitToPets(petIds, entry.hit);
             candidateToPets.delete(q);
+            continue;
+          }
+
+          const miss = missCache[q];
+          if (miss && now() - miss.ts < MISS_CACHE_TTL_MS) {
+            candidateToPets.delete(q);
           }
         }
         setProgress({
@@ -641,11 +666,17 @@ const MapPage: NextPage = () => {
           async (q) => {
             if (runIdRef.current !== myRun) return null;
             const hit = await geocode(q, controller.signal);
-            if (!hit) return null;
+            if (!hit) {
+              missCache[q] = { ts: now() };
+              missCacheDirty = true;
+              return null;
+            }
 
             // store to query cache
             queryCache[q] = { hit, ts: now() };
-            saveCache(GLOBAL_QUERY_CACHE_KEY, queryCache);
+            queryCacheDirty = true;
+            delete missCache[q];
+            missCacheDirty = true;
 
             // apply to all pets that rely on this query
             const petIds = candidateToPets.get(q) || [];
@@ -664,6 +695,19 @@ const MapPage: NextPage = () => {
           },
           CONCURRENCY,
         );
+
+        if (queryCacheDirty) {
+          saveCache(GLOBAL_QUERY_CACHE_KEY, queryCache);
+          queryCacheDirty = false;
+        }
+        if (petCacheDirty) {
+          saveCache(GLOBAL_PET_CACHE_KEY, petCache);
+          petCacheDirty = false;
+        }
+        if (missCacheDirty) {
+          saveCache(GLOBAL_MISS_CACHE_KEY, missCache);
+          missCacheDirty = false;
+        }
       }
     })()
       .catch(() => {
@@ -671,6 +715,9 @@ const MapPage: NextPage = () => {
       })
       .finally(() => {
         if (runIdRef.current !== myRun) return;
+        if (queryCacheDirty) saveCache(GLOBAL_QUERY_CACHE_KEY, queryCache);
+        if (petCacheDirty) saveCache(GLOBAL_PET_CACHE_KEY, petCache);
+        if (missCacheDirty) saveCache(GLOBAL_MISS_CACHE_KEY, missCache);
         setGeocoding(false);
         const b = boundsRef.current;
         if (b && b.isValid()) {
@@ -695,6 +742,7 @@ const MapPage: NextPage = () => {
   const clearLocalCache = () => {
     localStorage.removeItem(GLOBAL_QUERY_CACHE_KEY);
     localStorage.removeItem(GLOBAL_PET_CACHE_KEY);
+    localStorage.removeItem(GLOBAL_MISS_CACHE_KEY);
     toast.success("Geocode cache cleared");
     setRefreshTick((n) => n + 1);
   };

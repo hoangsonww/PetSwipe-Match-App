@@ -1,0 +1,7 @@
+interface:
+  display_name: "PetSwipe Backend API Change"
+  short_description: "Change backend behavior without drift."
+  default_prompt: "Use $backend-api-change to implement this PetSwipe backend change cleanly across routes, services, entities, and docs."
+
+policy:
+  allow_implicit_invocation: true
