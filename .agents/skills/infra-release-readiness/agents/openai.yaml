@@ -1,0 +1,7 @@
+interface:
+  display_name: "PetSwipe Infra Readiness"
+  short_description: "Audit deployment readiness and operator flow."
+  default_prompt: "Use $infra-release-readiness to evaluate PetSwipe deployment readiness and validate the real operator workflow."
+
+policy:
+  allow_implicit_invocation: false

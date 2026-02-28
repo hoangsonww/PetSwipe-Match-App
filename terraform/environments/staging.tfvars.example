@@ -1,0 +1,30 @@
+project     = "petswipe"
+environment = "staging"
+aws_region  = "us-east-1"
+dr_region   = "us-west-2"
+
+availability_zones = ["us-east-1a", "us-east-1b", "us-east-1c"]
+
+vpc_id             = "vpc-REPLACE_ME"
+subnet_ids         = ["subnet-REPLACE_ME_1", "subnet-REPLACE_ME_2", "subnet-REPLACE_ME_3"]
+security_group_ids = ["sg-REPLACE_ME"]
+
+db_username          = "petswipe_admin"
+db_password          = "replace-me-with-16-plus-chars"
+db_instance_class    = "db.t3.medium"
+db_allocated_storage = 100
+db_multi_az          = true
+
+acm_certificate_arn = "arn:aws:acm:us-east-1:123456789012:certificate/REPLACE_ME"
+alert_email         = "devops@example.com"
+
+ecs_desired_count = 2
+ecs_min_capacity  = 2
+ecs_max_capacity  = 8
+
+common_tags = {
+  Project     = "PetSwipe"
+  Environment = "staging"
+  ManagedBy   = "Terraform"
+  Owner       = "Platform"
+}

@@ -1,0 +1,16 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: petswipe-backend-config
+data:
+  NODE_ENV: production
+  PORT: "5001"
+  DB_HOST: postgres.internal.example.com
+  DB_PORT: "5432"
+  DB_NAME: petswipe
+  DB_USER: petswipe_app
+  DB_SSL: "true"
+  JWT_EXPIRES: 1h
+  AWS_REGION: us-east-1
+  S3_BUCKET: petswipe-uploads-production
+

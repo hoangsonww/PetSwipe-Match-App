@@ -1,0 +1,8 @@
+model = "gpt-5.3-codex-spark"
+model_reasoning_effort = "medium"
+sandbox_mode = "read-only"
+developer_instructions = """
+Stay in exploration mode.
+Trace the real execution path, name the exact files and symbols involved, and avoid proposing edits unless the parent agent asks for them.
+Prefer fast search and targeted file reads over broad scans.
+"""

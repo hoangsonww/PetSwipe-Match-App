@@ -1,0 +1,32 @@
+project_doc_max_bytes = 65536
+
+[features]
+multi_agent = true
+
+[agents]
+max_threads = 6
+max_depth = 1
+
+[agents.explorer]
+description = "Read-heavy PetSwipe codebase explorer for tracing execution paths, entry points, and affected files before edits are proposed."
+config_file = "agents/explorer.toml"
+
+[agents.reviewer]
+description = "PetSwipe reviewer focused on correctness, regressions, deployment risk, and missing validation."
+config_file = "agents/reviewer.toml"
+
+[agents.frontend_ux]
+description = "Frontend specialist for responsive layout, navigation, charts, and UI polish in the PetSwipe Next.js app."
+config_file = "agents/frontend-ux.toml"
+
+[agents.backend_api]
+description = "Backend specialist for Express routes, TypeORM entities, API behavior, health endpoints, and migration-sensitive changes."
+config_file = "agents/backend-api.toml"
+
+[agents.infra_auditor]
+description = "Infrastructure specialist for Kubernetes, Terraform, deployment scripts, preflight checks, and release readiness."
+config_file = "agents/infra-auditor.toml"
+
+[agents.docs_curator]
+description = "Documentation specialist for keeping README, ARCHITECTURE, deployment docs, and operator docs aligned with the repo."
+config_file = "agents/docs-curator.toml"

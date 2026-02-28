@@ -25,6 +25,14 @@ tox -e secrets
 
 ## Infra Security Scan
 
+Install the tools explicitly before running these checks in a workstation or CI image:
+
+- `tfsec`
+- `trivy`
+- `checkov`
+- `terrascan`
+- `infracost`
+
 The existing Makefile target runs tfsec and trivy:
 
 ```bash

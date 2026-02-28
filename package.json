@@ -12,7 +12,8 @@
   },
   "scripts": {
     "lint": "prettier --write \"**/*.{ts,tsx,js,jsx,json,css,scss,md,html}\"",
-    "format": "npm run lint"
+    "format": "npm run lint",
+    "precommit": "npm run lint"
   },
   "bin": {
     "petswipe": "bin/cli.js"

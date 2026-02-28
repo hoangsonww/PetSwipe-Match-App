@@ -1,0 +1,13 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: petswipe-frontend
+spec:
+  type: ClusterIP
+  selector:
+    app.kubernetes.io/name: petswipe-frontend
+  ports:
+    - name: http
+      port: 3000
+      targetPort: http
+

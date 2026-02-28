@@ -21,12 +21,12 @@ Comprehensive architectural overview of the PetSwipe pet adoption platform
 
 ## Executive Summary
 
-PetSwipe is a production-grade, cloud-native full-stack application built on modern microservices principles. The architecture leverages AWS cloud services, containerization, Infrastructure as Code (IaC), and comprehensive DevOps practices to deliver a scalable, secure, and maintainable pet adoption platform.
+PetSwipe is a production-grade, cloud-native full-stack application built on modern microservices principles. The architecture leverages AWS cloud services, Kubernetes-ready containerization, Infrastructure as Code (IaC), and comprehensive DevOps practices to deliver a scalable, secure, and maintainable pet adoption platform.
 
 ### Key Architecture Decisions
 
-- **Cloud-Native**: Built on AWS with multi-region capability
-- **Containerized**: Docker containers orchestrated via ECS Fargate
+- **Cloud-Native**: Built for AWS with a portable Kubernetes deployment path
+- **Containerized**: Docker containers orchestrated via Kubernetes or ECS Fargate
 - **API-First**: RESTful API with OpenAPI/Swagger documentation
 - **Type-Safe**: TypeScript throughout frontend and backend
 - **Infrastructure as Code**: Terraform + Ansible for reproducible deployments
@@ -66,7 +66,7 @@ C4Context
     Rel(api, storage, "Stores/Retrieves files", "S3 SDK")
     Rel(api, ai, "Chatbot queries", "HTTPS")
     Rel(api, monitoring, "Sends metrics", "Prometheus")
-    Rel(cicd, api, "Deploys", "ECS")
+    Rel(cicd, api, "Deploys", "Kubernetes / ECS")
 ```
 
 ### Component Architecture
@@ -88,7 +88,7 @@ flowchart TB
 
     subgraph Presentation["⚛️ Presentation Tier"]
         direction TB
-        NextJS["Next.js 14 App Router"]
+        NextJS["Next.js Frontend<br/>(Pages Router + API Routes)"]
         React["React 18 Components"]
         SWR["SWR for Data Fetching"]
         TailwindCSS["Tailwind CSS + shadcn/ui"]
@@ -98,13 +98,13 @@ flowchart TB
     subgraph Gateway["🚪 API Gateway Tier"]
         direction TB
         ALB["Application Load Balancer"]
-        TargetGroup["ECS Target Group"]
+        TargetGroup["Ingress / Target Group"]
         WAF["AWS WAF"]
     end
 
     subgraph Application["🔧 Application Tier"]
         direction TB
-        ECS["ECS Fargate Cluster"]
+        ECS["Kubernetes or ECS"]
         Express["Express.js API Server"]
         Controllers["REST Controllers"]
         Services["Business Logic Services"]
@@ -257,6 +257,9 @@ flowchart TB
         Home["Home/Dashboard<br/>(SSR + CSR)"]
         Profile["User Profile<br/>(SSR)"]
         Pets["Pet Details<br/>(ISR)"]
+        Planner["Adoption Planner<br/>(SWR + Client Analytics)"]
+        Insights["Preference Insights<br/>(Responsive Charts)"]
+        Map["Pet Map<br/>(Proxy Geocoding + Cache)"]
         Admin["Admin Panel<br/>(CSR)"]
     end
 
@@ -295,13 +298,23 @@ flowchart TB
 - Error boundaries
 
 **Technologies**:
-- **Framework**: Next.js 14 (App Router)
+- **Framework**: Next.js (Pages Router + API Routes)
 - **UI Library**: React 18
 - **Styling**: Tailwind CSS, shadcn/ui
 - **Animation**: Framer Motion
 - **Data Fetching**: SWR
 - **Form Handling**: React Hook Form
 - **Type Safety**: TypeScript 5.x
+
+**Current Frontend Surfaces**:
+- **Adoption Planner**: A dedicated decision-support page that converts liked swipes into compatibility/readiness scoring, paginated shortlist comparison, checklist-driven prep, and outreach prompts.
+- **Preference Insights**: A dedicated analytics page with responsive charts for swipe activity, decision split, pet-type affinity, and shelter momentum.
+- **Pet Map**: A dedicated map page backed by a same-origin geocoding proxy plus client-side query, pet, and miss caches to reduce repeated address lookups.
+- **Navigation**: Desktop uses icon-first navbar actions with tooltips, while mobile uses a separate compact header and expanded action panel for better small-screen UX.
+
+**Frontend Performance Notes**:
+- Shared chart styling is centralized in `frontend/components/ui/chart.tsx` so tooltip surfaces, dark-mode text colors, legend wrapping, and mobile-safe sizing remain consistent across analytics pages.
+- Map geocoding now uses reduced concurrency, in-flight request deduplication, normalized queries, and negative-result caching to avoid repeated slow lookups for the same shelter address variants.
 
 ### 4. API Gateway Layer
 
@@ -1888,7 +1901,8 @@ flowchart TB
 | | PostgreSQL | 15.x | Database |
 | | Redis | 7.x | Caching |
 | | RabbitMQ | 3.x | Message queue |
-| **Cloud** | AWS ECS | Fargate | Container orchestration |
+| **Cloud** | Kubernetes | 1.27+ | Primary portable container orchestration |
+| | AWS ECS | Fargate | AWS-native container orchestration |
 | | AWS RDS | PostgreSQL 15 | Managed database |
 | | AWS S3 | - | Object storage |
 | | AWS ALB | - | Load balancing |
@@ -1911,8 +1925,8 @@ flowchart TB
 
 ### Architecture Decision Records (ADRs)
 
-#### ADR-001: Why ECS Fargate over EKS?
-**Decision**: Use ECS Fargate for container orchestration instead of EKS (Kubernetes)
+#### ADR-001: Initial AWS Rollout Used ECS Fargate Before Kubernetes Support
+**Decision**: The initial AWS-first rollout used ECS Fargate, and the repository now also includes a production-oriented Kubernetes deployment stack for teams standardizing on EKS or other conformant clusters.
 
 **Rationale**:
 - Lower operational overhead (no control plane management)
@@ -1920,11 +1934,12 @@ flowchart TB
 - Better AWS integration (ALB, CloudWatch, IAM)
 - Cost-effective for our workload size
 - Faster cold starts compared to EC2-based solutions
+- Kubernetes support is now included to improve portability and standardize enterprise cluster operations
 
 **Consequences**:
-- Less portable than Kubernetes
-- Limited advanced orchestration features
-- Locked into AWS ecosystem
+- Teams can choose between an AWS-native path and a portable Kubernetes path
+- Operational complexity is higher when supporting both deployment models
+- The repo now carries both Terraform-heavy AWS infrastructure and kustomize-based Kubernetes manifests
 
 #### ADR-002: PostgreSQL over NoSQL
 **Decision**: Use PostgreSQL as primary database instead of DynamoDB or MongoDB

@@ -36,6 +36,8 @@ terraform/
 ├── variables.tf            # Input variables
 ├── outputs.tf              # Output values
 ├── provider.tf             # AWS provider configuration
+├── backend.hcl.example     # Template for remote state backend config
+├── environments/           # Example env-specific tfvars files
 ├── monitoring.tf           # CloudWatch, dashboards, alarms
 ├── observability.tf        # Prometheus, Grafana, OpenTelemetry
 ├── security.tf             # WAF, GuardDuty, Security Hub, Config
@@ -73,6 +75,24 @@ terraform/
 - Secrets Manager for credentials
 - GuardDuty for threat detection
 - Security Hub for compliance
+
+### Operator Bootstrap Standard
+
+Terraform deployments are expected to use:
+
+- `terraform/backend.hcl` copied from `terraform/backend.hcl.example`
+- `terraform/environments/<env>.tfvars` copied from the committed `.example` templates
+
+Recommended workflow:
+
+```bash
+cp terraform/backend.hcl.example terraform/backend.hcl
+cp terraform/environments/production.tfvars.example terraform/environments/production.tfvars
+make tf-preflight ENV=production
+make k8s-preflight
+make tf-init
+make tf-plan ENV=production
+```
 
 ## CI/CD Pipelines
 
@@ -305,6 +325,8 @@ Automated canary tests running every 5 minutes:
 
 #### 1. **Infrastructure Security**
 ```bash
+# Prerequisite: install tfsec, checkov, terrascan, and infracost explicitly
+
 # Run comprehensive infrastructure tests
 ./scripts/infrastructure-test.sh
 
@@ -525,6 +547,8 @@ DRY_RUN=false ENVIRONMENT=staging ./scripts/chaos-engineering.sh kill-task
 ### Infrastructure Testing
 
 ```bash
+# Prerequisite: install the required scanning and cost tools explicitly
+
 # Run comprehensive infrastructure tests
 ./scripts/infrastructure-test.sh
 

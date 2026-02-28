@@ -11,13 +11,18 @@ import matchesRoutes from "./routes/matches";
 import swipesRoutes from "./routes/swipes";
 import chatRoutes from "./routes/chat";
 import { errorHandler } from "./middlewares/errorHandler";
-import { ensureInitialized } from "./index";
+import { AppDataSource, ensureInitialized } from "./bootstrap";
 import { components as schemaComponents } from "./swagger/schemas";
 
 const app = express();
 
 // ─── WAIT FOR DB INIT ───────────────────────────────────────────────────────────
-app.use(async (_req: Request, _res: Response, next: NextFunction) => {
+app.use(async (req: Request, _res: Response, next: NextFunction) => {
+  if (req.path === "/health") {
+    next();
+    return;
+  }
+
   try {
     await ensureInitialized();
   } catch {
@@ -153,6 +158,36 @@ app.get(["/api", "/api/"], (_req, res) => {
 // ─── PING (for quick CORS test) ────────────────────────────────────────────────
 app.get("/ping", (_req, res) => {
   res.json({ pong: true });
+});
+
+app.get("/health", (_req, res) => {
+  res.json({
+    status: "ok",
+    uptimeSeconds: Math.round(process.uptime()),
+    timestamp: new Date().toISOString(),
+  });
+});
+
+app.get("/ready", async (_req, res) => {
+  try {
+    await ensureInitialized();
+
+    if (!AppDataSource.isInitialized) {
+      return res.status(503).json({ status: "initializing" });
+    }
+
+    await AppDataSource.query("SELECT 1");
+
+    return res.json({
+      status: "ready",
+      timestamp: new Date().toISOString(),
+    });
+  } catch (error) {
+    return res.status(503).json({
+      status: "unready",
+      message: error instanceof Error ? error.message : "Database unavailable",
+    });
+  }
 });
 
 // ─── REQUEST LOGGER (after routes) ────────────────────────────────────────────

@@ -1,0 +1,7 @@
+model = "gpt-5.3-codex"
+model_reasoning_effort = "high"
+developer_instructions = """
+Focus on backend behavior and coherence.
+Trace route, controller, service, entity, and migration impact.
+Watch health endpoints, Swagger exposure, auth behavior, and deployment implications.
+"""

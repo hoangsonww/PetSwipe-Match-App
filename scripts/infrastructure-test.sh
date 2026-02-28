@@ -99,12 +99,8 @@ test_tfsec_scan() {
   start_test "tfsec Security Scan"
 
   if ! command -v tfsec &> /dev/null; then
-    log_warning "tfsec not installed. Installing..."
-    if [[ "$OSTYPE" == "darwin"* ]]; then
-      brew install tfsec
-    else
-      curl -s https://raw.githubusercontent.com/aquasecurity/tfsec/master/scripts/install_linux.sh | bash
-    fi
+    fail_test "tfsec is not installed. Install it explicitly before running infrastructure tests."
+    return
   fi
 
   cd "$TERRAFORM_DIR"
@@ -129,8 +125,8 @@ test_checkov_scan() {
   start_test "Checkov Policy-as-Code Scan"
 
   if ! command -v checkov &> /dev/null; then
-    log_warning "checkov not installed. Installing..."
-    pip3 install checkov
+    fail_test "checkov is not installed. Install it explicitly before running infrastructure tests."
+    return
   fi
 
   cd "$TERRAFORM_DIR"
@@ -152,10 +148,8 @@ test_terrascan() {
   start_test "Terrascan Compliance Scan"
 
   if ! command -v terrascan &> /dev/null; then
-    log_warning "terrascan not installed. Installing..."
-    curl -L "$(curl -s https://api.github.com/repos/tenable/terrascan/releases/latest | grep -o -E "https://.+?_Darwin_x86_64.tar.gz")" > terrascan.tar.gz
-    tar -xf terrascan.tar.gz terrascan && rm terrascan.tar.gz
-    sudo install terrascan /usr/local/bin && rm terrascan
+    fail_test "terrascan is not installed. Install it explicitly before running infrastructure tests."
+    return
   fi
 
   cd "$TERRAFORM_DIR"
@@ -179,12 +173,8 @@ test_infracost_estimate() {
   start_test "Infrastructure Cost Estimation"
 
   if ! command -v infracost &> /dev/null; then
-    log_warning "infracost not installed. Installing..."
-    if [[ "$OSTYPE" == "darwin"* ]]; then
-      brew install infracost
-    else
-      curl -fsSL https://raw.githubusercontent.com/infracost/infracost/master/scripts/install.sh | sh
-    fi
+    fail_test "infracost is not installed. Install it explicitly before running infrastructure tests."
+    return
   fi
 
   cd "$TERRAFORM_DIR"
