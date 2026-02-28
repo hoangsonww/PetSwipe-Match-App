@@ -42,7 +42,7 @@ const fakeUsers = [{ id: "u1", email: "a@test.com" }];
 const fakePets = Array.from({ length: 3 }, (_, i) => ({ id: `p${i}` }));
 const fakeMatches = [];
 
-jest.mock("../src/index", () => ({
+jest.mock("../src/bootstrap", () => ({
   AppDataSource: {
     getRepository: (ent) => ({
       findOne: ({ where }) => fakeUsers.find((u) => u.id === where.id) ?? null,

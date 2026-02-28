@@ -2,6 +2,7 @@
 module.exports = {
   // jsdom gives us window, localStorage, FormData, etc.
   testEnvironment: "jsdom",
+  watchman: false,
 
   // transpile *.ts / *.tsx on-the-fly
   transform: {

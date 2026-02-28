@@ -1,0 +1,7 @@
+interface:
+  display_name: "PetSwipe Planner & Insights"
+  short_description: "Refine decision-support and analytics pages."
+  default_prompt: "Use $planner-and-insights-pages to improve the PetSwipe planner or insights experience without losing useful analytics."
+
+policy:
+  allow_implicit_invocation: true

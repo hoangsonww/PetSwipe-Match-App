@@ -1,0 +1,7 @@
+interface:
+  display_name: "PetSwipe Navigation"
+  short_description: "Refine page order and navbar behavior."
+  default_prompt: "Use $navigation-and-page-structure to update PetSwipe navigation without breaking desktop or mobile UX."
+
+policy:
+  allow_implicit_invocation: true

@@ -1,0 +1,7 @@
+interface:
+  display_name: "PetSwipe Validation"
+  short_description: "Choose the right checks for each change."
+  default_prompt: "Use $testing-and-validation to choose the smallest reliable validation plan for this PetSwipe task."
+
+policy:
+  allow_implicit_invocation: true

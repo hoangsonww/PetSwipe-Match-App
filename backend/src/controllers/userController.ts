@@ -1,7 +1,7 @@
 import { Request, Response, NextFunction } from "express";
 import multer from "multer";
 import { uploadAvatar } from "../utils/supabase";
-import { AppDataSource } from "../index";
+import { AppDataSource } from "../bootstrap";
 import { AppUser } from "../entities/User";
 
 const userRepo = () => AppDataSource.getRepository(AppUser);

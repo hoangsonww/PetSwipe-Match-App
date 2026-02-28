@@ -1,4 +1,4 @@
-import { AppDataSource } from "../index";
+import { AppDataSource } from "../bootstrap";
 import { AppUser } from "../entities/User";
 import { Pet } from "../entities/Pet";
 import { Match } from "../entities/Match";

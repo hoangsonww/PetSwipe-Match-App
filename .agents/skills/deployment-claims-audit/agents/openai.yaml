@@ -1,0 +1,7 @@
+interface:
+  display_name: "PetSwipe Deployment Claims"
+  short_description: "Audit readiness claims against repo evidence."
+  default_prompt: "Use $deployment-claims-audit to verify whether this PetSwipe deployment or readiness claim is actually supported by the repo."
+
+policy:
+  allow_implicit_invocation: true

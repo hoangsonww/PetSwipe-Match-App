@@ -1,0 +1,7 @@
+interface:
+  display_name: "Backend Runtime Contracts"
+  short_description: "Protect health and Swagger behavior."
+  default_prompt: "Use $swagger-health-contracts to update PetSwipe backend runtime or docs endpoints safely."
+
+policy:
+  allow_implicit_invocation: true

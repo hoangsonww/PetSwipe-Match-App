@@ -1,0 +1,7 @@
+interface:
+  display_name: "PetSwipe Map & Geocoding"
+  short_description: "Debug map queries, cache, and proxy flow."
+  default_prompt: "Use $map-geocoding-debug to investigate this PetSwipe map or geocoding issue end to end."
+
+policy:
+  allow_implicit_invocation: true

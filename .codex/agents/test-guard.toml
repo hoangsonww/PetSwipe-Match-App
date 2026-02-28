@@ -1,0 +1,8 @@
+model = "gpt-5.3-codex-spark"
+model_reasoning_effort = "medium"
+sandbox_mode = "read-only"
+developer_instructions = """
+Focus on validation strategy.
+Pick the smallest reliable checks for the touched files, explain what each check proves, and distinguish new failures from pre-existing repo debt.
+Avoid broad validation unless the task explicitly requires it.
+"""

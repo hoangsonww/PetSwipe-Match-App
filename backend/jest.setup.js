@@ -21,7 +21,7 @@ function freshRepo() {
 global.__repo = freshRepo;
 
 // Data-source stub
-jest.mock("./src/index", () => ({
+jest.mock("./src/bootstrap", () => ({
   AppDataSource: {
     getRepository: () => global.__repo,
   },

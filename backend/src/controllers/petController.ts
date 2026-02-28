@@ -1,6 +1,6 @@
 import { Request, Response, NextFunction } from "express";
 import csvParser from "csv-parser";
-import { AppDataSource } from "../index";
+import { AppDataSource } from "../bootstrap";
 import { Pet } from "../entities/Pet";
 import { sendCsv } from "../utils/csv";
 import stream from "stream";
