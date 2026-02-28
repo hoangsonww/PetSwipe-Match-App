@@ -1,0 +1,7 @@
+interface:
+  display_name: "Docs Product & Deploy Sync"
+  short_description: "Align PetSwipe docs across product and ops."
+  default_prompt: "Use $product-and-deploy-doc-sync to update PetSwipe docs so product and deployment guidance stay aligned."
+
+policy:
+  allow_implicit_invocation: true

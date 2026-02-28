@@ -1,6 +1,6 @@
 import { RequestHandler } from "express";
 import { verifyToken } from "../utils/jwt";
-import { AppDataSource } from "../index";
+import { AppDataSource } from "../bootstrap";
 import { AppUser } from "../entities/User";
 
 export const authMiddleware: RequestHandler = async (req, res, next) => {

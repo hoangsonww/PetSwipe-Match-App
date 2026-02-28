@@ -1,5 +1,5 @@
 import { Request, Response, NextFunction } from "express";
-import { AppDataSource } from "../index";
+import { AppDataSource } from "../bootstrap";
 import { Swipe } from "../entities/Swipe";
 import { Pet } from "../entities/Pet";
 

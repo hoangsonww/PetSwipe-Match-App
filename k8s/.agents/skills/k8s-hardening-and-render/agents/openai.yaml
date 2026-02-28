@@ -1,0 +1,7 @@
+interface:
+  display_name: "K8s Hardening & Render"
+  short_description: "Keep PetSwipe manifests renderable and safe."
+  default_prompt: "Use $k8s-hardening-and-render to improve PetSwipe Kubernetes manifests without breaking renderability or operator flow."
+
+policy:
+  allow_implicit_invocation: true

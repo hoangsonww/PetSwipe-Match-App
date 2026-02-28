@@ -1,0 +1,7 @@
+interface:
+  display_name: "Frontend Navbar & Routing"
+  short_description: "Polish PetSwipe navigation behavior."
+  default_prompt: "Use $navbar-and-routing to improve PetSwipe navbar or route discoverability on desktop and mobile."
+
+policy:
+  allow_implicit_invocation: true

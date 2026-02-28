@@ -1,6 +1,6 @@
 import { Request, Response, NextFunction } from "express";
 import bcrypt from "bcryptjs";
-import { AppDataSource } from "../index";
+import { AppDataSource } from "../bootstrap";
 import { AppUser } from "../entities/User";
 import { generateToken } from "../utils/jwt";
 import { assignPetsToUser } from "../utils/assignmentHelper";

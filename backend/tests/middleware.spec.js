@@ -41,7 +41,7 @@ jest.mock("../src/utils/jwt", () => ({
 }));
 
 // mock TypeORM datasource / repository
-jest.mock("../src/index", () => ({
+jest.mock("../src/bootstrap", () => ({
   AppDataSource: {
     getRepository: () => ({
       findOneBy: ({ id }) =>

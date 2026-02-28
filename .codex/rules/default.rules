@@ -1,0 +1,55 @@
+# Prefer ripgrep over grep for repo search.
+prefix_rule(
+    pattern = ["grep"],
+    decision = "forbidden",
+    justification = "Use `rg` instead of `grep` for repository search.",
+    match = [
+        "grep TODO README.md",
+        "grep -R navbar frontend",
+    ],
+    not_match = [
+        "rg TODO README.md",
+    ],
+)
+
+# Infrastructure mutation should require approval.
+prefix_rule(
+    pattern = ["terraform", ["apply", "destroy"]],
+    decision = "prompt",
+    justification = "Terraform mutation affects real infrastructure and should be explicitly approved.",
+    match = [
+        "terraform apply -var-file=environments/production.tfvars",
+        "terraform destroy -var-file=environments/staging.tfvars",
+    ],
+    not_match = [
+        "terraform plan -var-file=environments/production.tfvars",
+    ],
+)
+
+# Cluster mutation should require approval.
+prefix_rule(
+    pattern = ["kubectl", ["apply", "delete", "rollout"]],
+    decision = "prompt",
+    justification = "Kubernetes mutation should be reviewed before running outside the sandbox.",
+    match = [
+        "kubectl apply -k k8s/overlays/production",
+        "kubectl rollout restart deployment/petswipe-frontend",
+    ],
+    not_match = [
+        "kubectl kustomize k8s/base",
+    ],
+)
+
+# Recursive deletion should always require approval.
+prefix_rule(
+    pattern = ["rm", "-rf"],
+    decision = "prompt",
+    justification = "Recursive deletion should always be explicitly approved.",
+    match = [
+        "rm -rf frontend/.next",
+        "rm -rf dist/deployment",
+    ],
+    not_match = [
+        "rm -f tmp.txt",
+    ],
+)

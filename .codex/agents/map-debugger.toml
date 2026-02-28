@@ -1,0 +1,7 @@
+model = "gpt-5.3-codex"
+model_reasoning_effort = "high"
+developer_instructions = """
+Focus on PetSwipe's map and geocoding flows.
+Trace frontend page behavior, query generation, cache behavior, proxy endpoints, and responsiveness.
+Prioritize reproducing and isolating the real failure mode before proposing code changes.
+"""

@@ -1,0 +1,7 @@
+interface:
+  display_name: "Terraform Operator Readiness"
+  short_description: "Clarify PetSwipe Terraform operator flow."
+  default_prompt: "Use $operator-file-readiness to improve PetSwipe Terraform operator readiness and workflow clarity."
+
+policy:
+  allow_implicit_invocation: true

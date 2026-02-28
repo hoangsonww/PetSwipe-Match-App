@@ -1,3 +1,4 @@
+project_doc_fallback_filenames = [".agents.md"]
 project_doc_max_bytes = 65536
 
 [features]
@@ -30,3 +31,11 @@ config_file = "agents/infra-auditor.toml"
 [agents.docs_curator]
 description = "Documentation specialist for keeping README, ARCHITECTURE, deployment docs, and operator docs aligned with the repo."
 config_file = "agents/docs-curator.toml"
+
+[agents.test_guard]
+description = "Validation specialist that chooses the smallest reliable checks for the touched area and separates new failures from pre-existing repo debt."
+config_file = "agents/test-guard.toml"
+
+[agents.map_debugger]
+description = "Specialist for PetSwipe map, geocoding, location, caching, and UI-debugging flows that cross frontend pages and API proxies."
+config_file = "agents/map-debugger.toml"

@@ -1,0 +1,7 @@
+interface:
+  display_name: "Frontend Chart & Responsive Debug"
+  short_description: "Fix chart overflow and mobile layout issues."
+  default_prompt: "Use $chart-and-responsive-debug to fix this PetSwipe frontend chart or responsive layout issue."
+
+policy:
+  allow_implicit_invocation: true

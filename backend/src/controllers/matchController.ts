@@ -1,5 +1,5 @@
 import { Request, Response, NextFunction } from "express";
-import { AppDataSource } from "../index";
+import { AppDataSource } from "../bootstrap";
 import { Match } from "../entities/Match";
 import { AppUser } from "../entities/User";
 import { Pet } from "../entities/Pet";
