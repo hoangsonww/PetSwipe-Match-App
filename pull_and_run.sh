@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+
 # pull_and_run.sh
 # Pull images and bring up the production stack
 
