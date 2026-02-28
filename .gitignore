@@ -17,3 +17,4 @@ yarn-error.log*
 /dist/deployment/
 /terraform/backend.hcl
 /terraform/environments/*.tfvars
+/backend/dist

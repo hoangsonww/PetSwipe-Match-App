@@ -168,25 +168,28 @@ app.get("/health", (_req, res) => {
   });
 });
 
-app.get("/ready", async (_req, res) => {
+app.get("/ready", async (_req, res): Promise<void> => {
   try {
     await ensureInitialized();
 
     if (!AppDataSource.isInitialized) {
-      return res.status(503).json({ status: "initializing" });
+      res.status(503).json({ status: "initializing" });
+      return;
     }
 
     await AppDataSource.query("SELECT 1");
 
-    return res.json({
+    res.json({
       status: "ready",
       timestamp: new Date().toISOString(),
     });
+    return;
   } catch (error) {
-    return res.status(503).json({
+    res.status(503).json({
       status: "unready",
       message: error instanceof Error ? error.message : "Database unavailable",
     });
+    return;
   }
 });
 
