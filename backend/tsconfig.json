@@ -11,8 +11,7 @@
     "experimentalDecorators": true,
     "resolveJsonModule": true,
     "baseUrl": "./src",
-    "paths": { "*": ["*"] },
-    "typeRoots": ["src/types", "node_modules/@types"]
+    "paths": { "*": ["*"] }
   },
   "include": ["src/**/*", "src/types/**/*.d.ts"]
 }
