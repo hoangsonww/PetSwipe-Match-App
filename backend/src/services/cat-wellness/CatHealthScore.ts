@@ -1,6 +1,6 @@
 /**
  * Cat Health Scoring Service
- * 
+ *
  * Calculates comprehensive health scores for cats based on:
  * - Age-appropriate energy levels
  * - Weight management status
@@ -10,6 +10,7 @@
  */
 
 import { Pet } from '../../entities/Pet';
+import { CAT_HEALTH_SCORING_CONSTANTS } from '../../constants/cat-health-scoring.constants';
 
 interface CatHealthIndicators {
   age: number;
@@ -27,7 +28,7 @@ export class CatHealthScore {
    * Calculate overall health score (0-100)
    */
   static calculateHealthScore(indicators: CatHealthIndicators): number {
-    let score = 100;
+    let score = CAT_HEALTH_SCORING_CONSTANTS.INITIAL_SCORE;
 
     // Age factor (younger cats generally healthier)
     score -= this.ageRiskFactor(indicators.age);
@@ -51,9 +52,9 @@ export class CatHealthScore {
     );
 
     // Diet quality (major preventive factor)
-    score += (indicators.dietQuality / 10) * 15;
+    score += (indicators.dietQuality / 10) * CAT_HEALTH_SCORING_CONSTANTS.DIET_QUALITY.MULTIPLIER;
 
-    return Math.max(0, Math.min(100, score));
+    return Math.max(CAT_HEALTH_SCORING_CONSTANTS.MIN_SCORE, Math.min(CAT_HEALTH_SCORING_CONSTANTS.MAX_SCORE, score));
   }
 
   /**
@@ -62,12 +63,13 @@ export class CatHealthScore {
   static identifyRisks(
     indicators: CatHealthIndicators
   ): { condition: string; riskLevel: 'low' | 'medium' | 'high'; actions: string[] }[] {
+    const { DISEASE_AGE_RISK } = CAT_HEALTH_SCORING_CONSTANTS;
     const risks = [];
 
     // FIP risk assessment
     if (
-      indicators.age < 2 ||
-      (indicators.age > 10 && indicators.lastVetVisit.getTime() < Date.now() - 365 * 24 * 60 * 60 * 1000)
+      indicators.age < DISEASE_AGE_RISK.FIP.YOUNG_THRESHOLD ||
+      (indicators.age > DISEASE_AGE_RISK.FIP.OLD_THRESHOLD && indicators.lastVetVisit.getTime() < Date.now() - DISEASE_AGE_RISK.FIP.OVERDUE_VET_DAYS * 24 * 60 * 60 * 1000)
     ) {
       risks.push({
         condition: 'Feline Infectious Peritonitis (FIP)',
@@ -81,10 +83,10 @@ export class CatHealthScore {
     }
 
     // CKD risk (age 7+)
-    if (indicators.age >= 7) {
+    if (indicators.age >= DISEASE_AGE_RISK.CKD.RISK_AGE) {
       risks.push({
         condition: 'Chronic Kidney Disease (CKD)',
-        riskLevel: indicators.age >= 12 ? 'high' : 'medium',
+        riskLevel: indicators.age >= DISEASE_AGE_RISK.CKD.HIGH_RISK_AGE ? 'high' : 'medium',
         actions: [
           'Schedule annual kidney panel bloodwork',
           'Monitor water intake and urination',
@@ -94,7 +96,7 @@ export class CatHealthScore {
     }
 
     // Hyperthyroidism risk (age 10+)
-    if (indicators.age >= 10) {
+    if (indicators.age >= DISEASE_AGE_RISK.HYPERTHYROIDISM.RISK_AGE) {
       risks.push({
         condition: 'Hyperthyroidism',
         riskLevel: 'medium',
@@ -107,7 +109,7 @@ export class CatHealthScore {
     }
 
     // Obesity-related risks
-    if (indicators.dietQuality < 5) {
+    if (indicators.dietQuality < CAT_HEALTH_SCORING_CONSTANTS.NUTRITION.DIET_QUALITY_POOR_THRESHOLD) {
       risks.push({
         condition: 'Obesity & Metabolic Disease',
         riskLevel: 'high',
@@ -154,28 +156,32 @@ export class CatHealthScore {
   }
 
   private static ageRiskFactor(age: number): number {
-    if (age < 1) return 5;
-    if (age < 7) return 0;
-    if (age < 10) return 10;
-    if (age < 15) return 25;
-    return 40;
+    const { AGE_RISK } = CAT_HEALTH_SCORING_CONSTANTS;
+
+    if (age < AGE_RISK.YOUNG_KITTEN.max) return AGE_RISK.YOUNG_KITTEN.penalty;
+    if (age < AGE_RISK.ADULT.min) return AGE_RISK.KITTEN.penalty;
+    if (age < AGE_RISK.SENIOR.min) return AGE_RISK.ADULT.penalty;
+    if (age < AGE_RISK.GERIATRIC.min) return AGE_RISK.SENIOR.penalty;
+    return AGE_RISK.GERIATRIC.penalty;
   }
 
   private static weightRiskFactor(weight: number): number {
-    // Assuming weight in kg, average cat is 4-5kg
-    if (weight < 3) return 15; // Underweight
-    if (weight <= 5.5) return 0;
-    if (weight <= 6.5) return 10;
-    if (weight <= 7.5) return 20;
-    return 35; // Obese
+    const { WEIGHT_RISK } = CAT_HEALTH_SCORING_CONSTANTS;
+
+    if (weight < WEIGHT_RISK.UNDERWEIGHT.max) return WEIGHT_RISK.UNDERWEIGHT.penalty;
+    if (weight <= WEIGHT_RISK.IDEAL.max) return WEIGHT_RISK.IDEAL.penalty;
+    if (weight <= WEIGHT_RISK.SLIGHT_OVERWEIGHT.max) return WEIGHT_RISK.SLIGHT_OVERWEIGHT.penalty;
+    if (weight <= WEIGHT_RISK.OVERWEIGHT.max) return WEIGHT_RISK.OVERWEIGHT.penalty;
+    return WEIGHT_RISK.OBESE.penalty;
   }
 
   private static diseaseRiskFactor(breeds: string[]): number {
-    const highRiskBreeds = ['Bengal', 'Siamese', 'Ragdoll', 'Abyssinian'];
+    const { DISEASE_RISK } = CAT_HEALTH_SCORING_CONSTANTS;
+
     const breedRisk = breeds.some((breed) =>
-      highRiskBreeds.some((hb) => breed.toLowerCase().includes(hb.toLowerCase()))
+      DISEASE_RISK.HIGH_RISK_BREEDS.some((hb) => breed.toLowerCase().includes(hb.toLowerCase()))
     )
-      ? 15
+      ? DISEASE_RISK.BREED_RISK_PENALTY
       : 0;
     return breedRisk;
   }
@@ -184,13 +190,14 @@ export class CatHealthScore {
     lastVetVisit: Date,
     vaccinations: string[]
   ): number {
+    const { PREVENTIVE_CARE } = CAT_HEALTH_SCORING_CONSTANTS;
     const daysSinceVisit = (Date.now() - lastVetVisit.getTime()) / (24 * 60 * 60 * 1000);
     let score = 0;
 
-    if (daysSinceVisit < 365) score += 20;
-    else if (daysSinceVisit < 730) score += 10;
+    if (daysSinceVisit < PREVENTIVE_CARE.RECENT_VET_VISIT_DAYS) score += PREVENTIVE_CARE.RECENT_VET_SCORE;
+    else if (daysSinceVisit < PREVENTIVE_CARE.MODERATE_VET_VISIT_DAYS) score += PREVENTIVE_CARE.MODERATE_VET_SCORE;
 
-    if (vaccinations.length >= 2) score += 10;
+    if (vaccinations.length >= PREVENTIVE_CARE.MIN_VACCINATIONS) score += PREVENTIVE_CARE.VACCINATION_BONUS;
 
     return score;
   }
@@ -199,24 +206,27 @@ export class CatHealthScore {
     behavioralScore: number,
     activityLevel: string
   ): number {
-    let score = behavioralScore * 1.5;
-    if (activityLevel === 'high') score += 10;
-    else if (activityLevel === 'moderate') score += 5;
-    return Math.min(score, 25);
+    const { BEHAVIORAL } = CAT_HEALTH_SCORING_CONSTANTS;
+
+    let score = behavioralScore * BEHAVIORAL.MULTIPLIER;
+    if (activityLevel === 'high') score += BEHAVIORAL.HIGH_ACTIVITY_BONUS;
+    else if (activityLevel === 'moderate') score += BEHAVIORAL.MODERATE_ACTIVITY_BONUS;
+    return Math.min(score, BEHAVIORAL.MAX_BEHAVIORAL_SCORE);
   }
 
   private static recommendedScreenings(age: number): string[] {
+    const { SCREENING_AGES } = CAT_HEALTH_SCORING_CONSTANTS;
     const screenings = ['Annual wellness exam'];
 
-    if (age >= 7) {
+    if (age >= SCREENING_AGES.SENIOR_START) {
       screenings.push('Blood chemistry panel', 'Urinalysis');
     }
 
-    if (age >= 10) {
+    if (age >= SCREENING_AGES.GERIATRIC_START) {
       screenings.push('Thyroid panel (T4)', 'Blood pressure');
     }
 
-    if (age >= 15) {
+    if (age >= SCREENING_AGES.VERY_GERIATRIC_START) {
       screenings.push('Cardiac ultrasound', 'Advanced imaging as needed');
     }
 
@@ -224,20 +234,21 @@ export class CatHealthScore {
   }
 
   private static nutritionPlan(weight: number, dietQuality: number): string[] {
+    const { NUTRITION } = CAT_HEALTH_SCORING_CONSTANTS;
     const plans = [];
 
-    if (weight > 6) {
+    if (weight > NUTRITION.OVERWEIGHT_THRESHOLD) {
       plans.push('High-protein, low-carb diet for weight management');
       plans.push('Measure portions carefully');
       plans.push('Increase water intake');
-    } else if (weight < 3) {
+    } else if (weight < NUTRITION.UNDERWEIGHT_THRESHOLD) {
       plans.push('Nutrient-dense food with higher calories');
       plans.push('Consider prescription diet if appropriate');
     } else {
       plans.push('Balanced, AAFCO-approved cat food');
     }
 
-    if (dietQuality < 5) {
+    if (dietQuality < NUTRITION.DIET_QUALITY_POOR_THRESHOLD) {
       plans.push('Switch to high-quality, vet-approved diet');
     }
 
@@ -251,7 +262,7 @@ export class CatHealthScore {
       case 'moderate':
         return 'Maintain current activity, aim for 30-45 min/day';
       case 'high':
-        return 'Maintain enriched environment, provide climbing/scratching',
+        return 'Maintain enriched environment, provide climbing/scratching';
       default:
         return 'Consult veterinarian for personalized activity plan';
     }
