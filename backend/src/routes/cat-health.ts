@@ -1,6 +1,6 @@
 /**
  * Cat Health & Wellness Endpoints
- * 
+ *
  * Provides comprehensive health scoring and risk assessment for cats
  * All endpoints require authentication
  */
