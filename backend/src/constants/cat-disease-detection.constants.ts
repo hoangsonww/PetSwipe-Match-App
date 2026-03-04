@@ -69,4 +69,13 @@ export const CAT_DISEASE_DETECTION_CONSTANTS = {
   PANCREATITIS: {
     PANCREATITIS_SYMPTOM_LIST: ['vomiting', 'abdominal pain', 'lethargy', 'decreased appetite'],
   } as const,
+
+  // Consolidated symptom lists for disease detection (used in both risk assessment and indicator checks)
+  SYMPTOM_LISTS: {
+    FIP: ['fever', 'lethargy', 'abdominal distension', 'weight loss'],
+    CKD: ['increased thirst', 'increased urination', 'weight loss', 'lethargy'],
+    HYPERTHYROIDISM: ['weight loss despite appetite', 'hyperactivity', 'increased thirst', 'vomiting'],
+    DIABETES: ['increased thirst', 'increased urination', 'weight loss', 'lethargy'],
+    PANCREATITIS: ['vomiting', 'lethargy', 'abdominal pain', 'decreased appetite'],
+  } as const,
 } as const;
