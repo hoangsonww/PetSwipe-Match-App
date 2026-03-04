@@ -6,7 +6,7 @@
  */
 
 import { Router, Request, Response } from 'express';
-import { authenticateToken } from '../middleware/auth';
+import { authenticateToken } from '../middlewares/auth';
 import CatHealthScore from '../services/cat-wellness/CatHealthScore';
 
 const router = Router();
