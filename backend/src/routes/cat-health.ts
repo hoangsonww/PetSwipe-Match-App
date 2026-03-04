@@ -6,13 +6,14 @@
  */
 
 import { Router, Request, Response } from 'express';
-import { authenticateToken } from '../middlewares/auth';
+import { authMiddleware } from '../middlewares/auth';
+import { CAT_HEALTH_CONSTANTS } from '../constants/cat-health.constants';
 import CatHealthScore from '../services/cat-wellness/CatHealthScore';
 
 const router = Router();
 
 // Apply authentication to all routes
-router.use(authenticateToken);
+router.use(authMiddleware);
 
 interface CatHealthRequest {
   age: number;
@@ -29,11 +30,11 @@ interface CatHealthRequest {
  * Validate cat health input
  */
 function validateCatHealthInput(data: CatHealthRequest): { valid: boolean; error?: string } {
-  if (!data.age || data.age < 0 || data.age > 30) {
-    return { valid: false, error: 'Age must be between 0 and 30' };
+  if (data.age === undefined || data.age === null || data.age < CAT_HEALTH_CONSTANTS.AGE.MIN || data.age > CAT_HEALTH_CONSTANTS.AGE.MAX) {
+    return { valid: false, error: `Age must be between ${CAT_HEALTH_CONSTANTS.AGE.MIN} and ${CAT_HEALTH_CONSTANTS.AGE.MAX}` };
   }
-  if (!data.weight || data.weight <= 0 || data.weight > 20) {
-    return { valid: false, error: 'Weight must be between 0 and 20 kg' };
+  if (data.weight === undefined || data.weight === null || data.weight <= CAT_HEALTH_CONSTANTS.WEIGHT.MIN || data.weight > CAT_HEALTH_CONSTANTS.WEIGHT.MAX) {
+    return { valid: false, error: `Weight must be between ${CAT_HEALTH_CONSTANTS.WEIGHT.MIN} and ${CAT_HEALTH_CONSTANTS.WEIGHT.MAX} kg` };
   }
   return { valid: true };
 }
@@ -52,12 +53,12 @@ router.post('/score', (req: Request<{}, {}, CatHealthRequest>, res: Response) =>
     const {
       age,
       weight,
-      breed = 'Mixed',
-      lastVetVisit = new Date(Date.now() - 365 * 24 * 60 * 60 * 1000).toISOString(),
+      breed = CAT_HEALTH_CONSTANTS.DEFAULT_BREED,
+      lastVetVisit = new Date(Date.now() - CAT_HEALTH_CONSTANTS.DEFAULT_VET_VISIT_DAYS_AGO * 24 * 60 * 60 * 1000).toISOString(),
       vaccinations = [],
-      behavioralScore = 5,
-      activityLevel = 'moderate',
-      dietQuality = 6,
+      behavioralScore = CAT_HEALTH_CONSTANTS.BEHAVIORAL.DEFAULT,
+      activityLevel = CAT_HEALTH_CONSTANTS.ACTIVITY_LEVEL.DEFAULT,
+      dietQuality = CAT_HEALTH_CONSTANTS.DIET_QUALITY.DEFAULT,
     } = req.body;
 
     const indicators = {
@@ -66,9 +67,9 @@ router.post('/score', (req: Request<{}, {}, CatHealthRequest>, res: Response) =>
       breedPredispositions: breed ? [breed] : [],
       lastVetVisit: new Date(lastVetVisit),
       vaccinations,
-      behavioralScore: Math.max(1, Math.min(10, behavioralScore)),
+      behavioralScore: Math.max(CAT_HEALTH_CONSTANTS.BEHAVIORAL.MIN, Math.min(CAT_HEALTH_CONSTANTS.BEHAVIORAL.MAX, behavioralScore)),
       activityLevel,
-      dietQuality: Math.max(1, Math.min(10, dietQuality)),
+      dietQuality: Math.max(CAT_HEALTH_CONSTANTS.DIET_QUALITY.MIN, Math.min(CAT_HEALTH_CONSTANTS.DIET_QUALITY.MAX, dietQuality)),
     };
 
     const score = CatHealthScore.calculateHealthScore(indicators);
@@ -78,10 +79,10 @@ router.post('/score', (req: Request<{}, {}, CatHealthRequest>, res: Response) =>
     res.json({
       overallScore: Math.round(score),
       scoreRange: {
-        excellent: score >= 85,
-        good: score >= 70 && score < 85,
-        fair: score >= 50 && score < 70,
-        poor: score < 50,
+        excellent: score >= CAT_HEALTH_CONSTANTS.SCORE.EXCELLENT,
+        good: score >= CAT_HEALTH_CONSTANTS.SCORE.GOOD && score < CAT_HEALTH_CONSTANTS.SCORE.EXCELLENT,
+        fair: score >= CAT_HEALTH_CONSTANTS.SCORE.FAIR && score < CAT_HEALTH_CONSTANTS.SCORE.GOOD,
+        poor: score < CAT_HEALTH_CONSTANTS.SCORE.FAIR,
       },
       risks,
       wellnessPlan: plan,
@@ -106,7 +107,7 @@ router.post('/risks', (req: Request<{}, {}, CatHealthRequest>, res: Response) =>
       return res.status(400).json({ error: validation.error });
     }
 
-    const { age, weight, breed = 'Mixed', lastVetVisit, dietQuality = 6 } = req.body;
+    const { age, weight, breed = CAT_HEALTH_CONSTANTS.DEFAULT_BREED, lastVetVisit, dietQuality = CAT_HEALTH_CONSTANTS.DIET_QUALITY.DEFAULT } = req.body;
 
     const indicators = {
       age,
@@ -114,8 +115,8 @@ router.post('/risks', (req: Request<{}, {}, CatHealthRequest>, res: Response) =>
       breedPredispositions: breed ? [breed] : [],
       lastVetVisit: lastVetVisit ? new Date(lastVetVisit) : new Date(),
       vaccinations: req.body.vaccinations || [],
-      behavioralScore: 5,
-      activityLevel: 'moderate' as const,
+      behavioralScore: CAT_HEALTH_CONSTANTS.BEHAVIORAL.DEFAULT,
+      activityLevel: CAT_HEALTH_CONSTANTS.ACTIVITY_LEVEL.DEFAULT as const,
       dietQuality,
     };
 
@@ -155,10 +156,10 @@ router.post('/wellness-plan', (req: Request<{}, {}, CatHealthRequest>, res: Resp
     const {
       age,
       weight,
-      breed = 'Mixed',
+      breed = CAT_HEALTH_CONSTANTS.DEFAULT_BREED,
       lastVetVisit,
-      dietQuality = 6,
-      activityLevel = 'moderate',
+      dietQuality = CAT_HEALTH_CONSTANTS.DIET_QUALITY.DEFAULT,
+      activityLevel = CAT_HEALTH_CONSTANTS.ACTIVITY_LEVEL.DEFAULT,
     } = req.body;
 
     const indicators = {
@@ -167,7 +168,7 @@ router.post('/wellness-plan', (req: Request<{}, {}, CatHealthRequest>, res: Resp
       breedPredispositions: breed ? [breed] : [],
       lastVetVisit: lastVetVisit ? new Date(lastVetVisit) : new Date(),
       vaccinations: req.body.vaccinations || [],
-      behavioralScore: req.body.behavioralScore || 5,
+      behavioralScore: req.body.behavioralScore || CAT_HEALTH_CONSTANTS.BEHAVIORAL.DEFAULT,
       activityLevel,
       dietQuality,
     };
