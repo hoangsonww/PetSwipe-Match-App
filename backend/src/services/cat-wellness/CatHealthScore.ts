@@ -251,7 +251,7 @@ export class CatHealthScore {
       case 'moderate':
         return 'Maintain current activity, aim for 30-45 min/day';
       case 'high':
-        return 'Maintain enriched environment, provide climbing/scratching',
+        return 'Maintain enriched environment, provide climbing/scratching';
       default:
         return 'Consult veterinarian for personalized activity plan';
     }

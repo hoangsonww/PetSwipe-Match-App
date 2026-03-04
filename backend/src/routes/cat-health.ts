@@ -2,12 +2,17 @@
  * Cat Health & Wellness Endpoints
  * 
  * Provides comprehensive health scoring and risk assessment for cats
+ * All endpoints require authentication
  */
 
 import { Router, Request, Response } from 'express';
+import { authenticateToken } from '../middleware/auth';
 import CatHealthScore from '../services/cat-wellness/CatHealthScore';
 
 const router = Router();
+
+// Apply authentication to all routes
+router.use(authenticateToken);
 
 interface CatHealthRequest {
   age: number;
@@ -21,11 +26,29 @@ interface CatHealthRequest {
 }
 
 /**
+ * Validate cat health input
+ */
+function validateCatHealthInput(data: CatHealthRequest): { valid: boolean; error?: string } {
+  if (!data.age || data.age < 0 || data.age > 30) {
+    return { valid: false, error: 'Age must be between 0 and 30' };
+  }
+  if (!data.weight || data.weight <= 0 || data.weight > 20) {
+    return { valid: false, error: 'Weight must be between 0 and 20 kg' };
+  }
+  return { valid: true };
+}
+
+/**
  * POST /api/cat-health/score
  * Calculate comprehensive health score for a cat
  */
 router.post('/score', (req: Request<{}, {}, CatHealthRequest>, res: Response) => {
   try {
+    const validation = validateCatHealthInput(req.body);
+    if (!validation.valid) {
+      return res.status(400).json({ error: validation.error });
+    }
+
     const {
       age,
       weight,
@@ -36,14 +59,6 @@ router.post('/score', (req: Request<{}, {}, CatHealthRequest>, res: Response) =>
       activityLevel = 'moderate',
       dietQuality = 6,
     } = req.body;
-
-    // Validate inputs
-    if (age < 0 || age > 30) {
-      return res.status(400).json({ error: 'Invalid age' });
-    }
-    if (weight <= 0 || weight > 20) {
-      return res.status(400).json({ error: 'Invalid weight' });
-    }
 
     const indicators = {
       age,
@@ -86,11 +101,16 @@ router.post('/score', (req: Request<{}, {}, CatHealthRequest>, res: Response) =>
  */
 router.post('/risks', (req: Request<{}, {}, CatHealthRequest>, res: Response) => {
   try {
-    const { age, breed = 'Mixed', lastVetVisit, dietQuality = 6 } = req.body;
+    const validation = validateCatHealthInput(req.body);
+    if (!validation.valid) {
+      return res.status(400).json({ error: validation.error });
+    }
+
+    const { age, weight, breed = 'Mixed', lastVetVisit, dietQuality = 6 } = req.body;
 
     const indicators = {
       age,
-      weight: req.body.weight || 4.5,
+      weight,
       breedPredispositions: breed ? [breed] : [],
       lastVetVisit: lastVetVisit ? new Date(lastVetVisit) : new Date(),
       vaccinations: req.body.vaccinations || [],
@@ -104,6 +124,7 @@ router.post('/risks', (req: Request<{}, {}, CatHealthRequest>, res: Response) =>
     res.json({
       catProfile: {
         age,
+        weight,
         breed,
       },
       identifiedRisks: risks,
@@ -126,6 +147,11 @@ router.post('/risks', (req: Request<{}, {}, CatHealthRequest>, res: Response) =>
  */
 router.post('/wellness-plan', (req: Request<{}, {}, CatHealthRequest>, res: Response) => {
   try {
+    const validation = validateCatHealthInput(req.body);
+    if (!validation.valid) {
+      return res.status(400).json({ error: validation.error });
+    }
+
     const {
       age,
       weight,
