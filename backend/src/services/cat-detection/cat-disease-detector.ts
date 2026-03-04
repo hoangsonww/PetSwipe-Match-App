@@ -63,6 +63,13 @@ const DISEASE_DETECTION_CONSTANTS = {
     DIABETES: ['increased thirst', 'increased urination', 'weight loss', 'lethargy'],
     PANCREATITIS: ['vomiting', 'lethargy', 'abdominal pain', 'decreased appetite'],
   },
+  // Validation limits
+  VALIDATION: {
+    MAX_DURATION: 3650,
+    MAX_AGE: 30,
+  },
+  // Symptom threshold for general assessment
+  GENERAL_SYMPTOM_THRESHOLD: 3,
 } as const;
 
 export class CatDiseaseDetector {
@@ -73,11 +80,11 @@ export class CatDiseaseDetector {
     if (!report.symptoms || report.symptoms.length === 0) {
       return { valid: false, error: 'At least one symptom is required' };
     }
-    if (report.duration < 0 || report.duration > 3650) {
-      return { valid: false, error: 'Duration must be 0-3650 days' };
+    if (report.duration < 0 || report.duration > DISEASE_DETECTION_CONSTANTS.VALIDATION.MAX_DURATION) {
+      return { valid: false, error: `Duration must be 0-${DISEASE_DETECTION_CONSTANTS.VALIDATION.MAX_DURATION} days` };
     }
-    if (report.age < 0 || report.age > 30) {
-      return { valid: false, error: 'Age must be 0-30 years' };
+    if (report.age < 0 || report.age > DISEASE_DETECTION_CONSTANTS.VALIDATION.MAX_AGE) {
+      return { valid: false, error: `Age must be 0-${DISEASE_DETECTION_CONSTANTS.VALIDATION.MAX_AGE} years` };
     }
     return { valid: true };
   }
@@ -223,7 +230,7 @@ export class CatDiseaseDetector {
     const ageRisk = report.age >= DISEASE_DETECTION_CONSTANTS.AGE.SENIOR_CAT;
     const symptomRisk = matchingSymptoms.length >= DISEASE_DETECTION_CONSTANTS.SYMPTOMS.MIN_HYPERTHYROIDISM;
 
-    return (ageRisk || report.symptoms.length >= 3) && symptomRisk;
+    return (ageRisk || report.symptoms.length >= DISEASE_DETECTION_CONSTANTS.GENERAL_SYMPTOM_THRESHOLD) && symptomRisk;
   }
 
   /**
