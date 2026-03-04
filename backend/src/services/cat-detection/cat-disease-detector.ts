@@ -55,6 +55,14 @@ const DISEASE_DETECTION_CONSTANTS = {
     MIN_DIABETES: 3,
     MIN_PANCREATITIS: 2,
   },
+  // Consolidated symptom lists (single source of truth)
+  SYMPTOM_LISTS: {
+    FIP: ['fever', 'lethargy', 'abdominal distension', 'weight loss'],
+    CKD: ['increased thirst', 'increased urination', 'weight loss', 'lethargy'],
+    HYPERTHYROIDISM: ['weight loss despite appetite', 'hyperactivity', 'increased thirst', 'vomiting'],
+    DIABETES: ['increased thirst', 'increased urination', 'weight loss', 'lethargy'],
+    PANCREATITIS: ['vomiting', 'lethargy', 'abdominal pain', 'decreased appetite'],
+  },
 } as const;
 
 export class CatDiseaseDetector {
@@ -90,7 +98,7 @@ export class CatDiseaseDetector {
         disease: 'Feline Infectious Peritonitis (FIP)',
         riskLevel: 'critical',
         confidence: DISEASE_DETECTION_CONSTANTS.CONFIDENCE.FIP,
-        symptoms: ['fever', 'lethargy', 'abdominal distension', 'weight loss'],
+        symptoms: DISEASE_DETECTION_CONSTANTS.SYMPTOM_LISTS.FIP,
         urgency: 'IMMEDIATE - Requires emergency vet visit',
         actions: [
           'Contact vet immediately (today if possible)',
@@ -106,7 +114,7 @@ export class CatDiseaseDetector {
         disease: 'Chronic Kidney Disease (CKD)',
         riskLevel: report.age >= DISEASE_DETECTION_CONSTANTS.AGE.SENIOR_CAT ? 'high' : 'moderate',
         confidence: DISEASE_DETECTION_CONSTANTS.CONFIDENCE.CKD,
-        symptoms: ['increased thirst', 'increased urination', 'weight loss', 'lethargy'],
+        symptoms: DISEASE_DETECTION_CONSTANTS.SYMPTOM_LISTS.CKD,
         urgency: 'Schedule vet appointment within 3-7 days',
         actions: [
           'Schedule bloodwork (BUN, creatinine, phosphorus)',
@@ -122,7 +130,7 @@ export class CatDiseaseDetector {
         disease: 'Hyperthyroidism',
         riskLevel: 'high',
         confidence: DISEASE_DETECTION_CONSTANTS.CONFIDENCE.HYPERTHYROIDISM,
-        symptoms: ['weight loss despite appetite', 'hyperactivity', 'increased thirst', 'vomiting'],
+        symptoms: DISEASE_DETECTION_CONSTANTS.SYMPTOM_LISTS.HYPERTHYROIDISM,
         urgency: 'Schedule vet appointment within 1-2 weeks',
         actions: [
           'Request: T4 test (thyroid hormone level)',
@@ -138,7 +146,7 @@ export class CatDiseaseDetector {
         disease: 'Diabetes Mellitus',
         riskLevel: 'high',
         confidence: DISEASE_DETECTION_CONSTANTS.CONFIDENCE.DIABETES,
-        symptoms: ['increased thirst', 'increased urination', 'weight loss', 'lethargy'],
+        symptoms: DISEASE_DETECTION_CONSTANTS.SYMPTOM_LISTS.DIABETES,
         urgency: 'Schedule vet appointment within 3-7 days',
         actions: [
           'Request: fasting blood glucose + urinalysis',
@@ -154,7 +162,7 @@ export class CatDiseaseDetector {
         disease: 'Pancreatitis',
         riskLevel: 'moderate',
         confidence: DISEASE_DETECTION_CONSTANTS.CONFIDENCE.PANCREATITIS,
-        symptoms: ['vomiting', 'lethargy', 'abdominal pain', 'decreased appetite'],
+        symptoms: DISEASE_DETECTION_CONSTANTS.SYMPTOM_LISTS.PANCREATITIS,
         urgency: 'Schedule vet appointment within 1-3 days',
         actions: [
           'Avoid food (fasting may help)',
@@ -180,7 +188,7 @@ export class CatDiseaseDetector {
    * Check for FIP indicators
    */
   private static hasFIPIndicators(report: CatSymptomReport): boolean {
-    const fipSymptoms = ['fever', 'lethargy', 'abdominal distension', 'weight loss', 'vomiting'];
+    const fipSymptoms = DISEASE_DETECTION_CONSTANTS.SYMPTOM_LISTS.FIP;
     const matchingSymptoms = fipSymptoms.filter((s) => report.symptoms.includes(s));
 
     const ageRisk = report.age < DISEASE_DETECTION_CONSTANTS.AGE.YOUNG_CAT || 
@@ -195,7 +203,7 @@ export class CatDiseaseDetector {
    * Check for CKD indicators
    */
   private static hasCKDIndicators(report: CatSymptomReport): boolean {
-    const ckdSymptoms = ['increased thirst', 'increased urination', 'weight loss', 'lethargy', 'bad breath'];
+    const ckdSymptoms = DISEASE_DETECTION_CONSTANTS.SYMPTOM_LISTS.CKD;
     const matchingSymptoms = ckdSymptoms.filter((s) => report.symptoms.includes(s));
 
     const ageRisk = report.age >= DISEASE_DETECTION_CONSTANTS.AGE.MATURE_CAT;
@@ -209,13 +217,7 @@ export class CatDiseaseDetector {
    * Check for hyperthyroidism indicators
    */
   private static hasHyperthyroidismIndicators(report: CatSymptomReport): boolean {
-    const hyperSymptoms = [
-      'weight loss despite appetite',
-      'hyperactivity',
-      'increased thirst',
-      'increased urination',
-      'vomiting',
-    ];
+    const hyperSymptoms = DISEASE_DETECTION_CONSTANTS.SYMPTOM_LISTS.HYPERTHYROIDISM;
     const matchingSymptoms = hyperSymptoms.filter((s) => report.symptoms.some((rs) => rs.includes(s)));
 
     const ageRisk = report.age >= DISEASE_DETECTION_CONSTANTS.AGE.SENIOR_CAT;
@@ -228,7 +230,7 @@ export class CatDiseaseDetector {
    * Check for diabetes indicators
    */
   private static hasDiabetesIndicators(report: CatSymptomReport): boolean {
-    const diabeteSymptoms = ['increased thirst', 'increased urination', 'weight loss', 'lethargy'];
+    const diabeteSymptoms = DISEASE_DETECTION_CONSTANTS.SYMPTOM_LISTS.DIABETES;
     const matchingSymptoms = diabeteSymptoms.filter((s) => report.symptoms.includes(s));
 
     return matchingSymptoms.length >= DISEASE_DETECTION_CONSTANTS.SYMPTOMS.MIN_DIABETES;
@@ -238,7 +240,7 @@ export class CatDiseaseDetector {
    * Check for pancreatitis indicators
    */
   private static hasPancreatitisIndicators(report: CatSymptomReport): boolean {
-    const pancreSymptoms = ['vomiting', 'lethargy', 'decreased appetite', 'abdominal pain'];
+    const pancreSymptoms = DISEASE_DETECTION_CONSTANTS.SYMPTOM_LISTS.PANCREATITIS;
     const matchingSymptoms = pancreSymptoms.filter((s) => report.symptoms.includes(s));
 
     const acuteOnset = report.duration <= DISEASE_DETECTION_CONSTANTS.DURATION.ACUTE;
