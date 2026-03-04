@@ -9,8 +9,6 @@
  * - Behavioral indicators of wellbeing
  */
 
-import { Pet } from "../../entities/Pet";
-
 interface CatHealthIndicators {
   age: number;
   weight: number;
@@ -68,13 +66,8 @@ export class CatHealthScore {
   }[] {
     const risks = [];
 
-    // FIP risk assessment
-    if (
-      indicators.age < 2 ||
-      (indicators.age > 10 &&
-        indicators.lastVetVisit.getTime() <
-          Date.now() - 365 * 24 * 60 * 60 * 1000)
-    ) {
+    // FIP risk assessment - primarily affects young cats
+    if (indicators.age < 2) {
       risks.push({
         condition: "Feline Infectious Peritonitis (FIP)",
         riskLevel: "high",
@@ -178,9 +171,10 @@ export class CatHealthScore {
 
   private static diseaseRiskFactor(breeds: string[]): number {
     const highRiskBreeds = ["Bengal", "Siamese", "Ragdoll", "Abyssinian"];
+    // Use exact match to avoid false positives (e.g., "Bengal Tiger" shouldn't match "Bengal")
     const breedRisk = breeds.some((breed) =>
       highRiskBreeds.some((hb) =>
-        breed.toLowerCase().includes(hb.toLowerCase()),
+        breed.toLowerCase() === hb.toLowerCase(),
       ),
     )
       ? 15
