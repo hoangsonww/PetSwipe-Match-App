@@ -6,11 +6,11 @@
  */
 
 interface CatSymptomReport {
-  symptoms: string[]; // ["lethargy", "vomiting", "weight loss"]
+  symptoms: string[];
   duration: number; // days
   age: number; // years
   breed?: string;
-  recentChanges?: string[]; // ["diet change", "stress", "new environment"]
+  recentChanges?: string[];
 }
 
 interface DiseaseRiskAssessment {
@@ -22,19 +22,74 @@ interface DiseaseRiskAssessment {
   actions: string[];
 }
 
+/**
+ * Constants for disease detection thresholds
+ */
+const DISEASE_DETECTION_CONSTANTS = {
+  // Confidence scores
+  CONFIDENCE: {
+    FIP: 0.85,
+    CKD: 0.75,
+    HYPERTHYROIDISM: 0.7,
+    DIABETES: 0.65,
+    PANCREATITIS: 0.6,
+  },
+  // Age thresholds
+  AGE: {
+    YOUNG_CAT: 2,
+    MATURE_CAT: 7,
+    SENIOR_CAT: 10,
+    VERY_SENIOR_CAT: 12,
+    GERIATRIC_CAT: 15,
+  },
+  // Duration thresholds (days)
+  DURATION: {
+    ACUTE: 7,
+    CHRONIC: 14,
+  },
+  // Symptom matching requirements
+  SYMPTOMS: {
+    MIN_FIP: 2,
+    MIN_CKD: 2,
+    MIN_HYPERTHYROIDISM: 2,
+    MIN_DIABETES: 3,
+    MIN_PANCREATITIS: 2,
+  },
+} as const;
+
 export class CatDiseaseDetector {
+  /**
+   * Validate symptom report input
+   */
+  static validateReport(report: CatSymptomReport): { valid: boolean; error?: string } {
+    if (!report.symptoms || report.symptoms.length === 0) {
+      return { valid: false, error: 'At least one symptom is required' };
+    }
+    if (report.duration < 0 || report.duration > 3650) {
+      return { valid: false, error: 'Duration must be 0-3650 days' };
+    }
+    if (report.age < 0 || report.age > 30) {
+      return { valid: false, error: 'Age must be 0-30 years' };
+    }
+    return { valid: true };
+  }
+
   /**
    * Assess disease risk from symptom report
    */
   static assessSymptomReport(report: CatSymptomReport): DiseaseRiskAssessment[] {
+    const validation = this.validateReport(report);
+    if (!validation.valid) {
+      throw new Error(`Invalid report: ${validation.error}`);
+    }
+
     const risks: DiseaseRiskAssessment[] = [];
 
-    // FIP Risk Assessment
     if (this.hasFIPIndicators(report)) {
       risks.push({
         disease: 'Feline Infectious Peritonitis (FIP)',
         riskLevel: 'critical',
-        confidence: 0.85,
+        confidence: DISEASE_DETECTION_CONSTANTS.CONFIDENCE.FIP,
         symptoms: ['fever', 'lethargy', 'abdominal distension', 'weight loss'],
         urgency: 'IMMEDIATE - Requires emergency vet visit',
         actions: [
@@ -46,12 +101,11 @@ export class CatDiseaseDetector {
       });
     }
 
-    // Chronic Kidney Disease (CKD) Risk
     if (this.hasCKDIndicators(report)) {
       risks.push({
         disease: 'Chronic Kidney Disease (CKD)',
-        riskLevel: report.age >= 10 ? 'high' : 'moderate',
-        confidence: 0.75,
+        riskLevel: report.age >= DISEASE_DETECTION_CONSTANTS.AGE.SENIOR_CAT ? 'high' : 'moderate',
+        confidence: DISEASE_DETECTION_CONSTANTS.CONFIDENCE.CKD,
         symptoms: ['increased thirst', 'increased urination', 'weight loss', 'lethargy'],
         urgency: 'Schedule vet appointment within 3-7 days',
         actions: [
@@ -63,12 +117,11 @@ export class CatDiseaseDetector {
       });
     }
 
-    // Hyperthyroidism Risk
     if (this.hasHyperthyroidismIndicators(report)) {
       risks.push({
         disease: 'Hyperthyroidism',
         riskLevel: 'high',
-        confidence: 0.7,
+        confidence: DISEASE_DETECTION_CONSTANTS.CONFIDENCE.HYPERTHYROIDISM,
         symptoms: ['weight loss despite appetite', 'hyperactivity', 'increased thirst', 'vomiting'],
         urgency: 'Schedule vet appointment within 1-2 weeks',
         actions: [
@@ -80,12 +133,11 @@ export class CatDiseaseDetector {
       });
     }
 
-    // Diabetes Risk
     if (this.hasDiabetesIndicators(report)) {
       risks.push({
         disease: 'Diabetes Mellitus',
         riskLevel: 'high',
-        confidence: 0.65,
+        confidence: DISEASE_DETECTION_CONSTANTS.CONFIDENCE.DIABETES,
         symptoms: ['increased thirst', 'increased urination', 'weight loss', 'lethargy'],
         urgency: 'Schedule vet appointment within 3-7 days',
         actions: [
@@ -97,12 +149,11 @@ export class CatDiseaseDetector {
       });
     }
 
-    // Pancreatitis Risk
     if (this.hasPancreatitisIndicators(report)) {
       risks.push({
         disease: 'Pancreatitis',
         riskLevel: 'moderate',
-        confidence: 0.6,
+        confidence: DISEASE_DETECTION_CONSTANTS.CONFIDENCE.PANCREATITIS,
         symptoms: ['vomiting', 'lethargy', 'abdominal pain', 'decreased appetite'],
         urgency: 'Schedule vet appointment within 1-3 days',
         actions: [
@@ -114,11 +165,15 @@ export class CatDiseaseDetector {
       });
     }
 
-    // Sort by risk level (critical first)
-    const riskOrder = { critical: 0, high: 1, moderate: 2, low: 3 };
-    risks.sort((a, b) => riskOrder[a.riskLevel] - riskOrder[b.riskLevel]);
+    return this.sortRisksByLevel(risks);
+  }
 
-    return risks;
+  /**
+   * Sort risks by priority (critical → high → moderate → low)
+   */
+  private static sortRisksByLevel(risks: DiseaseRiskAssessment[]): DiseaseRiskAssessment[] {
+    const riskOrder = { critical: 0, high: 1, moderate: 2, low: 3 };
+    return risks.sort((a, b) => riskOrder[a.riskLevel] - riskOrder[b.riskLevel]);
   }
 
   /**
@@ -128,10 +183,10 @@ export class CatDiseaseDetector {
     const fipSymptoms = ['fever', 'lethargy', 'abdominal distension', 'weight loss', 'vomiting'];
     const matchingSymptoms = fipSymptoms.filter((s) => report.symptoms.includes(s));
 
-    // FIP typically affects young cats (< 2 years) or older (> 10 years)
-    const ageRisk = report.age < 2 || report.age > 10;
-    const durationRisk = report.duration >= 7; // Acute presentation
-    const symptomRisk = matchingSymptoms.length >= 2;
+    const ageRisk = report.age < DISEASE_DETECTION_CONSTANTS.AGE.YOUNG_CAT || 
+                    report.age > DISEASE_DETECTION_CONSTANTS.AGE.SENIOR_CAT;
+    const durationRisk = report.duration >= DISEASE_DETECTION_CONSTANTS.DURATION.ACUTE;
+    const symptomRisk = matchingSymptoms.length >= DISEASE_DETECTION_CONSTANTS.SYMPTOMS.MIN_FIP;
 
     return symptomRisk && (ageRisk || durationRisk);
   }
@@ -143,10 +198,9 @@ export class CatDiseaseDetector {
     const ckdSymptoms = ['increased thirst', 'increased urination', 'weight loss', 'lethargy', 'bad breath'];
     const matchingSymptoms = ckdSymptoms.filter((s) => report.symptoms.includes(s));
 
-    // CKD primarily affects older cats
-    const ageRisk = report.age >= 7;
-    const symptomRisk = matchingSymptoms.length >= 2;
-    const durationRisk = report.duration >= 14; // Chronic condition
+    const ageRisk = report.age >= DISEASE_DETECTION_CONSTANTS.AGE.MATURE_CAT;
+    const symptomRisk = matchingSymptoms.length >= DISEASE_DETECTION_CONSTANTS.SYMPTOMS.MIN_CKD;
+    const durationRisk = report.duration >= DISEASE_DETECTION_CONSTANTS.DURATION.CHRONIC;
 
     return (ageRisk || durationRisk) && symptomRisk;
   }
@@ -164,9 +218,8 @@ export class CatDiseaseDetector {
     ];
     const matchingSymptoms = hyperSymptoms.filter((s) => report.symptoms.some((rs) => rs.includes(s)));
 
-    // Affects older cats (10+)
-    const ageRisk = report.age >= 10;
-    const symptomRisk = matchingSymptoms.length >= 2;
+    const ageRisk = report.age >= DISEASE_DETECTION_CONSTANTS.AGE.SENIOR_CAT;
+    const symptomRisk = matchingSymptoms.length >= DISEASE_DETECTION_CONSTANTS.SYMPTOMS.MIN_HYPERTHYROIDISM;
 
     return (ageRisk || report.symptoms.length >= 3) && symptomRisk;
   }
@@ -178,7 +231,7 @@ export class CatDiseaseDetector {
     const diabeteSymptoms = ['increased thirst', 'increased urination', 'weight loss', 'lethargy'];
     const matchingSymptoms = diabeteSymptoms.filter((s) => report.symptoms.includes(s));
 
-    return matchingSymptoms.length >= 3;
+    return matchingSymptoms.length >= DISEASE_DETECTION_CONSTANTS.SYMPTOMS.MIN_DIABETES;
   }
 
   /**
@@ -188,8 +241,8 @@ export class CatDiseaseDetector {
     const pancreSymptoms = ['vomiting', 'lethargy', 'decreased appetite', 'abdominal pain'];
     const matchingSymptoms = pancreSymptoms.filter((s) => report.symptoms.includes(s));
 
-    const acuteOnset = report.duration <= 7;
-    return matchingSymptoms.length >= 2 && acuteOnset;
+    const acuteOnset = report.duration <= DISEASE_DETECTION_CONSTANTS.DURATION.ACUTE;
+    return matchingSymptoms.length >= DISEASE_DETECTION_CONSTANTS.SYMPTOMS.MIN_PANCREATITIS && acuteOnset;
   }
 
   /**
