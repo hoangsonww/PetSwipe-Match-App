@@ -1,6 +1,6 @@
 /**
  * Cat Health Scoring Service
- * 
+ *
  * Calculates comprehensive health scores for cats based on:
  * - Age-appropriate energy levels
  * - Weight management status
@@ -9,7 +9,7 @@
  * - Behavioral indicators of wellbeing
  */
 
-import { Pet } from '../../entities/Pet';
+import { Pet } from "../../entities/Pet";
 
 interface CatHealthIndicators {
   age: number;
@@ -18,7 +18,7 @@ interface CatHealthIndicators {
   lastVetVisit: Date;
   vaccinations: string[];
   behavioralScore: number; // 1-10
-  activityLevel: 'low' | 'moderate' | 'high';
+  activityLevel: "low" | "moderate" | "high";
   dietQuality: number; // 1-10
 }
 
@@ -41,13 +41,13 @@ export class CatHealthScore {
     // Preventive care compliance
     score += this.preventiveCareScore(
       indicators.lastVetVisit,
-      indicators.vaccinations
+      indicators.vaccinations,
     );
 
     // Behavioral and activity indicators
     score += this.behavioralHealthScore(
       indicators.behavioralScore,
-      indicators.activityLevel
+      indicators.activityLevel,
     );
 
     // Diet quality (major preventive factor)
@@ -60,22 +60,28 @@ export class CatHealthScore {
    * Identify high-risk conditions for this cat
    */
   static identifyRisks(
-    indicators: CatHealthIndicators
-  ): { condition: string; riskLevel: 'low' | 'medium' | 'high'; actions: string[] }[] {
+    indicators: CatHealthIndicators,
+  ): {
+    condition: string;
+    riskLevel: "low" | "medium" | "high";
+    actions: string[];
+  }[] {
     const risks = [];
 
     // FIP risk assessment
     if (
       indicators.age < 2 ||
-      (indicators.age > 10 && indicators.lastVetVisit.getTime() < Date.now() - 365 * 24 * 60 * 60 * 1000)
+      (indicators.age > 10 &&
+        indicators.lastVetVisit.getTime() <
+          Date.now() - 365 * 24 * 60 * 60 * 1000)
     ) {
       risks.push({
-        condition: 'Feline Infectious Peritonitis (FIP)',
-        riskLevel: 'high',
+        condition: "Feline Infectious Peritonitis (FIP)",
+        riskLevel: "high",
         actions: [
-          'Schedule immediate veterinary consultation',
-          'Consider FIP vaccine if appropriate',
-          'Monitor for fever, lethargy, abdominal distension',
+          "Schedule immediate veterinary consultation",
+          "Consider FIP vaccine if appropriate",
+          "Monitor for fever, lethargy, abdominal distension",
         ],
       });
     }
@@ -83,12 +89,12 @@ export class CatHealthScore {
     // CKD risk (age 7+)
     if (indicators.age >= 7) {
       risks.push({
-        condition: 'Chronic Kidney Disease (CKD)',
-        riskLevel: indicators.age >= 12 ? 'high' : 'medium',
+        condition: "Chronic Kidney Disease (CKD)",
+        riskLevel: indicators.age >= 12 ? "high" : "medium",
         actions: [
-          'Schedule annual kidney panel bloodwork',
-          'Monitor water intake and urination',
-          'Consider therapeutic diet if diagnosed',
+          "Schedule annual kidney panel bloodwork",
+          "Monitor water intake and urination",
+          "Consider therapeutic diet if diagnosed",
         ],
       });
     }
@@ -96,12 +102,12 @@ export class CatHealthScore {
     // Hyperthyroidism risk (age 10+)
     if (indicators.age >= 10) {
       risks.push({
-        condition: 'Hyperthyroidism',
-        riskLevel: 'medium',
+        condition: "Hyperthyroidism",
+        riskLevel: "medium",
         actions: [
-          'Schedule thyroid function tests (T4)',
-          'Monitor weight and behavior changes',
-          'Discuss treatment options with vet',
+          "Schedule thyroid function tests (T4)",
+          "Monitor weight and behavior changes",
+          "Discuss treatment options with vet",
         ],
       });
     }
@@ -109,13 +115,13 @@ export class CatHealthScore {
     // Obesity-related risks
     if (indicators.dietQuality < 5) {
       risks.push({
-        condition: 'Obesity & Metabolic Disease',
-        riskLevel: 'high',
+        condition: "Obesity & Metabolic Disease",
+        riskLevel: "high",
         actions: [
-          'Consult with vet about nutrition plan',
-          'Increase playtime and activity',
-          'Monitor weight monthly',
-          'Consider therapeutic diet',
+          "Consult with vet about nutrition plan",
+          "Increase playtime and activity",
+          "Monitor weight monthly",
+          "Consider therapeutic diet",
         ],
       });
     }
@@ -136,19 +142,19 @@ export class CatHealthScore {
     return {
       vetVisitFrequency:
         indicators.age >= 12
-          ? 'Every 6 months'
+          ? "Every 6 months"
           : indicators.age >= 7
-            ? 'Annually'
-            : 'Every 2 years',
+            ? "Annually"
+            : "Every 2 years",
       screeningTests: this.recommendedScreenings(indicators.age),
       nutritionRecommendations: this.nutritionPlan(
         indicators.weight,
-        indicators.dietQuality
+        indicators.dietQuality,
       ),
       activityGoals: this.activityGoals(indicators.activityLevel),
       preventiveMeasures: this.preventiveMeasures(
         indicators.breedPredispositions,
-        indicators.age
+        indicators.age,
       ),
     };
   }
@@ -171,9 +177,11 @@ export class CatHealthScore {
   }
 
   private static diseaseRiskFactor(breeds: string[]): number {
-    const highRiskBreeds = ['Bengal', 'Siamese', 'Ragdoll', 'Abyssinian'];
+    const highRiskBreeds = ["Bengal", "Siamese", "Ragdoll", "Abyssinian"];
     const breedRisk = breeds.some((breed) =>
-      highRiskBreeds.some((hb) => breed.toLowerCase().includes(hb.toLowerCase()))
+      highRiskBreeds.some((hb) =>
+        breed.toLowerCase().includes(hb.toLowerCase()),
+      ),
     )
       ? 15
       : 0;
@@ -182,9 +190,10 @@ export class CatHealthScore {
 
   private static preventiveCareScore(
     lastVetVisit: Date,
-    vaccinations: string[]
+    vaccinations: string[],
   ): number {
-    const daysSinceVisit = (Date.now() - lastVetVisit.getTime()) / (24 * 60 * 60 * 1000);
+    const daysSinceVisit =
+      (Date.now() - lastVetVisit.getTime()) / (24 * 60 * 60 * 1000);
     let score = 0;
 
     if (daysSinceVisit < 365) score += 20;
@@ -197,27 +206,27 @@ export class CatHealthScore {
 
   private static behavioralHealthScore(
     behavioralScore: number,
-    activityLevel: string
+    activityLevel: string,
   ): number {
     let score = behavioralScore * 1.5;
-    if (activityLevel === 'high') score += 10;
-    else if (activityLevel === 'moderate') score += 5;
+    if (activityLevel === "high") score += 10;
+    else if (activityLevel === "moderate") score += 5;
     return Math.min(score, 25);
   }
 
   private static recommendedScreenings(age: number): string[] {
-    const screenings = ['Annual wellness exam'];
+    const screenings = ["Annual wellness exam"];
 
     if (age >= 7) {
-      screenings.push('Blood chemistry panel', 'Urinalysis');
+      screenings.push("Blood chemistry panel", "Urinalysis");
     }
 
     if (age >= 10) {
-      screenings.push('Thyroid panel (T4)', 'Blood pressure');
+      screenings.push("Thyroid panel (T4)", "Blood pressure");
     }
 
     if (age >= 15) {
-      screenings.push('Cardiac ultrasound', 'Advanced imaging as needed');
+      screenings.push("Cardiac ultrasound", "Advanced imaging as needed");
     }
 
     return screenings;
@@ -227,18 +236,18 @@ export class CatHealthScore {
     const plans = [];
 
     if (weight > 6) {
-      plans.push('High-protein, low-carb diet for weight management');
-      plans.push('Measure portions carefully');
-      plans.push('Increase water intake');
+      plans.push("High-protein, low-carb diet for weight management");
+      plans.push("Measure portions carefully");
+      plans.push("Increase water intake");
     } else if (weight < 3) {
-      plans.push('Nutrient-dense food with higher calories');
-      plans.push('Consider prescription diet if appropriate');
+      plans.push("Nutrient-dense food with higher calories");
+      plans.push("Consider prescription diet if appropriate");
     } else {
-      plans.push('Balanced, AAFCO-approved cat food');
+      plans.push("Balanced, AAFCO-approved cat food");
     }
 
     if (dietQuality < 5) {
-      plans.push('Switch to high-quality, vet-approved diet');
+      plans.push("Switch to high-quality, vet-approved diet");
     }
 
     return plans;
@@ -246,28 +255,28 @@ export class CatHealthScore {
 
   private static activityGoals(activityLevel: string): string {
     switch (activityLevel) {
-      case 'low':
-        return '20-30 minutes of active play daily, increase gradually';
-      case 'moderate':
-        return 'Maintain current activity, aim for 30-45 min/day';
-      case 'high':
-        return 'Maintain enriched environment, provide climbing/scratching';
+      case "low":
+        return "20-30 minutes of active play daily, increase gradually";
+      case "moderate":
+        return "Maintain current activity, aim for 30-45 min/day";
+      case "high":
+        return "Maintain enriched environment, provide climbing/scratching";
       default:
-        return 'Consult veterinarian for personalized activity plan';
+        return "Consult veterinarian for personalized activity plan";
     }
   }
 
   private static preventiveMeasures(breeds: string[], age: number): string[] {
     const measures = [
-      'Monthly parasite prevention',
-      'Regular dental care',
-      'Weight monitoring',
-      'Annual vet wellness exam',
+      "Monthly parasite prevention",
+      "Regular dental care",
+      "Weight monitoring",
+      "Annual vet wellness exam",
     ];
 
     if (age >= 7) {
-      measures.push('Increase vet visit frequency');
-      measures.push('Monitor for signs of chronic disease');
+      measures.push("Increase vet visit frequency");
+      measures.push("Monitor for signs of chronic disease");
     }
 
     return measures;
