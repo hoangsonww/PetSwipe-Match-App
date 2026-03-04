@@ -9,7 +9,6 @@
  * - Behavioral indicators of wellbeing
  */
 
-import { Pet } from '../../entities/Pet';
 import { CAT_HEALTH_SCORING_CONSTANTS } from '../../constants/cat-health-scoring.constants';
 
 interface CatHealthIndicators {
@@ -66,11 +65,8 @@ export class CatHealthScore {
     const { DISEASE_AGE_RISK } = CAT_HEALTH_SCORING_CONSTANTS;
     const risks = [];
 
-    // FIP risk assessment
-    if (
-      indicators.age < DISEASE_AGE_RISK.FIP.YOUNG_THRESHOLD ||
-      (indicators.age > DISEASE_AGE_RISK.FIP.OLD_THRESHOLD && indicators.lastVetVisit.getTime() < Date.now() - DISEASE_AGE_RISK.FIP.OVERDUE_VET_DAYS * 24 * 60 * 60 * 1000)
-    ) {
+    // FIP risk assessment - primarily affects young cats
+    if (indicators.age < DISEASE_AGE_RISK.FIP.YOUNG_THRESHOLD) {
       risks.push({
         condition: 'Feline Infectious Peritonitis (FIP)',
         riskLevel: 'high',
@@ -178,8 +174,9 @@ export class CatHealthScore {
   private static diseaseRiskFactor(breeds: string[]): number {
     const { DISEASE_RISK } = CAT_HEALTH_SCORING_CONSTANTS;
 
+    // Use exact match to avoid false positives (e.g., "Bengal Tiger" shouldn't match "Bengal")
     const breedRisk = breeds.some((breed) =>
-      DISEASE_RISK.HIGH_RISK_BREEDS.some((hb) => breed.toLowerCase().includes(hb.toLowerCase()))
+      DISEASE_RISK.HIGH_RISK_BREEDS.some((hb) => breed.toLowerCase() === hb.toLowerCase())
     )
       ? DISEASE_RISK.BREED_RISK_PENALTY
       : 0;
