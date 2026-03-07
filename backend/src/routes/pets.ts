@@ -9,6 +9,7 @@ import {
   updatePet,
   listMyCreatedPets,
 } from "../controllers/petController";
+import { streamNewPets } from "../controllers/petStreamController";
 import { authMiddleware } from "../middlewares/auth";
 
 const router = Router();
@@ -23,5 +24,6 @@ router.get("/mine", listMyCreatedPets);
 router.put("/:petId", updatePet);
 router.post("/:petId/photo", ...uploadPetPhoto);
 router.get("/:petId", getPetById);
+router.get("/stream", streamNewPets);
 
 export default router;
