@@ -1,4 +1,4 @@
-.PHONY: install dev build test lint format clean docker-build docker-run deploy-aws deploy-azure help
+.PHONY: install dev mcp-stdio mcp-http build test lint format clean docker-build docker-run deploy-aws deploy-azure help
 
 # Variables
 PYTHON := python3
@@ -17,6 +17,12 @@ install: ## Install dependencies
 
 dev: ## Run in development mode
 	$(PYTHON) -m agentic_ai.api.server
+
+mcp-stdio: ## Run standalone MCP server over stdio
+	$(PYTHON) -m mcp_server.server --transport stdio
+
+mcp-http: ## Run standalone MCP server over streamable HTTP
+	$(PYTHON) -m mcp_server.server --transport streamable-http --host 0.0.0.0 --port 8766 --path /mcp
 
 build: ## Build Docker image
 	$(DOCKER) build -t petswipe/agentic-ai:latest .

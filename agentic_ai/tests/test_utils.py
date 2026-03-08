@@ -7,7 +7,7 @@ import asyncio
 import pytest
 
 from agentic_ai.utils.cache import CacheClient
-from agentic_ai.utils.config import resolve_agent_config
+from agentic_ai.utils.config import resolve_agent_config, validate_mcp_configuration
 from agentic_ai.utils.security import RateLimiter
 
 
@@ -33,3 +33,15 @@ async def test_rate_limiter():
     assert await limiter.allow("client")
     assert await limiter.allow("client")
     assert not await limiter.allow("client")
+
+
+def test_validate_mcp_configuration_invalid_client_url():
+    config = {
+        "mcp": {"transport": "stdio", "port": 8766, "path": "/mcp"},
+        "mcp_client": {
+            "transport": "streamable-http",
+            "streamable_http": {"url": "127.0.0.1:8766/mcp"},
+        },
+    }
+    with pytest.raises(ValueError):
+        validate_mcp_configuration(config)

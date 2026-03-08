@@ -1,21 +1,12 @@
 """
-PetSwipe Agentic AI Pipeline
-============================
+PetSwipe Agentic AI package.
 
-A sophisticated agentic AI system using LangGraph and LangChain for intelligent
-pet matching, recommendation, and user interaction processing.
-
-Features:
-- Multi-agent assembly line architecture
-- LangGraph workflow orchestration
-- Model Context Protocol (MCP) server
-- Production-ready deployment configurations for AWS and Azure
+The package intentionally avoids heavy wildcard imports at module import time,
+so lightweight modules (config, schemas, utilities) can be imported without
+eagerly loading model/runtime dependencies.
 """
 
 __version__ = "1.0.0"
 __author__ = "PetSwipe Team"
 
-from .agents import *
-from .workflows import *
-from .mcp_server import *
-from .config import *
+__all__ = ["__version__", "__author__"]

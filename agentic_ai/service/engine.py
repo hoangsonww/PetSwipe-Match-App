@@ -1,15 +1,18 @@
 """Agentic AI service engine."""
 
+import asyncio
 import hashlib
 import json
 import logging
-from typing import Any, Dict, Optional
+from typing import TYPE_CHECKING, Any, Callable, Dict, Optional
 
 from ..utils.cache import CacheClient
 from ..utils.metrics import MetricsCollector
 from ..utils.costs import CostTracker
-from ..workflows import WorkflowBuilder
 from ..workflows.state_manager import StateManager
+
+if TYPE_CHECKING:
+    from ..mcp_client import MCPClientConfig, MCPToolClient
 
 
 class AgenticEngine:
@@ -32,13 +35,15 @@ class AgenticEngine:
         runtime = config.setdefault("runtime", {})
         runtime["cost_tracker"] = self.cost_tracker
 
-        self.workflows = {
-            "recommendation": WorkflowBuilder.build_recommendation_workflow(config),
-            "conversation": WorkflowBuilder.build_conversation_workflow(config),
-            "analysis": WorkflowBuilder.build_analysis_workflow(config),
-            "profile": WorkflowBuilder.build_profile_workflow(config),
-            "match": WorkflowBuilder.build_match_workflow(config),
+        self._workflow_builders: Dict[str, Callable[[], Any]] = {
+            "recommendation": lambda: self._build_workflow("build_recommendation_workflow"),
+            "conversation": lambda: self._build_workflow("build_conversation_workflow"),
+            "analysis": lambda: self._build_workflow("build_analysis_workflow"),
+            "profile": lambda: self._build_workflow("build_profile_workflow"),
+            "match": lambda: self._build_workflow("build_match_workflow"),
         }
+        self._workflows: Dict[str, Any] = {}
+        self._workflow_lock = asyncio.Lock()
 
     async def close(self) -> None:
         await self.cache.close()
@@ -152,8 +157,80 @@ class AgenticEngine:
             "conversation_history": result.get("data", {}).get("conversation_history", []),
         }
 
+    @property
+    def mcp_client_enabled(self) -> bool:
+        return bool(self.config.get("mcp_client", {}).get("enabled", False))
+
+    def create_mcp_client(self) -> "MCPToolClient":
+        """Create an MCP client from config for agent-side tool consumption."""
+        from ..mcp_client import MCPClientConfig, MCPToolClient
+
+        client_cfg = self.config.get("mcp_client", {})
+        if not client_cfg:
+            raise ValueError("mcp_client config block is missing")
+        return MCPToolClient(MCPClientConfig.from_dict(client_cfg))
+
+    def list_workflows(self) -> list[str]:
+        """Return available workflow names."""
+        return list(self._workflow_builders.keys())
+
+    async def execute_workflow(self, workflow: str, input_data: Dict[str, Any]) -> Dict[str, Any]:
+        """Execute a workflow by name with input payload."""
+        if workflow not in self._workflow_builders:
+            available = ", ".join(self.list_workflows())
+            raise ValueError(f"Unknown workflow '{workflow}'. Available workflows: {available}")
+        return await self._execute(workflow, input_data)
+
+    async def check_mcp_connectivity(self) -> Dict[str, Any]:
+        """Attempt a short MCP connectivity probe using configured client settings."""
+        if not self.mcp_client_enabled:
+            return {"enabled": False, "status": "disabled"}
+
+        client = self.create_mcp_client()
+        try:
+            async with client:
+                probe = await client.ping()
+            return {
+                "enabled": True,
+                "status": "healthy",
+                "target": client.config.target_summary(),
+                "probe": probe,
+            }
+        except Exception as exc:
+            self.logger.exception("MCP connectivity probe failed")
+            return {
+                "enabled": True,
+                "status": "unhealthy",
+                "target": client.config.target_summary(),
+                "error": str(exc),
+            }
+
+    async def _get_workflow(self, workflow: str) -> Any:
+        built = self._workflows.get(workflow)
+        if built is not None:
+            return built
+
+        builder = self._workflow_builders.get(workflow)
+        if builder is None:
+            available = ", ".join(self.list_workflows())
+            raise ValueError(f"Unknown workflow '{workflow}'. Available workflows: {available}")
+
+        async with self._workflow_lock:
+            built = self._workflows.get(workflow)
+            if built is None:
+                built = builder()
+                self._workflows[workflow] = built
+        return built
+
+    def _build_workflow(self, builder_name: str) -> Any:
+        """Build one workflow lazily by importing WorkflowBuilder only when needed."""
+        from ..workflows import WorkflowBuilder
+
+        builder = getattr(WorkflowBuilder, builder_name)
+        return builder(self.config)
+
     async def _execute(self, workflow: str, input_data: Dict[str, Any]) -> Dict[str, Any]:
-        wf = self.workflows[workflow]
+        wf = await self._get_workflow(workflow)
         if self.metrics:
             self.metrics.increment_active_requests()
         try:

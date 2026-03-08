@@ -61,6 +61,12 @@ Preflight before apply:
 make k8s-preflight
 ```
 
+By default, `k8s-preflight` also fails if rendered manifests still include static AWS credential keys (`AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`). This is intentional to push workload identity patterns such as IRSA. If you have a temporary exception:
+
+```bash
+ALLOW_STATIC_AWS_KEYS=true make k8s-preflight
+```
+
 ## Production notes
 
 - The backend exposes `/health` and `/ready` for Kubernetes probes.
@@ -76,4 +82,4 @@ make k8s-preflight
 - If your ingress controller is not in the `ingress-nginx` namespace, update the ingress `NetworkPolicy` selectors before enforcing them.
 - If you use Redis, RabbitMQ, or extra third-party APIs from inside the cluster, extend the egress policies before enforcing them.
 - If you standardize on EKS, map the placeholder registry hosts to ECR and use IRSA instead of long-lived AWS keys inside `Secret` resources.
-- The repo includes a Kubernetes preflight script that fails if rendered manifests still contain placeholder hosts, image names, or `latest` tags in the production overlay.
+- The repo includes a Kubernetes preflight script that fails if rendered manifests still contain placeholders, mutable `latest` tags, missing probe/resource/security markers, privileged host access settings, missing TLS ingress config, or missing baseline policy objects (`default-deny` NetworkPolicy, `ResourceQuota`, `LimitRange`).

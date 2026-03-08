@@ -48,7 +48,7 @@ services:
     command: ["npm", "run", "dev"]
 
   prometheus:
-    image: prom/prometheus:latest
+    image: ${PROMETHEUS_IMAGE:-prom/prometheus:v2.52.0}
     restart: always
     ports:
       - "9090:9090"
@@ -65,7 +65,7 @@ services:
       - backend
 
   grafana:
-    image: grafana/grafana:latest
+    image: ${GRAFANA_IMAGE:-grafana/grafana:11.0.0}
     restart: always
     ports:
       - "3001:3000"

@@ -83,7 +83,7 @@ services:
       - petswipe
 
   prometheus:
-    image: prom/prometheus:latest
+    image: ${PROMETHEUS_IMAGE:-prom/prometheus:v2.52.0}
     restart: unless-stopped
     profiles: ["observability"]
     ports:
@@ -104,7 +104,7 @@ services:
       - petswipe
 
   grafana:
-    image: grafana/grafana:latest
+    image: ${GRAFANA_IMAGE:-grafana/grafana:11.0.0}
     restart: unless-stopped
     profiles: ["observability"]
     ports:

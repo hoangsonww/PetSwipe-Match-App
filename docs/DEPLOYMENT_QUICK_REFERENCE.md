@@ -7,6 +7,12 @@ cp .env.production.example .env.production
 bash scripts/deploy-preflight.sh .env.production
 ```
 
+If static AWS keys are unavoidable for a temporary exception:
+
+```bash
+ALLOW_STATIC_AWS_KEYS=true bash scripts/deploy-preflight.sh .env.production
+```
+
 ## Terraform Bootstrap
 
 ```bash
@@ -17,6 +23,12 @@ make tf-preflight ENV=production
 make tf-init
 make tf-plan ENV=production
 make tf-apply ENV=production
+```
+
+Optional strict scanner gate:
+
+```bash
+ENFORCE_TERRAFORM_SECURITY_SCANNERS=true make tf-preflight ENV=production
 ```
 
 ## Production Docker Compose
@@ -48,7 +60,7 @@ kubectl apply -k k8s/overlays/production
 ```bash
 export GITHUB_USERNAME=your-org
 export GITHUB_TOKEN=your-token
-export IMAGE_TAG=stable
+export IMAGE_TAG=v1.2.3
 export NEXT_PUBLIC_API_URL=https://api.petswipe.example.com/api
 
 ./upload_to_ghcr.sh

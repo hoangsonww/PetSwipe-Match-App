@@ -5,20 +5,11 @@ set -euo pipefail
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$ROOT_DIR"
 
-fail() {
-  echo "❌ $1"
-  exit 1
-}
+source "${ROOT_DIR}/scripts/lib/preflight-common.sh"
 
-warn() {
-  echo "⚠️  $1"
-}
+ALLOW_STATIC_AWS_KEYS="${ALLOW_STATIC_AWS_KEYS:-false}"
 
-info() {
-  echo "• $1"
-}
-
-command -v kubectl >/dev/null 2>&1 || fail "kubectl is not installed"
+require_command kubectl "kubectl is not installed"
 
 info "Rendering Kubernetes base manifests"
 BASE_RENDER="$(mktemp)"
@@ -40,9 +31,56 @@ if grep -Eq 'image: .*:latest' "$PROD_RENDER"; then
   fail "Production overlay still renders mutable latest image tags. Pin stable or immutable release tags before deployment."
 fi
 
-info "Checking for plaintext AWS access keys in Kubernetes secrets"
-if grep -Eq 'AWS_ACCESS_KEY_ID|AWS_SECRET_ACCESS_KEY' "$PROD_RENDER"; then
-  warn "Production manifests still include long-lived AWS credential keys in Secret resources. Prefer workload identity such as IRSA when deploying on EKS."
+info "Checking deployment-level runtime hardening"
+deployment_count="$(grep -c '^kind: Deployment$' "$PROD_RENDER" || true)"
+(( deployment_count > 0 )) || fail "No Deployment resources found in the production render"
+
+required_markers=(
+  "readinessProbe:"
+  "livenessProbe:"
+  "startupProbe:"
+  "resources:"
+  "allowPrivilegeEscalation: false"
+  "readOnlyRootFilesystem: true"
+  "runAsNonRoot: true"
+  "imagePullPolicy: Always"
+)
+
+for marker in "${required_markers[@]}"; do
+  marker_count="$(grep -c "$marker" "$PROD_RENDER" || true)"
+  if (( marker_count < deployment_count )); then
+    fail "Expected at least ${deployment_count} '${marker}' entries in the production render, found ${marker_count}"
+  fi
+done
+
+info "Checking for insecure Kubernetes fields"
+if grep -Eq 'hostNetwork: true|hostPID: true|hostIPC: true|privileged: true' "$PROD_RENDER"; then
+  fail "Production manifests contain insecure host access or privileged container settings"
 fi
 
-info "Kubernetes preflight checks completed"
+info "Checking service exposure types"
+if grep -Eq 'type: (NodePort|LoadBalancer)' "$PROD_RENDER"; then
+  fail "Production manifests expose a Service as NodePort/LoadBalancer. Use Ingress with ClusterIP services."
+fi
+
+info "Checking required baseline policy resources"
+grep -Eq 'kind: NetworkPolicy' "$PROD_RENDER" || fail "No NetworkPolicy resources were rendered in production"
+grep -Eq 'name: default-deny-all' "$PROD_RENDER" || fail "default-deny-all NetworkPolicy is missing from production render"
+grep -Eq 'kind: ResourceQuota' "$PROD_RENDER" || fail "ResourceQuota is missing from production render"
+grep -Eq 'kind: LimitRange' "$PROD_RENDER" || fail "LimitRange is missing from production render"
+grep -Eq 'pod-security\.kubernetes\.io/enforce: restricted' "$PROD_RENDER" || fail "Namespace is not enforcing Pod Security restricted mode"
+
+info "Checking ingress TLS"
+grep -Eq '^kind: Ingress$' "$PROD_RENDER" || fail "Ingress resource is missing from production render"
+grep -Eq '^[[:space:]]+tls:' "$PROD_RENDER" || fail "Ingress TLS configuration is missing from production render"
+
+info "Checking for plaintext AWS access keys in Kubernetes secrets"
+if grep -Eq 'AWS_ACCESS_KEY_ID|AWS_SECRET_ACCESS_KEY' "$PROD_RENDER"; then
+  if is_truthy "$ALLOW_STATIC_AWS_KEYS"; then
+    warn "Static AWS credential keys are present in rendered manifests because ALLOW_STATIC_AWS_KEYS=true"
+  else
+    fail "Rendered production manifests still include AWS_ACCESS_KEY_ID/AWS_SECRET_ACCESS_KEY. Prefer workload identity such as IRSA."
+  fi
+fi
+
+success "Kubernetes preflight checks completed"

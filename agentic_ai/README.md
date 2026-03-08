@@ -44,7 +44,8 @@ The PetSwipe Agentic AI Pipeline is a production-ready, scalable AI system that 
 - ✅ **Multi-Agent Architecture** - 6 specialized agents working in harmony
 - ✅ **Assembly Line Processing** - Sequential and parallel agent execution
 - ✅ **LangGraph Orchestration** - State-of-the-art workflow management
-- ✅ **MCP Server** - Model Context Protocol for standardized AI interactions
+- ✅ **Standalone MCP Server** - Dedicated MCP service for AI agents and MCP hosts
+- ✅ **Agent-Side MCP Client** - Native Python client package for agents to call MCP tools
 - ✅ **Production Ready** - Full AWS and Azure deployment configurations
 - ✅ **Auto-Scaling** - Horizontal scaling for high availability
 - ✅ **Monitoring & Observability** - Built-in metrics and logging
@@ -69,8 +70,8 @@ graph TB
     end
 
     subgraph "MCP Server Layer"
-        MCP[Model Context Protocol Server]
-        MCP --> |WebSocket| Handler[Request Handler]
+        MCP[Standalone MCP Server]
+        MCP --> Handler[Agentic Engine Adapter]
     end
 
     subgraph "Assembly Line Pipeline"
@@ -292,7 +293,7 @@ sequenceDiagram
     participant Monitor as Monitoring Agent
     participant State as State Manager
 
-    Client->>MCP: Send Request (WebSocket)
+    Client->>MCP: Tool Call (MCP JSON-RPC)
     MCP->>Pipeline: Initialize Workflow
 
     Pipeline->>State: Create Initial State
@@ -322,7 +323,7 @@ sequenceDiagram
     State-->>Pipeline: State Saved
 
     Pipeline-->>MCP: Return Results
-    MCP-->>Client: Send Response (WebSocket)
+    MCP-->>Client: Tool Result (MCP JSON-RPC)
 ```
 
 ### State Management
@@ -356,92 +357,57 @@ graph TD
 
 ## 🌐 MCP Server
 
-### Model Context Protocol Server Architecture
+PetSwipe now exposes MCP through a **standalone server package** at `mcp_server/` (repo root). This is separate from `agentic_ai/`.
+
+### Standalone MCP Architecture
 
 ```mermaid
 graph TB
-    subgraph "MCP Server"
-        Server[WebSocket Server]
-        Server --> Protocol[MCP Protocol]
-        Server --> Handler[Request Handler]
-
-        Handler --> Router[Request Router]
-
-        Router --> WF1[Recommendation Workflow]
-        Router --> WF2[Conversation Workflow]
-        Router --> WF3[Analysis Workflow]
-        Router --> WF4[Custom Workflow]
+    subgraph "MCP Host"
+        Host[Claude / ChatGPT / IDE]
     end
 
-    subgraph "Request Types"
-        RT1[execute_workflow]
-        RT2[get_recommendations]
-        RT3[chat]
-        RT4[analyze_pet]
-        RT5[health]
-        RT6[metrics]
+    subgraph "Standalone MCP Server (mcp_server/)"
+        MCP[FastMCP Server]
+        T1[list_workflows]
+        T2[execute_workflow]
+        T3[analyze_pet]
+        T4[profile_user]
+        T5[match_pets]
+        T6[recommend_pets]
+        T7[chat]
+        T8[health + cost tools]
     end
 
-    subgraph "Response Format"
-        Success[Success Response]
-        Error[Error Response]
-
-        Success --> ID[Request ID]
-        Success --> Status[Status: success]
-        Success --> Data[Data Payload]
-        Success --> TS[Timestamp]
-
-        Error --> EID[Request ID]
-        Error --> EStatus[Status: error]
-        Error --> ECode[Error Code]
-        Error --> EMsg[Error Message]
+    subgraph "Agentic Runtime (agentic_ai/)"
+        Engine[AgenticEngine]
+        WF[LangGraph Workflows]
     end
 
-    RT1 --> Router
-    RT2 --> Router
-    RT3 --> Router
-    RT4 --> Router
-    RT5 --> Router
-    RT6 --> Router
-
-    WF1 --> Success
-    WF2 --> Success
-    WF3 --> Success
-    WF4 --> Success
+    Host --> MCP
+    MCP --> T1
+    MCP --> T2
+    MCP --> T3
+    MCP --> T4
+    MCP --> T5
+    MCP --> T6
+    MCP --> T7
+    MCP --> T8
+    T1 --> Engine
+    T2 --> Engine
+    T3 --> Engine
+    T4 --> Engine
+    T5 --> Engine
+    T6 --> Engine
+    T7 --> Engine
+    T8 --> Engine
+    Engine --> WF
 ```
 
-### MCP Protocol Message Format
+### Transport Support
 
-**Request**:
-```json
-{
-  "id": "unique-request-id",
-  "type": "execute_workflow",
-  "version": "1.0.0",
-  "timestamp": "2025-11-04T18:00:00Z",
-  "data": {
-    "workflow": "recommendation",
-    "input": {
-      "user": {...},
-      "pet_candidates": [...]
-    }
-  }
-}
-```
-
-**Response**:
-```json
-{
-  "id": "unique-request-id",
-  "version": "1.0.0",
-  "status": "success",
-  "timestamp": "2025-11-04T18:00:05Z",
-  "data": {
-    "recommendations": [...],
-    "metadata": {...}
-  }
-}
-```
+- `stdio` (recommended for local MCP hosts)
+- `streamable-http` (for remote MCP deployment)
 
 ---
 
@@ -619,35 +585,49 @@ result = await pipeline.execute({
 recommendations = result["data"]["recommendations"]
 ```
 
-### Using the WebSocket (MCP) API
+### Starting the Standalone MCP Server
+
+```bash
+# From repo root
+python -m mcp_server.server --transport stdio
+
+# Or run streamable HTTP transport
+python -m mcp_server.server --transport streamable-http --host 0.0.0.0 --port 8766 --path /mcp
+
+# Convenience targets
+cd agentic_ai
+make mcp-stdio
+make mcp-http
+```
+
+For MCP host/client setup examples, see [`docs/AGENTIC_MCP.md`](../docs/AGENTIC_MCP.md).
+
+### Using the Agent-Side MCP Client
 
 ```python
 import asyncio
-import websockets
-import json
 
-async def get_recommendations():
-    uri = "ws://localhost:8765/mcp"
+from agentic_ai.mcp_client import MCPClientConfig, MCPToolClient
 
-    async with websockets.connect(uri) as websocket:
-        request = {
-            "id": "req-123",
-            "type": "get_recommendations",
-            "version": "1.0.0",
-            "data": {
-                "user": {...},
-                "pet_candidates": [...]
-            }
-        }
+async def run():
+    cfg = MCPClientConfig(
+        transport="streamable-http",
+        url="http://127.0.0.1:8766/mcp"
+    )
+    async with MCPToolClient(cfg) as client:
+        await client.ping()
+        tools = await client.list_tools()
+        recs = await client.call_tool(
+            "recommend_pets",
+            {
+                "user": {"id": "user-1", "bio": "I love dogs"},
+                "swipe_history": [],
+                "pet_candidates": []
+            },
+        )
+        return tools, recs
 
-        await websocket.send(json.dumps(request))
-        response = await websocket.recv()
-
-        result = json.loads(response)
-        return result
-
-# Run
-recommendations = asyncio.run(get_recommendations())
+tools, recommendations = asyncio.run(run())
 ```
 
 ### Using the REST API
@@ -766,60 +746,48 @@ kubectl apply -f deployment.yaml
 
 ## 📖 API Reference
 
-### MCP Server Endpoints
+### Standalone MCP Server
 
-#### Execute Workflow
+Entrypoint:
 
-```json
-POST /execute
-{
-  "type": "execute_workflow",
-  "data": {
-    "workflow": "recommendation",
-    "input": {...}
-  }
-}
+```bash
+python -m mcp_server.server --transport stdio
 ```
 
-#### Get Recommendations
+Tools:
 
-```json
-POST /recommendations
-{
-  "type": "get_recommendations",
-  "data": {
-    "user": {...},
-    "pet_candidates": [...]
-  }
-}
-```
+- `list_workflows`
+- `execute_workflow`
+- `analyze_pet`
+- `profile_user`
+- `match_pets`
+- `recommend_pets`
+- `chat`
+- `health`
+- `cost_summary`
+- `recent_cost_entries`
 
-#### Chat
+See full setup and client examples in [`docs/AGENTIC_MCP.md`](../docs/AGENTIC_MCP.md).
 
-```json
-POST /chat
-{
-  "type": "chat",
-  "data": {
-    "message": "Tell me about this pet",
-    "context": {...}
-  }
-}
-```
+### REST API
 
-#### Health Check
+- `POST /v1/analysis/pet`
+- `POST /v1/profile`
+- `POST /v1/match`
+- `POST /v1/recommendations`
+- `POST /v1/chat`
+- `GET /v1/costs/summary`
+- `GET /v1/costs/recent`
+- `GET /v1/mcp/info`
+- `GET /v1/mcp/health`
+- `GET /health`
+- `GET /metrics`
 
-```json
-GET /health
-```
+### Agent MCP Client Package
 
-Response:
-```json
-{
-  "status": "healthy",
-  "workflows": ["recommendation", "conversation", "analysis", "profile", "match"]
-}
-```
+- `agentic_ai/mcp_client/config.py` for transport configuration.
+- `agentic_ai/mcp_client/client.py` for async MCP sessions and tool calls.
+- Supported transports: `stdio`, `streamable-http`.
 
 ---
 

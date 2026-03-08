@@ -7,6 +7,7 @@ from pathlib import Path
 
 
 _config_cache: Optional[Dict[str, Any]] = None
+_config_cache_key: Optional[str] = None
 
 
 def load_config(config_path: str = "config/config.yaml") -> Dict[str, Any]:
@@ -19,19 +20,41 @@ def load_config(config_path: str = "config/config.yaml") -> Dict[str, Any]:
     Returns:
         Configuration dictionary
     """
-    global _config_cache
+    global _config_cache, _config_cache_key
 
-    if _config_cache is not None:
+    requested_path = os.getenv("AGENTIC_AI_CONFIG", config_path)
+    resolved_path = _resolve_config_path(requested_path)
+    cache_key = str(resolved_path)
+
+    if _config_cache is not None and _config_cache_key == cache_key:
         return _config_cache
 
-    with open(config_path, "r") as f:
+    with open(resolved_path, "r") as f:
         _config_cache = yaml.safe_load(f) or {}
+    _config_cache_key = cache_key
 
     _config_cache = _apply_env_overrides(_config_cache)
     _ensure_paths(_config_cache)
     validate_costs(_config_cache)
+    validate_mcp_configuration(_config_cache)
 
     return _config_cache
+
+
+def _resolve_config_path(config_path: str) -> Path:
+    """Resolve config file path from CWD or package root."""
+    candidate = Path(config_path).expanduser()
+    if candidate.is_file():
+        return candidate
+
+    package_root = Path(__file__).resolve().parents[1]
+    package_candidate = package_root / config_path
+    if package_candidate.is_file():
+        return package_candidate
+
+    raise FileNotFoundError(
+        f"Config file not found at '{config_path}' or '{package_candidate}'."
+    )
 
 
 def get_config_value(key: str, default: Any = None) -> Any:
@@ -182,3 +205,31 @@ def validate_costs(config: Dict[str, Any]) -> None:
     missing = sorted(name for name in used_models if name not in model_names)
     if missing:
         raise ValueError(f"Missing pricing entries for models: {', '.join(missing)}")
+
+
+def validate_mcp_configuration(config: Dict[str, Any]) -> None:
+    """Validate standalone MCP server and MCP client configuration blocks."""
+    mcp_cfg = config.get("mcp", {})
+    if mcp_cfg and not isinstance(mcp_cfg, dict):
+        raise ValueError("mcp config must be an object")
+
+    if isinstance(mcp_cfg, dict):
+        transport = str(mcp_cfg.get("transport", "stdio")).strip().lower()
+        if transport not in {"stdio", "streamable-http"}:
+            raise ValueError("mcp.transport must be either 'stdio' or 'streamable-http'")
+
+        path = str(mcp_cfg.get("path", "/mcp")).strip() or "/mcp"
+        if not path.startswith("/"):
+            raise ValueError("mcp.path must start with '/'")
+
+        port = int(mcp_cfg.get("port", 8766))
+        if port <= 0 or port > 65535:
+            raise ValueError("mcp.port must be between 1 and 65535")
+
+    mcp_client_cfg = config.get("mcp_client", {})
+    if mcp_client_cfg and not isinstance(mcp_client_cfg, dict):
+        raise ValueError("mcp_client config must be an object")
+    if isinstance(mcp_client_cfg, dict) and mcp_client_cfg:
+        from agentic_ai.mcp_client import MCPClientConfig
+
+        MCPClientConfig.from_dict(mcp_client_cfg)
