@@ -8,8 +8,15 @@ from datetime import datetime, timedelta
 from pathlib import Path
 from typing import Any, Deque, Dict, List, Optional
 
-from langchain.callbacks.base import BaseCallbackHandler
-from langchain.schema import LLMResult
+try:
+    from langchain.callbacks.base import BaseCallbackHandler
+    from langchain.schema import LLMResult
+except Exception:  # pragma: no cover - optional dependency fallback
+    class BaseCallbackHandler:  # type: ignore[override]
+        pass
+
+    class LLMResult:  # type: ignore[override]
+        llm_output: Dict[str, Any]
 
 from .context import get_context
 

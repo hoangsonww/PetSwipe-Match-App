@@ -2,7 +2,27 @@
 
 from typing import Dict, Any
 from datetime import datetime
-from prometheus_client import Counter, Histogram, Gauge
+
+try:
+    from prometheus_client import Counter, Histogram, Gauge
+except Exception:  # pragma: no cover - optional dependency fallback
+    class _NoopMetric:
+        def __init__(self, *_args, **_kwargs):
+            pass
+
+        def labels(self, **_kwargs):
+            return self
+
+        def inc(self, *_args, **_kwargs):
+            return None
+
+        def dec(self, *_args, **_kwargs):
+            return None
+
+        def observe(self, *_args, **_kwargs):
+            return None
+
+    Counter = Histogram = Gauge = _NoopMetric
 
 
 class MetricsCollector:

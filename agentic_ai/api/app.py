@@ -1,17 +1,14 @@
 """FastAPI application for Agentic AI."""
 
-import json
 import time
 import uuid
 from typing import Any, Dict
 
-from fastapi import FastAPI, Request, WebSocket, WebSocketDisconnect
+from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse, Response
 from prometheus_client import CONTENT_TYPE_LATEST, generate_latest
 
-from ..mcp_server.protocol import MCPProtocol
-from ..mcp_server.handlers import RequestHandler
 from ..service.engine import AgenticEngine
 from ..utils.config import load_config
 from ..utils.logger import setup_logging
@@ -37,8 +34,6 @@ setup_logging(config.get("logging", {}).get("level", "INFO"), config.get("loggin
 
 app = FastAPI(title="PetSwipe Agentic AI", version="1.0.0")
 engine = AgenticEngine(config)
-protocol = MCPProtocol()
-handler = RequestHandler(config, engine=engine)
 
 security_cfg = config.get("security", {})
 api_key_auth = APIKeyAuth(security_cfg)
@@ -94,7 +89,7 @@ async def shutdown_event():
 async def health() -> Dict[str, Any]:
     return {
         "status": "healthy",
-        "workflows": list(engine.workflows.keys()),
+        "workflows": engine.list_workflows(),
     }
 
 
@@ -149,48 +144,35 @@ async def cost_recent(limit: int = 100):
     return {"entries": engine.cost_tracker.recent(limit=limit)}
 
 
-@app.websocket(config.get("server", {}).get("mcp_path", "/mcp"))
-async def mcp_socket(websocket: WebSocket):
-    supplied_key = websocket.headers.get(api_key_auth.header)
-    if not api_key_auth.validate(supplied_key):
-        await websocket.close(code=1008)
-        return
+@app.get("/v1/mcp/info")
+async def mcp_info() -> Dict[str, Any]:
+    """Describe standalone MCP server and MCP client settings."""
+    mcp_cfg = config.get("mcp", {})
+    client_cfg = config.get("mcp_client", {})
+    return {
+        "standalone": {
+            "server_name": mcp_cfg.get("server_name", "petswipe-agentic"),
+            "transport": mcp_cfg.get("transport", "stdio"),
+            "host": mcp_cfg.get("host", "0.0.0.0"),
+            "port": mcp_cfg.get("port", 8766),
+            "path": mcp_cfg.get("path", "/mcp"),
+            "entrypoint": "python -m mcp_server.server",
+        },
+        "client": {
+            "enabled": client_cfg.get("enabled", False),
+            "transport": client_cfg.get("transport", "stdio"),
+            "timeout_seconds": client_cfg.get("timeout_seconds", 30),
+            "stdio_command": client_cfg.get("stdio", {}).get("command", "python"),
+            "stdio_args": client_cfg.get("stdio", {}).get("args", []),
+            "streamable_http_url": client_cfg.get("streamable_http", {}).get("url"),
+        },
+    }
 
-    await websocket.accept()
-    try:
-        while True:
-            message = await websocket.receive_text()
-            if rate_limiter:
-                client_ip = websocket.client.host if websocket.client else "unknown"
-                allowed = await rate_limiter.allow(client_ip)
-                if not allowed:
-                    await websocket.send_json(
-                        protocol.create_error_response(
-                            "unknown",
-                            "RATE_LIMITED",
-                            "Rate limit exceeded",
-                        )
-                    )
-                    continue
-            try:
-                request = json.loads(message)
-            except json.JSONDecodeError:
-                await websocket.send_json(
-                    protocol.create_error_response("unknown", "PARSE_ERROR", "Invalid JSON")
-                )
-                continue
 
-            if not protocol.validate_request(request):
-                await websocket.send_json(
-                    protocol.create_error_response(
-                        request.get("id", "unknown"),
-                        "INVALID_REQUEST",
-                        "Invalid request format",
-                    )
-                )
-                continue
-
-            response = await handler.handle_request(request)
-            await websocket.send_json(response)
-    except WebSocketDisconnect:
-        return
+@app.get("/v1/mcp/health")
+async def mcp_health() -> Any:
+    """Probe MCP client connectivity to the configured standalone MCP server."""
+    result = await engine.check_mcp_connectivity()
+    if result.get("status") == "unhealthy":
+        return JSONResponse(status_code=503, content=result)
+    return result

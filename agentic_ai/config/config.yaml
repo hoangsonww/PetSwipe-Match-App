@@ -5,9 +5,34 @@
 server:
   host: "0.0.0.0"
   port: 8765
-  mcp_path: "/mcp"
   workers: 4
   timeout: 300
+
+# Standalone MCP Server Configuration
+mcp:
+  server_name: "petswipe-agentic"
+  transport: "stdio" # stdio or streamable-http
+  host: "0.0.0.0"
+  port: 8766
+  path: "/mcp"
+
+# MCP Client Configuration (for agent-side MCP tool usage)
+mcp_client:
+  enabled: false
+  transport: "stdio" # stdio or streamable-http
+  timeout_seconds: 30
+  stdio:
+    command: "python"
+    args:
+      - "-m"
+      - "mcp_server.server"
+      - "--transport"
+      - "stdio"
+    cwd: "."
+    env: {}
+  streamable_http:
+    url: "http://127.0.0.1:8766/mcp"
+    headers: {}
 
 # AI Models Configuration
 models:

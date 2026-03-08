@@ -88,11 +88,21 @@ Recommended workflow:
 ```bash
 cp terraform/backend.hcl.example terraform/backend.hcl
 cp terraform/environments/production.tfvars.example terraform/environments/production.tfvars
+cp .env.production.example .env.production
+bash scripts/deploy-preflight.sh .env.production
 make tf-preflight ENV=production
 make k8s-preflight
 make tf-init
 make tf-plan ENV=production
 ```
+
+Hard-gate notes:
+
+- `scripts/deploy-preflight.sh` rejects mutable app tags and placeholder/weak secrets.
+- Static AWS keys are rejected unless `ALLOW_STATIC_AWS_KEYS=true` is explicitly set.
+- `scripts/k8s-preflight.sh` enforces deployment probes/resources/security-context markers and rejects privileged host settings.
+- `scripts/terraform-preflight.sh` enforces backend encryption + env key scoping and validates with a local `terraform init -backend=false`.
+- Optional scanner enforcement: `ENFORCE_TERRAFORM_SECURITY_SCANNERS=true make tf-preflight ENV=production`.
 
 ## CI/CD Pipelines
 
@@ -339,7 +349,7 @@ terrascan scan -t aws          # Compliance scanning
 #### 2. **Container Security**
 ```bash
 # Trivy image scanning
-trivy image ghcr.io/user/petswipe-app-backend:latest
+trivy image ghcr.io/user/petswipe-app-backend:v1.2.3
 
 # In CI/CD (automatic)
 # Scans run in Jenkins pipeline stage: Image Scan
@@ -351,7 +361,7 @@ trivy image ghcr.io/user/petswipe-app-backend:latest
 gitleaks detect --source . --verbose
 
 # TruffleHog (Docker-based)
-docker run --rm -v $(pwd):/scan trufflesecurity/trufflehog:latest filesystem /scan
+docker run --rm -v $(pwd):/scan trufflesecurity/trufflehog:v3.80.1 filesystem /scan
 ```
 
 ### Compliance

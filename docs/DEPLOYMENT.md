@@ -229,7 +229,20 @@ cp .env.production.example .env.production
 bash scripts/deploy-preflight.sh .env.production
 ```
 
-This preflight now includes Kubernetes placeholder checks for the production overlay.
+`deploy-preflight` now enforces hard production gates:
+
+- required non-empty production env vars
+- HTTPS-only `NEXT_PUBLIC_API_URL` (no localhost)
+- minimum secret lengths (`JWT_SECRET` >= 32, database/Grafana passwords >= 16)
+- immutable app image tags (rejects `latest`, `main`, `master`, `dev`)
+- rendered compose manifests without `:latest` tags
+- Kubernetes production render checks via `scripts/k8s-preflight.sh`
+
+By default, static AWS keys in `.env.production` are rejected. If your environment requires long-lived keys temporarily, explicitly override:
+
+```bash
+ALLOW_STATIC_AWS_KEYS=true bash scripts/deploy-preflight.sh .env.production
+```
 
 If you are using the Terraform-managed AWS stack, also prepare the operator files:
 
@@ -238,6 +251,14 @@ cp terraform/backend.hcl.example terraform/backend.hcl
 cp terraform/environments/production.tfvars.example terraform/environments/production.tfvars
 
 make tf-preflight ENV=production
+```
+
+`tf-preflight` now validates operator-file semantics (backend encryption, environment scoping, production Multi-AZ posture, ECS capacity bounds) and performs `terraform init -backend=false`, `terraform fmt -check -recursive`, and `terraform validate -var-file=...`.
+
+Optional stricter security scanning can be enabled:
+
+```bash
+ENFORCE_TERRAFORM_SECURITY_SCANNERS=true make tf-preflight ENV=production
 ```
 
 ### Local Production Bundle
@@ -289,14 +310,14 @@ aws ecr get-login-password --region $AWS_REGION | \
   ${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com
 
 # Build backend image
-docker build -t petswipe-backend:latest -f backend/Dockerfile backend/
+docker build -t petswipe-backend:v1.2.3 -f backend/Dockerfile backend/
 
 # Tag image
-docker tag petswipe-backend:latest \
-  ${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/petswipe-backend:latest
+docker tag petswipe-backend:v1.2.3 \
+  ${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/petswipe-backend:v1.2.3
 
 # Push to ECR
-docker push ${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/petswipe-backend:latest
+docker push ${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/petswipe-backend:v1.2.3
 ```
 
 ### 3. Deploy Using Blue-Green
@@ -676,7 +697,7 @@ cd frontend && npm test
 
 ✅ **Security scan images**
 ```bash
-trivy image petswipe-backend:latest
+trivy image petswipe-backend:v1.2.3
 ```
 
 ✅ **Validate Terraform changes**

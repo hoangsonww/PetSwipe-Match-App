@@ -75,6 +75,22 @@ Important:
 make tf-preflight ENV=production
 ```
 
+`tf-preflight` enforces:
+
+- operator file presence (`backend.hcl`, `environments/<env>.tfvars`)
+- no placeholder values in backend/tfvars
+- backend encryption and DynamoDB lock configuration
+- backend state key namespaced by environment (for example `production/...`)
+- production posture checks (`db_multi_az = true`, sane ECS min/max capacity)
+- `terraform fmt -check -recursive`
+- local validation flow: `terraform init -backend=false` + `terraform validate -var-file=...`
+
+Optional scanner hard-fail mode:
+
+```bash
+ENFORCE_TERRAFORM_SECURITY_SCANNERS=true make tf-preflight ENV=production
+```
+
 ### 3. Initialize Terraform
 
 ```bash

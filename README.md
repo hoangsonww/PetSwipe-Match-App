@@ -960,7 +960,7 @@ PetSwipe features a sophisticated **multi-agent AI system** built with **LangGra
 - ⚡ **Assembly Line Processing** - Sequential, observable agent execution with workflow timeouts
 - 🎯 **Intelligent Matching** - AI-powered compatibility scoring between users and pets
 - 💬 **Natural Conversations** - Context-aware chat with profile + recommendation grounding
-- 🌐 **REST + MCP WebSocket API** - `/v1/*` endpoints and MCP bridge for integrations
+- 🌐 **REST + MCP Platform** - `/v1/*` endpoints, standalone MCP server, and an agent-side MCP client package
 - 📊 **Cost + Metrics Tracking** - Token/cost reporting, Prometheus metrics, Grafana dashboards
 - 🔐 **Production Controls** - API key auth, rate limiting, caching, and structured logging
 
@@ -975,7 +975,8 @@ The agentic AI pipeline processes user requests through multiple stages:
 5. **Conversation** - Handles natural language interactions
 6. **Monitoring** - Tracks performance metrics and system health
 
-For detailed information about the AI system, including installation, configuration, REST/MCP API reference, cost tracking, and deployment guides, see the **[Agentic AI README](agentic_ai/README.md)**.
+For detailed information about the AI system, including installation, configuration, REST API reference, cost tracking, and deployment guides, see the **[Agentic AI README](agentic_ai/README.md)**.  
+For standalone MCP server setup and client integration examples, see **[docs/AGENTIC_MCP.md](docs/AGENTIC_MCP.md)**.
 
 ---
 
