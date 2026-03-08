@@ -1,6 +1,6 @@
 # PetSwipe MCP Platform
 
-PetSwipe now ships a production-oriented MCP setup with:
+PetSwipe AI ships a production-oriented MCP setup with:
 
 - a standalone MCP server at `mcp_server/`
 - an agent-side MCP client package at `agentic_ai/mcp_client/`
