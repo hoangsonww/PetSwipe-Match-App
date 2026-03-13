@@ -24,6 +24,7 @@ import {
   Twitter,
   Copy,
   PhoneCall,
+  MessageCircle,
 } from "lucide-react";
 import { Layout } from "@/components/Layout";
 import { Button } from "@/components/ui/button";
@@ -949,6 +950,22 @@ const Home: NextPage = () => {
                 className="bg-white text-[#7097A8] rounded-md px-3 py-2 shadow-lg text-sm font-medium hover:text-[#7097A8]"
               >
                 View adopted pets
+              </TooltipContent>
+            </Tooltip>
+
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Link href="/messages" legacyBehavior>
+                  <a className="p-2 rounded-full hover:bg-white/10 focus:outline-none focus:ring-2 focus:ring-white hover:text-[#7097A8]">
+                    <MessageCircle size={22} />
+                  </a>
+                </Link>
+              </TooltipTrigger>
+              <TooltipContent
+                side="top"
+                className="bg-white text-[#7097A8] rounded-md px-3 py-2 shadow-lg text-sm font-medium hover:text-[#7097A8]"
+              >
+                Messages
               </TooltipContent>
             </Tooltip>
 
