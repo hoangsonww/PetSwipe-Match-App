@@ -6,6 +6,7 @@ import { sendCsv } from "../utils/csv";
 import stream from "stream";
 import multer from "multer";
 import { uploadPetPic } from "../utils/supabase";
+import { petEvents } from "../utils/petEvents";
 
 interface RawPetRow {
   name: string;
@@ -293,6 +294,8 @@ export const uploadPets = [
         }
 
         const saved = await petRepo().save(validPartials);
+        // Broadcast each newly imported pet
+        for (const p of saved) petEvents.emit("new-pet", p);
         res.json({ imported: saved.length, errors });
       } catch (err) {
         next(err);
@@ -628,6 +631,8 @@ export const createPet = async (
     });
 
     await AppDataSource.getRepository(Pet).save(pet);
+    // Notify SSE clients about the new pet
+    petEvents.emit("new-pet", pet);
     res.status(201).json({ pet });
   } catch (err) {
     next(err);
