@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from "react";
 import type { NextPage } from "next";
 import { useRouter } from "next/router";
 import useSWR from "swr";
-import { matchApi, swipeApi, Pet, Match } from "@/lib/api";
+import { matchApi, swipeApi, petApi, Pet, Match, DeckResponse } from "@/lib/api";
 import { useUser } from "@/hooks/useUser";
 import { useSwipeable } from "react-swipeable";
 import { toast, Toaster } from "sonner";
@@ -44,6 +44,7 @@ import { Slider } from "@/components/ui/slider";
 import Link from "next/link";
 
 const fetchMatches = () => matchApi.listMyMatches();
+const fetchDeck = () => petApi.getDeck({ limit: 30 });
 const pageVariants = {
   enter: (d: number) => ({ x: d > 0 ? 300 : -300, opacity: 0 }),
   center: { x: 0, opacity: 1 },
@@ -64,15 +65,47 @@ const deckCardVariants = {
 const Home: NextPage = () => {
   const router = useRouter();
   const { user, loading: authLoading } = useUser();
-  const { data: matches, error } = useSWR<Match[]>(
-    user ? "matches" : null,
+  
+  // Feature flag to test new relevance engine - can be toggled via URL param
+  const useRelevanceEngine = router.query.engine === 'v1' || false;
+  
+  // Legacy match-based system
+  const { data: matches, error: matchError } = useSWR<Match[]>(
+    user && !useRelevanceEngine ? "matches" : null,
     fetchMatches,
+  );
+
+  // New personalized deck system  
+  const { data: deckResponse, error: deckError } = useSWR<DeckResponse>(
+    user && useRelevanceEngine ? "deck" : null,
+    fetchDeck,
   );
 
   const [cases, setCases] = useState<Pet[]>([]);
   useEffect(() => {
-    setCases(matches?.map((m) => m.pet) ?? []);
-  }, [matches]);
+    if (useRelevanceEngine && deckResponse?.items) {
+      // Convert DeckItems to Pet format for compatibility
+      const pets: Pet[] = deckResponse.items.map(item => ({
+        id: item.id,
+        name: item.name,
+        type: item.type,
+        ageMonths: item.ageMonths,
+        approxBreed: item.breed,
+        description: item.description,
+        photoUrl: item.photoUrl,
+        shelterName: item.shelterName || '',
+        shelterContact: item.shelterContact,
+        shelterAddress: item.shelterAddress,
+        matches: [],
+        swipes: [],
+        createdAt: item.createdAt,
+        updatedAt: item.createdAt, // Fallback
+      }));
+      setCases(pets);
+    } else if (!useRelevanceEngine && matches) {
+      setCases(matches.map((m) => m.pet));
+    }
+  }, [matches, deckResponse, useRelevanceEngine]);
 
   const [index, setIndex] = useState(-1); // start with instructions
   const [flipped, setFlipped] = useState(false);
@@ -164,14 +197,27 @@ const Home: NextPage = () => {
     }
   };
 
+  const error = useRelevanceEngine ? deckError : matchError;
+  const hasData = useRelevanceEngine 
+    ? (deckResponse?.items?.length ?? 0) > 0 
+    : (matches?.length ?? 0) > 0;
+
   if (error) {
     return (
       <Layout>
-        <p className="text-center text-red-600 mt-20">Error loading pets</p>
+        <div className="text-center mt-20">
+          <p className="text-red-600">Error loading pets</p>
+          {useRelevanceEngine && (
+            <p className="text-sm text-gray-500 mt-2">
+              Try the <a href="/home" className="text-blue-600 underline">legacy system</a>
+            </p>
+          )}
+        </div>
       </Layout>
     );
   }
-  if (!matches || (matches && cases.length === 0 && index < 0)) {
+  
+  if (!hasData && (index < 0 || cases.length === 0)) {
     return (
       <Layout>
         <div className="flex h-screen items-center justify-center">
@@ -920,6 +966,15 @@ const Home: NextPage = () => {
              shadow-[inset_0_4px_6px_-4px_rgba(0,0,0,0.3)]"
         >
           <div className="flex items-center gap-8 py-4">
+            {/* System indicator */}
+            <div className="text-xs text-white/70 bg-black/20 px-2 py-1 rounded">
+              {useRelevanceEngine ? 'Relevance Engine v1' : 'Legacy System'}
+              {useRelevanceEngine && deckResponse?.meta && (
+                <span className="ml-1" title="Cache hit">
+                  {deckResponse.meta.cacheHit ? '⚡' : '🔄'}
+                </span>
+              )}
+            </div>
             <Tooltip>
               <TooltipTrigger asChild>
                 <Link href="/swipes" legacyBehavior>
