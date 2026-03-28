@@ -20,8 +20,9 @@ Comprehensive architectural overview of the PetSwipe pet adoption platform
 8. [Infrastructure as Code](#infrastructure-as-code)
 9. [Monitoring & Observability](#monitoring--observability)
 10. [CI/CD Pipeline](#cicd-pipeline)
-11. [Scalability & Performance](#scalability--performance)
-12. [Disaster Recovery](#disaster-recovery)
+11. [Agent Flywheel Infrastructure](#agent-flywheel-infrastructure)
+12. [Scalability & Performance](#scalability--performance)
+13. [Disaster Recovery](#disaster-recovery)
 
 ---
 
@@ -1718,6 +1719,54 @@ flowchart TB
     ImageScan --> PushGHCR
     PushGHCR --> DeployDev
 ```
+
+---
+
+## Agent Flywheel Infrastructure
+
+PetSwipe uses the **Agent Flywheel** methodology to coordinate AI coding agents across the codebase. The Flywheel separates work into three reasoning spaces (plan, bead, code) and uses a three-tool coordination stack.
+
+### Artifact Layout
+
+| Artifact | Path | Purpose |
+|----------|------|---------|
+| Bead store | `.beads/beads.jsonl` | 86 beads across 7 epics with full dependency graph |
+| Bead config | `.beads/config.json` | Labels, priorities, status definitions |
+| Session log | `.agent-sessions/sessions.jsonl` | 15 historical sessions with commits and file tracking |
+| Operating manual | `AGENTS.md` | 319-line agent instruction file covering safety, coordination, and quality standards |
+| Project instructions | `CLAUDE.md` | Project-level context for Claude Code sessions |
+
+### Coordination Stack
+
+```
+Beads (br)          Task structure with dependencies, priorities, and embedded context
+    |
+Bead Viewer (bv)    Graph-theory routing: PageRank, betweenness, critical path
+    |
+Agent Mail (am)     Identities, file reservations, threaded messages, claim coordination
+```
+
+All three tools operate on the same bead graph. Agents query `bv --robot-triage` to find the highest-leverage unblocked bead, claim it via Agent Mail, reserve files, implement, self-review, close the bead, and move to the next one. No central coordinator agent is required; coordination lives in the artifacts.
+
+### Bead Lifecycle
+
+```
+open --> in_progress --> closed
+                    \--> blocked (dependency not met)
+```
+
+Each bead carries: a rich description with rationale and acceptance criteria, a list of files to modify, dependency references to other bead IDs, priority (P0 critical through P4 backlog), and labels for filtering (backend, frontend, infra, testing, etc.).
+
+### Multi-Agent Safety
+
+- **Single-branch model**: all agents commit to `main`. No worktrees or feature branches per agent.
+- **Advisory file reservations**: agents call dibs on files via Agent Mail with TTL expiry. Not rigidly enforced, so dead agents cannot deadlock the system.
+- **Post-compaction protocol**: after context compression, agents must re-read `AGENTS.md` to restore behavioral rules.
+- **Destructive command guard**: `git reset --hard`, `git clean -fd`, and `rm -rf` are forbidden.
+
+### Session Tracking
+
+Every agent session is logged in `.agent-sessions/sessions.jsonl` with session ID, agent name and type, start/end timestamps, beads claimed and completed, commit hashes, files touched, and free-form notes. This provides a durable audit trail across the full project history.
 
 ---
 

@@ -1,0 +1,29 @@
+{
+  "project": "PetSwipe",
+  "version": "1.0.0",
+  "id_prefix": "br",
+  "auto_increment": true,
+  "next_id": 151,
+  "labels": [
+    "backend",
+    "frontend",
+    "infra",
+    "testing",
+    "docs",
+    "security",
+    "ux",
+    "performance",
+    "api",
+    "database"
+  ],
+  "priorities": {
+    "P0": "critical",
+    "P1": "high",
+    "P2": "medium",
+    "P3": "low",
+    "P4": "backlog"
+  },
+  "statuses": ["open", "in_progress", "closed", "blocked"],
+  "types": ["epic", "task", "bug", "feature", "docs", "question"],
+  "created_at": "2026-03-28T15:00:00Z"
+}
