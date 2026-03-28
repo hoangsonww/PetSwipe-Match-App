@@ -603,9 +603,15 @@ function buildInsights(user: AppUser, swipes: Swipe[], likedSwipes: Swipe[]) {
 const AdoptionPlannerPage: NextPage = () => {
   const router = useRouter();
   const { user: authUser, loading: authLoading } = useUser();
-  const { data, error, isLoading } = useSWR<PlannerData>(
+  const { data, error, isLoading, mutate } = useSWR<PlannerData>(
     authUser ? "adoption-planner" : null,
     fetchPlannerData,
+    {
+      errorRetryCount: 3,
+      errorRetryInterval: 2000,
+      revalidateOnFocus: true,
+      shouldRetryOnError: true,
+    },
   );
   const [selectedPetId, setSelectedPetId] = useState("");
   const [compatPage, setCompatPage] = useState(1);
@@ -673,21 +679,40 @@ const AdoptionPlannerPage: NextPage = () => {
   if (error) {
     return (
       <Layout>
-        <div className="mx-auto flex min-h-[70vh] max-w-2xl items-center justify-center px-6">
-          <Card className="w-full border-red-200">
-            <CardContent className="space-y-4 p-8 text-center">
-              <h1 className="text-2xl font-bold text-[#234851]">
-                Planner unavailable
-              </h1>
-              <p className="text-neutral-600 dark:text-neutral-300">
-                The adoption planner could not load your shortlist right now.
-              </p>
-              <Button
-                className="bg-[#7097A8] text-white hover:bg-[#5f868d]"
-                onClick={() => router.reload()}
-              >
-                Try again
-              </Button>
+        <Head>
+          <title>Adoption Planner | PetSwipe</title>
+        </Head>
+        <div className="mx-auto max-w-4xl px-6 py-12">
+          <Card className="overflow-hidden border-0 shadow-xl">
+            <CardContent className="bg-gradient-to-br from-[#234851] via-[#30575d] to-[#8bb6b0] px-8 py-14 text-white">
+              <div className="mx-auto max-w-2xl text-center">
+                <div className="mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-full bg-white/15">
+                  <ClipboardList className="h-8 w-8" />
+                </div>
+                <h1 className="text-4xl font-black tracking-tight">
+                  Planner couldn&apos;t load
+                </h1>
+                <p className="mt-4 text-base text-white/85">
+                  This usually means a brief network hiccup or an expired
+                  session. Give it another try — if the problem persists, log
+                  out and back in.
+                </p>
+                <div className="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row">
+                  <Button
+                    className="bg-white text-[#234851] hover:bg-white/90"
+                    onClick={() => mutate()}
+                  >
+                    Retry now
+                  </Button>
+                  <Button
+                    variant="outline"
+                    className="border-white/40 bg-transparent text-white hover:bg-white/10"
+                    onClick={() => router.push("/home")}
+                  >
+                    Back to swiping
+                  </Button>
+                </div>
+              </div>
             </CardContent>
           </Card>
         </div>
@@ -871,8 +896,8 @@ const AdoptionPlannerPage: NextPage = () => {
                       Compare your favorites
                     </h2>
                     <p className="mt-1 text-sm text-neutral-600 dark:text-neutral-300">
-                      Four cards per page so you can make sharper comparisons
-                      without scanning an endless list.
+                      Click on a pet card to see details and compare side by
+                      side.
                     </p>
                   </div>
                   <div className="flex flex-nowrap items-center gap-2 self-start rounded-full border border-[#C6D9DE] bg-white/90 px-2 py-2 shadow-sm dark:border-slate-700 dark:bg-slate-900/90">

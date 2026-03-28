@@ -175,14 +175,8 @@ const FAQ: NextPage = () => {
         <title>FAQs | PetSwipe</title>
       </Head>
 
-      <div className="relative overflow-hidden">
-        <div className="pointer-events-none absolute inset-0">
-          <div className="absolute left-[-6rem] top-10 h-56 w-56 rounded-full bg-[#d9f5f1] blur-3xl dark:bg-[#163032]" />
-          <div className="absolute right-[-4rem] top-24 h-64 w-64 rounded-full bg-[#e8eefc] blur-3xl dark:bg-[#171d31]" />
-          <div className="absolute bottom-0 left-1/3 h-52 w-52 rounded-full bg-[#fff2d9] blur-3xl dark:bg-[#302110]" />
-        </div>
-
-        <div className="relative mx-auto max-w-6xl px-4 pb-20 pt-10 sm:px-6 sm:pt-14 lg:px-8">
+      <div>
+        <div className="mx-auto max-w-6xl px-4 pb-20 pt-10 sm:px-6 sm:pt-14 lg:px-8">
           <div className="grid gap-8 lg:grid-cols-[minmax(0,1.3fr)_minmax(280px,0.9fr)] lg:items-start">
             <motion.div
               initial={{ opacity: 0, y: 18 }}
