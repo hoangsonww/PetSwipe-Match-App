@@ -44,18 +44,19 @@
    - [Vault, Consul, Nomad](#vault-consul-nomad)
    - [Ansible](#ansible)
 10. [Agentic AI Integration](#-agentic-ai-integration)
-11. [Scripts & Utilities](#-scripts--utilities)
+11. [Agent Flywheel & Beads](#-agent-flywheel--beads)
+12. [Scripts & Utilities](#-scripts--utilities)
     - [Docker](#docker)
-12. [Testing](#-testing)
+13. [Testing](#-testing)
     - [Playwright](#playwright)
     - [Jest](#jest)
     - [Chai & Mocha](#chai--mocha)
-13. [GitHub Actions CI/CD](#-github-actions)
-14. [Command Line Interface](#-command-line-interface)
-15. [Monitoring & Observability](#-monitoring--observability)
-16. [Contributing](#-contributing)
-17. [License](#-license)
-18. [Author](#-author)
+14. [GitHub Actions CI/CD](#-github-actions)
+15. [Command Line Interface](#-command-line-interface)
+16. [Monitoring & Observability](#-monitoring--observability)
+17. [Contributing](#-contributing)
+18. [License](#-license)
+19. [Author](#-author)
 
 ---
 
@@ -507,6 +508,12 @@ sequenceDiagram
 
 <p align="center">
   <img src="docs/img/profile.png" alt="Profile" width="100%">
+</p>
+
+### Success Stories
+
+<p align="center">
+  <img src="docs/img/success.png" alt="Profile" width="100%">
 </p>
 
 ### Login & Signup
@@ -979,6 +986,46 @@ The agentic AI pipeline processes user requests through multiple stages:
 
 For detailed information about the AI system, including installation, configuration, REST API reference, cost tracking, and deployment guides, see the **[Agentic AI README](agentic_ai/README.md)**.  
 For standalone MCP server setup and client integration examples, see **[docs/AGENTIC_MCP.md](docs/AGENTIC_MCP.md)**.
+
+---
+
+## 🔄 Agent Flywheel & Beads
+
+PetSwipe uses the **Agent Flywheel** methodology for AI-assisted development. The project includes a full Flywheel infrastructure with beads-based task tracking, agent session logging, and a comprehensive operating manual.
+
+### Directory Structure
+
+```
+.beads/              # Bead (task) store
+  config.json        # Project metadata, labels, priorities
+  beads.jsonl        # 86 beads across 7 epics (JSONL format)
+.agent-sessions/     # Agent session history
+  sessions.jsonl     # 15 sessions with commit/file tracking
+  README.md          # Session format documentation
+AGENTS.md            # Operating manual for AI coding agents (319 lines)
+```
+
+### Bead Epics
+
+| Epic | ID | Beads | Focus |
+|------|----|-------|-------|
+| Core Platform Hardening | br-001 | 10 | Rate limiting, input validation, security headers, graceful shutdown |
+| Backend Testing | br-002 | 15 | Jest setup, controller/service unit tests, integration tests, CI runner |
+| Search & Discovery | br-003 | 10 | Search API, full-text search, pagination, shelter directory, geo-bounding |
+| Real-time & Notifications | br-004 | 8 | Socket.io, match notifications, notification entity and UI |
+| Analytics Backend | br-005 | 10 | Admin role, platform stats API, trends, admin dashboard |
+| DevOps & Deployment | br-006 | 12 | GitHub Actions CI, Dockerfiles, docker-compose, Terraform RDS/Redis |
+| UX Polish & Accessibility | br-007 | 14 | ARIA labels, keyboard nav, PWA, skeletons, Lighthouse, OpenGraph |
+
+### Three-Tool Core
+
+- **Beads (`br`)** &mdash; Self-contained work units stored as JSONL with dependency graphs. Each bead carries its own context, acceptance criteria, and test obligations so agents can execute without guessing.
+- **Bead Viewer (`bv`)** &mdash; Graph-theory routing engine that computes PageRank, betweenness, and critical-path metrics to tell agents which bead unlocks the most downstream work.
+- **Agent Mail (`am`)** &mdash; Coordination layer for multi-agent swarms. Agents register, claim beads, reserve files, and send progress updates through threaded messages anchored to bead IDs.
+
+### AGENTS.md
+
+The `AGENTS.md` file is the operating manual every agent reads at session start and after every context compaction. It contains safety rules, the full repo map, stack documentation, the bead workflow, Agent Mail coordination protocol, self-review checklist, and code quality standards.
 
 ---
 

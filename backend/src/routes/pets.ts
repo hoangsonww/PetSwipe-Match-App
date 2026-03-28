@@ -8,6 +8,7 @@ import {
   getPetById,
   updatePet,
   listMyCreatedPets,
+  geocodePets,
 } from "../controllers/petController";
 import { authMiddleware } from "../middlewares/auth";
 
@@ -17,6 +18,7 @@ router.use(authMiddleware);
 
 router.post("/", createPet);
 router.post("/upload", ...uploadPets);
+router.post("/geocode", geocodePets);
 router.get("/", listPets);
 router.get("/export", exportPets);
 router.get("/mine", listMyCreatedPets);

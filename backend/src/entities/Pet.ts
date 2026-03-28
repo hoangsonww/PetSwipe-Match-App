@@ -42,6 +42,14 @@ export class Pet {
   @Column({ type: "text", nullable: true })
   shelterAddress?: string;
 
+  /** Pre-computed latitude from shelterAddress geocoding */
+  @Column({ type: "double precision", nullable: true })
+  latitude?: number | null;
+
+  /** Pre-computed longitude from shelterAddress geocoding */
+  @Column({ type: "double precision", nullable: true })
+  longitude?: number | null;
+
   /** Email of the uploader/creator (used for edit permissions) */
   @Column({ type: "varchar", length: 255, default: "test@unc.edu" })
   createdBy!: string;

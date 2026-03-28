@@ -18,309 +18,14 @@ import {
   MapPin,
   ChevronLeft,
   ChevronRight,
-  Trash2,
 } from "lucide-react";
 import { Layout } from "@/components/Layout";
 import { Button } from "@/components/ui/button";
 import { petApi, Pet } from "@/lib/api";
 
-type LatLng = { lat: number; lon: number };
-type GeocodeHit = LatLng & { queryUsed: string; source: "photon" | "proxy" };
-type PointsItem = { pet: Pet; hit: GeocodeHit };
+type PointsItem = { pet: Pet; lat: number; lon: number };
 
-const GLOBAL_QUERY_CACHE_KEY = "petswipe_gc_query_v5";
-const GLOBAL_PET_CACHE_KEY = "petswipe_gc_pet_v5";
-const GLOBAL_MISS_CACHE_KEY = "petswipe_gc_miss_v1";
-const CACHE_TTL_MS = 1000 * 60 * 60 * 24 * 30; // 30 days
-const MISS_CACHE_TTL_MS = 1000 * 60 * 60 * 24 * 7; // 7 days
-
-const DEFAULT_COUNTRY = "USA";
-const CONCURRENCY = 8;
 const PAGE_SIZE_OPTIONS = [24, 48, 96, 192];
-
-// ---------- cache helpers (with TTL) ----------
-function now() {
-  return Date.now();
-}
-function loadCache<T>(k: string, fallback: T): T {
-  try {
-    const raw = typeof window !== "undefined" ? localStorage.getItem(k) : null;
-    return raw ? (JSON.parse(raw) as T) : fallback;
-  } catch {
-    return fallback;
-  }
-}
-function saveCache(k: string, v: unknown) {
-  try {
-    if (typeof window !== "undefined")
-      localStorage.setItem(k, JSON.stringify(v));
-  } catch {}
-}
-function isFresh(ts?: number) {
-  return typeof ts === "number" && now() - ts < CACHE_TTL_MS;
-}
-
-// ---------- geocode via same-origin proxy ----------
-async function geocode(
-  q: string,
-  signal?: AbortSignal,
-): Promise<GeocodeHit | null> {
-  try {
-    const res = await fetch(`/api/geocode?q=${encodeURIComponent(q)}`, {
-      signal,
-      credentials: "same-origin",
-      headers: { Accept: "application/json" },
-    });
-    if (res.ok) {
-      const data = await res.json();
-      if (typeof data?.lat === "number" && typeof data?.lon === "number") {
-        return {
-          lat: data.lat,
-          lon: data.lon,
-          queryUsed: data.query ?? q,
-          source: "proxy",
-        };
-      }
-    }
-  } catch {}
-  return null;
-}
-
-// ---------- address parsing (intl-friendly) ----------
-const KNOWN_COUNTRIES = new Set(
-  [
-    "USA",
-    "United States",
-    "United States of America",
-    "Canada",
-    "Mexico",
-    "United Kingdom",
-    "UK",
-    "Great Britain",
-    "France",
-    "Germany",
-    "Spain",
-    "Italy",
-    "Australia",
-    "New Zealand",
-    "Brazil",
-    "Argentina",
-    "Chile",
-    "Japan",
-    "South Korea",
-    "China",
-    "India",
-    "Singapore",
-    "Malaysia",
-    "Indonesia",
-    "Philippines",
-    "Thailand",
-    "Vietnam",
-    "Viet Nam",
-    "Cambodia",
-    "Laos",
-    "Myanmar",
-    "Bangladesh",
-    "Pakistan",
-    "Netherlands",
-    "Belgium",
-    "Switzerland",
-    "Austria",
-    "Sweden",
-    "Norway",
-    "Denmark",
-    "Finland",
-    "Ireland",
-    "Portugal",
-    "Greece",
-    "Turkey",
-    "Poland",
-    "Czechia",
-    "Czech Republic",
-    "Slovakia",
-    "Hungary",
-    "Romania",
-    "Bulgaria",
-    "Ukraine",
-    "Russia",
-    "South Africa",
-    "Nigeria",
-    "Kenya",
-    "Egypt",
-    "Saudi Arabia",
-    "UAE",
-    "United Arab Emirates",
-    "Qatar",
-  ].map((s) => s.toLowerCase()),
-);
-const US_STATES = new Set([
-  "AL",
-  "AK",
-  "AZ",
-  "AR",
-  "CA",
-  "CO",
-  "CT",
-  "DE",
-  "FL",
-  "GA",
-  "HI",
-  "IA",
-  "ID",
-  "IL",
-  "IN",
-  "KS",
-  "KY",
-  "LA",
-  "MA",
-  "MD",
-  "ME",
-  "MI",
-  "MN",
-  "MO",
-  "MS",
-  "MT",
-  "NC",
-  "ND",
-  "NE",
-  "NH",
-  "NJ",
-  "NM",
-  "NV",
-  "NY",
-  "OH",
-  "OK",
-  "OR",
-  "PA",
-  "RI",
-  "SC",
-  "SD",
-  "TN",
-  "TX",
-  "UT",
-  "VA",
-  "VT",
-  "WA",
-  "WI",
-  "WV",
-  "WY",
-  "DC",
-]);
-function stripZipAndTrim(s: string): string {
-  return s
-    .replace(/\b\d{4,}(?:-\d{3,})?\b\s*$/i, "")
-    .replace(/\s*,\s*$/, "")
-    .trim();
-}
-function normalizeWhitespace(s: string): string {
-  return s
-    .replace(/\s+/g, " ")
-    .replace(/\s*,\s*/g, ", ")
-    .trim();
-}
-function isLikelyBroadQuery(q: string): boolean {
-  const cleaned = normalizeWhitespace(q).replace(/^,+|,+$/g, "");
-  if (!cleaned) return true;
-
-  const parts = cleaned
-    .split(",")
-    .map((part) => part.trim())
-    .filter(Boolean);
-  if (!parts.length) return true;
-
-  if (parts.length === 1) {
-    const [only] = parts;
-    return (
-      only.toLowerCase() === DEFAULT_COUNTRY.toLowerCase() ||
-      US_STATES.has(only.toUpperCase()) ||
-      only.length < 4
-    );
-  }
-
-  return false;
-}
-function uniqQueries(queries: Array<string | undefined>): string[] {
-  return Array.from(
-    new Set(
-      queries
-        .filter((query): query is string => Boolean(query))
-        .map((query) => normalizeWhitespace(query))
-        .filter((query) => !isLikelyBroadQuery(query)),
-    ),
-  );
-}
-function detectCountry(addr: string): string | undefined {
-  const parts = addr
-    .split(",")
-    .map((p) => p.trim())
-    .filter(Boolean);
-  if (!parts.length) return undefined;
-  const tail = parts[parts.length - 1].toLowerCase();
-  return KNOWN_COUNTRIES.has(tail) ? parts[parts.length - 1] : undefined;
-}
-function extractCityRegion(addr: string): { city?: string; region?: string } {
-  const parts = addr
-    .split(",")
-    .map((p) => p.trim())
-    .filter(Boolean);
-  if (parts.length < 2) return {};
-  const tail = parts[parts.length - 1];
-  const stateCode = (tail.match(/\b([A-Z]{2})\b/) || [])[1];
-  if (stateCode && US_STATES.has(stateCode)) {
-    return { city: parts[parts.length - 2], region: stateCode };
-  }
-  const region = stripZipAndTrim(tail);
-  return { city: parts[parts.length - 2], region: region || undefined };
-}
-function candidatesByLevel(pet: Pet): string[][] {
-  const sAddr = (pet.shelterAddress || "")
-    .replace(/\s+/g, " ")
-    .replace(/\n+/g, ", ")
-    .trim();
-  const noZip = sAddr ? stripZipAndTrim(sAddr) : "";
-  const foundCountry = sAddr ? detectCountry(sAddr) : undefined;
-  const fallbackCountry = foundCountry || DEFAULT_COUNTRY;
-  const { city, region } = noZip ? extractCityRegion(noZip) : {};
-
-  const L0 = new Set<string>();
-  const L1 = new Set<string>();
-
-  if (sAddr) L0.add(sAddr);
-  if (noZip && noZip !== sAddr) L0.add(noZip);
-
-  if (city && region)
-    L1.add(`${city}, ${region}${foundCountry ? "" : `, ${fallbackCountry}`}`);
-  if (city && !region) L1.add(`${city}, ${fallbackCountry}`);
-
-  return [uniqQueries(Array.from(L0)), uniqQueries(Array.from(L1))];
-}
-
-// ---------- pMap with fixed concurrency = 48 ----------
-async function pMap<T, R>(
-  items: T[],
-  mapper: (item: T, index: number) => Promise<R>,
-  concurrency: number,
-  onEach?: (r: R, i: number) => void,
-) {
-  let i = 0;
-  const results: Promise<void>[] = [];
-  const run = async () => {
-    while (true) {
-      const idx = i++;
-      if (idx >= items.length) return;
-      try {
-        const r = await mapper(items[idx], idx);
-        onEach?.(r, idx);
-      } catch {
-        // ignore
-      }
-    }
-  };
-  for (let k = 0; k < Math.min(concurrency, items.length); k++) {
-    results.push(run());
-  }
-  await Promise.allSettled(results);
-}
 
 const MapPage: NextPage = () => {
   const [leafletReady, setLeafletReady] = useState(false);
@@ -329,7 +34,7 @@ const MapPage: NextPage = () => {
 
   const mapRef = useRef<any>(null);
   const tileLayerRef = useRef<any>(null);
-  const groupRef = useRef<any>(null); // cluster or simple group fallback
+  const groupRef = useRef<any>(null);
   const markerMapRef = useRef<Record<string, any>>({});
   const boundsRef = useRef<any>(null);
 
@@ -344,6 +49,8 @@ const MapPage: NextPage = () => {
     obs.observe(el, { attributes: true, attributeFilter: ["class"] });
     return () => obs.disconnect();
   }, []);
+
+  // Auth check
   useEffect(() => {
     let cancelled = false;
 
@@ -368,11 +75,10 @@ const MapPage: NextPage = () => {
           if (!cancelled) router.replace("/login");
         }
       } catch {
-        // network hiccup: keep current page; next poll will re-check
+        // network hiccup: keep current page
       }
     };
 
-    // immediate check + poll every 2s for invalid/expired tokens
     checkAuth();
     const id = setInterval(checkAuth, 2000);
 
@@ -381,6 +87,7 @@ const MapPage: NextPage = () => {
       clearInterval(id);
     };
   }, [router]);
+
   const tiles = useMemo(
     () =>
       isDark
@@ -409,14 +116,7 @@ const MapPage: NextPage = () => {
     return allPets.slice(start, start + pageSize);
   }, [allPets, page, pageSize]);
 
-  const [geocoding, setGeocoding] = useState(false);
-  const [progress, setProgress] = useState<{ done: number; total: number }>({
-    done: 0,
-    total: 0,
-  });
   const [points, setPoints] = useState<PointsItem[]>([]);
-  const runIdRef = useRef(0);
-  const [refreshTick, setRefreshTick] = useState(0);
 
   // Load Leaflet & cluster plugin, then init map
   useEffect(() => {
@@ -507,15 +207,14 @@ const MapPage: NextPage = () => {
     boundsRef.current = L.latLngBounds([]);
   }, []);
 
-  const addMarker = useCallback((pet: Pet, hit: GeocodeHit) => {
+  const addMarker = useCallback((pet: Pet, lat: number, lon: number) => {
     if (!mapRef.current || !(window as any).L || !groupRef.current) return;
     if (markerMapRef.current[pet.id]) return; // dedupe
     const L = (window as any).L;
 
-    const marker = L.marker([hit.lat, hit.lon]);
+    const marker = L.marker([lat, lon]);
     markerMapRef.current[pet.id] = marker;
 
-    // white popup, dark text
     const img = pet.photoUrl
       ? `<img src="${pet.photoUrl}" alt="${pet.name}" style="width:100%;max-height:140px;object-fit:cover;border-radius:8px;margin-bottom:8px" />`
       : "";
@@ -523,212 +222,47 @@ const MapPage: NextPage = () => {
       <div style="max-width:260px;background:#fff;color:#111;line-height:1.25">
         ${img}
         <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">
-          <span style="display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;border-radius:9999px;background:#EDF6F3;color:#234851">🐾</span>
+          <span style="display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;border-radius:9999px;background:#EDF6F3;color:#234851">&#128062;</span>
           <h3 style="margin:0;font-weight:800;font-size:16px;color:#111">${pet.name}</h3>
         </div>
         <div style="font-size:13px;color:#374151;margin-bottom:8px">
-          ${pet.type}${pet.shelterName ? ` • ${pet.shelterName}` : ""}
+          ${pet.type}${pet.shelterName ? ` &bull; ${pet.shelterName}` : ""}
         </div>
-        ${pet.shelterAddress ? `<div style="font-size:13px;color:#374151;margin-bottom:10px;display:flex;gap:6px">📍 <span>${pet.shelterAddress}</span></div>` : ""}
+        ${pet.shelterAddress ? `<div style="font-size:13px;color:#374151;margin-bottom:10px;display:flex;gap:6px">&#128205; <span>${pet.shelterAddress}</span></div>` : ""}
         <a href="/pet/${pet.id}" style="display:inline-block;background:#234851;color:white;padding:8px 10px;border-radius:8px;font-weight:600;text-decoration:none">View profile</a>
       </div>
     `;
     marker.bindPopup(popup, { closeButton: true });
 
     groupRef.current.addLayer(marker);
-    boundsRef.current.extend([hit.lat, hit.lon]);
+    boundsRef.current.extend([lat, lon]);
   }, []);
 
-  // Main geocoding pipeline — cache-first, deduped, and rate-limited
+  // Plot pets from DB coordinates — no geocoding needed
   useEffect(() => {
-    if (!pagePets.length || !mapRef.current) {
-      setPoints([]);
-      clearMarkers();
-      return;
-    }
+    if (!mapRef.current) return;
 
-    // Load caches
-    type QueryCache = Record<string, { hit: GeocodeHit; ts: number }>;
-    type PetCache = Record<string, { hit: GeocodeHit; ts: number }>;
-    type MissCache = Record<string, { ts: number }>;
-    const queryCache = loadCache<QueryCache>(GLOBAL_QUERY_CACHE_KEY, {});
-    const petCache = loadCache<PetCache>(GLOBAL_PET_CACHE_KEY, {});
-    const missCache = loadCache<MissCache>(GLOBAL_MISS_CACHE_KEY, {});
-    let queryCacheDirty = false;
-    let petCacheDirty = false;
-    let missCacheDirty = false;
-
-    const myRun = ++runIdRef.current;
-    const controller = new AbortController();
-
-    setPoints([]);
     clearMarkers();
 
-    // 0) Instant from PET cache
-    let mapped = 0;
+    const mapped: PointsItem[] = [];
     for (const pet of pagePets) {
-      const entry = petCache[pet.id];
-      if (entry && isFresh(entry.ts)) {
-        addMarker(pet, entry.hit);
-        mapped++;
+      if (
+        typeof pet.latitude === "number" &&
+        typeof pet.longitude === "number"
+      ) {
+        addMarker(pet, pet.latitude, pet.longitude);
+        mapped.push({ pet, lat: pet.latitude, lon: pet.longitude });
       }
     }
-    setPoints(
-      pagePets
-        .filter((pp) => petCache[pp.id] && isFresh(petCache[pp.id].ts))
-        .map((pp) => ({ pet: pp, hit: petCache[pp.id].hit })),
-    );
-    if (mapped > 0 && boundsRef.current?.isValid()) {
-      mapRef.current!.fitBounds(boundsRef.current.pad(0.15), { animate: true });
+
+    setPoints(mapped);
+
+    if (mapped.length > 0 && boundsRef.current?.isValid()) {
+      mapRef.current.fitBounds(boundsRef.current.pad(0.15), { animate: true });
+    } else {
+      mapRef.current.setView([20, 0], 2);
     }
-
-    // 1) Build unresolved set and candidate queries (by level)
-    const unresolved = new Set(
-      pagePets
-        .filter((pp) => !(petCache[pp.id] && isFresh(petCache[pp.id].ts)))
-        .map((pp) => pp.id),
-    );
-    if (unresolved.size === 0) {
-      setProgress({ done: pagePets.length, total: pagePets.length });
-      return;
-    }
-
-    const petLevels = new Map<string, string[][]>();
-    for (const pet of pagePets) petLevels.set(pet.id, candidatesByLevel(pet));
-
-    // Helper to apply a hit to all pets referencing a query
-    const applyHitToPets = (petIds: string[], hit: GeocodeHit) => {
-      for (const pid of petIds) {
-        if (!unresolved.has(pid)) continue;
-        const p = pagePets.find((x) => x.id === pid);
-        if (!p) continue;
-        petCache[pid] = { hit, ts: now() };
-        petCacheDirty = true;
-        addMarker(p, hit);
-        setPoints((prev) =>
-          prev.find((x) => x.pet.id === pid)
-            ? prev
-            : [...prev, { pet: p, hit }],
-        );
-        unresolved.delete(pid);
-      }
-    };
-
-    (async () => {
-      setGeocoding(true);
-      setProgress({
-        done: pagePets.length - unresolved.size,
-        total: pagePets.length,
-      });
-
-      // Process the most-specific candidate levels only.
-      for (let level = 0; level < 2; level++) {
-        if (runIdRef.current !== myRun) return;
-        if (unresolved.size === 0) break;
-
-        // Map: query -> list of petIds that will accept this level result
-        const candidateToPets = new Map<string, string[]>();
-        for (const pid of Array.from(unresolved)) {
-          const levels = petLevels.get(pid)!;
-          const cands = levels[level] || [];
-          for (const q of cands) {
-            const arr = candidateToPets.get(q) || [];
-            arr.push(pid);
-            candidateToPets.set(q, arr);
-          }
-        }
-
-        // First: satisfy from QUERY cache
-        for (const [q, petIds] of candidateToPets) {
-          const entry = queryCache[q];
-          if (entry && isFresh(entry.ts)) {
-            applyHitToPets(petIds, entry.hit);
-            candidateToPets.delete(q);
-            continue;
-          }
-
-          const miss = missCache[q];
-          if (miss && now() - miss.ts < MISS_CACHE_TTL_MS) {
-            candidateToPets.delete(q);
-          }
-        }
-        setProgress({
-          done: pagePets.length - unresolved.size,
-          total: pagePets.length,
-        });
-        if (unresolved.size === 0) break;
-
-        // Next: network geocode remaining queries at this level, 48-way parallel
-        const pendingQueries = Array.from(candidateToPets.keys());
-
-        await pMap(
-          pendingQueries,
-          async (q) => {
-            if (runIdRef.current !== myRun) return null;
-            const hit = await geocode(q, controller.signal);
-            if (!hit) {
-              missCache[q] = { ts: now() };
-              missCacheDirty = true;
-              return null;
-            }
-
-            // store to query cache
-            queryCache[q] = { hit, ts: now() };
-            queryCacheDirty = true;
-            delete missCache[q];
-            missCacheDirty = true;
-
-            // apply to all pets that rely on this query
-            const petIds = candidateToPets.get(q) || [];
-            const before = unresolved.size;
-            applyHitToPets(petIds, hit);
-
-            // progress bump equals number of newly resolved pets
-            const resolvedNow = before - unresolved.size;
-            if (resolvedNow > 0) {
-              setProgress((prev) => ({
-                done: Math.min(prev.done + resolvedNow, prev.total),
-                total: prev.total,
-              }));
-            }
-            return null;
-          },
-          CONCURRENCY,
-        );
-
-        if (queryCacheDirty) {
-          saveCache(GLOBAL_QUERY_CACHE_KEY, queryCache);
-          queryCacheDirty = false;
-        }
-        if (petCacheDirty) {
-          saveCache(GLOBAL_PET_CACHE_KEY, petCache);
-          petCacheDirty = false;
-        }
-        if (missCacheDirty) {
-          saveCache(GLOBAL_MISS_CACHE_KEY, missCache);
-          missCacheDirty = false;
-        }
-      }
-    })()
-      .catch(() => {
-        toast.error("Geocoding failed for this page");
-      })
-      .finally(() => {
-        if (runIdRef.current !== myRun) return;
-        if (queryCacheDirty) saveCache(GLOBAL_QUERY_CACHE_KEY, queryCache);
-        if (petCacheDirty) saveCache(GLOBAL_PET_CACHE_KEY, petCache);
-        if (missCacheDirty) saveCache(GLOBAL_MISS_CACHE_KEY, missCache);
-        setGeocoding(false);
-        const b = boundsRef.current;
-        if (b && b.isValid()) {
-          mapRef.current.fitBounds(b.pad(0.15), { animate: true });
-        } else {
-          mapRef.current.setView([20, 0], 2);
-        }
-      });
-
-    return () => controller.abort();
-  }, [pagePets, addMarker, clearMarkers, refreshTick]);
+  }, [pagePets, addMarker, clearMarkers]);
 
   const recenter = () => {
     if (!mapRef.current) return;
@@ -737,25 +271,44 @@ const MapPage: NextPage = () => {
       mapRef.current.fitBounds(b.pad(0.15), { animate: true });
     }
   };
-  const rerunThisPage = () => setRefreshTick((n) => n + 1);
 
-  const clearLocalCache = () => {
-    localStorage.removeItem(GLOBAL_QUERY_CACHE_KEY);
-    localStorage.removeItem(GLOBAL_PET_CACHE_KEY);
-    localStorage.removeItem(GLOBAL_MISS_CACHE_KEY);
-    toast.success("Geocode cache cleared");
-    setRefreshTick((n) => n + 1);
+  const [geocodingAll, setGeocodingAll] = useState(false);
+  const triggerBatchGeocode = async () => {
+    try {
+      setGeocodingAll(true);
+      const res = await fetch(
+        `${process.env.NEXT_PUBLIC_API_URL}/pets/geocode`,
+        {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem("jwt")?.replace(/^Bearer\s+/i, "")}`,
+          },
+        },
+      );
+      if (!res.ok) throw new Error("Geocode request failed");
+      const data = await res.json();
+      toast.success(`Geocoded ${data.geocoded} pets`);
+      // Reload pets to get fresh coordinates
+      const pets = await petApi.listPets();
+      setAllPets(pets);
+    } catch {
+      toast.error("Batch geocoding failed");
+    } finally {
+      setGeocodingAll(false);
+    }
   };
 
-  const progressLabel = geocoding
-    ? `Geocoding ${progress.done}/${progress.total}...`
+  const unmappedCount = pagePets.filter(
+    (p) => p.latitude == null || p.longitude == null,
+  ).length;
+
+  const progressLabel = geocodingAll
+    ? "Geocoding..."
     : points.length
       ? `${points.length} mapped on this page`
-      : "No mappable locations on this page";
+      : "No mapped locations on this page";
 
-  const shouldDim =
-    loadingPets ||
-    (geocoding && Object.keys(markerMapRef.current).length === 0);
+  const shouldDim = loadingPets || geocodingAll;
 
   return (
     <Layout>
@@ -805,23 +358,21 @@ const MapPage: NextPage = () => {
               <Crosshair className="h-4 w-4" />
               Re-center
             </Button>
-            <Button
-              onClick={rerunThisPage}
-              className="bg-[#234851] hover:bg-[#1b3a3f] text-white"
-              title="Refresh (cache-first)"
-            >
-              <RefreshCw className="h-4 w-4" />
-              Refresh
-            </Button>
-            <Button
-              variant="secondary"
-              onClick={clearLocalCache}
-              className="bg-white dark:bg-neutral-900 text-[#234851] dark:text-[#B6EBE9] border border-black/5 dark:border-white/10"
-              title="Clear geocode cache"
-            >
-              <Trash2 className="h-4 w-4" />
-              Clear cache
-            </Button>
+            {unmappedCount > 0 && (
+              <Button
+                onClick={triggerBatchGeocode}
+                disabled={geocodingAll}
+                className="bg-[#234851] hover:bg-[#1b3a3f] text-white"
+                title={`Geocode ${unmappedCount} unmapped pets`}
+              >
+                {geocodingAll ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <RefreshCw className="h-4 w-4" />
+                )}
+                Geocode {unmappedCount} missing
+              </Button>
+            )}
           </div>
         </div>
 
@@ -849,14 +400,14 @@ const MapPage: NextPage = () => {
               }
             `}</style>
             <div className="flex items-center gap-3">
-              {geocoding ? (
+              {geocodingAll ? (
                 <Loader2 className="h-5 w-5 animate-spin text-[#234851]" />
               ) : (
                 <MapPin className="h-5 w-5 text-[#234851]" />
               )}
               <p className="text-gray-700 dark:text-gray-300">
-                {progressLabel} • Page {page} / {totalPages} • {allPets.length}{" "}
-                total pets
+                {progressLabel} &bull; Page {page} / {totalPages} &bull;{" "}
+                {allPets.length} total pets
               </p>
             </div>
           </div>
@@ -923,18 +474,20 @@ const MapPage: NextPage = () => {
                   <div className="flex items-center justify-center py-16">
                     <Loader2 className="h-6 w-6 animate-spin text-[#7097A8]" />
                   </div>
-                ) : points.length === 0 && !geocoding ? (
+                ) : points.length === 0 ? (
                   <div className="px-5 py-10 text-center text-sm text-gray-700 dark:text-gray-300">
-                    Nothing to show on this page. Try the next page or refresh.
+                    {unmappedCount > 0
+                      ? `${unmappedCount} pets need geocoding. Click "Geocode missing" above.`
+                      : "Nothing to show on this page. Try the next page."}
                   </div>
                 ) : (
-                  points.map(({ pet, hit }) => (
+                  points.map(({ pet, lat, lon }) => (
                     <button
                       key={pet.id}
                       onClick={() => {
                         if (!mapRef.current) return;
                         mapRef.current.setView(
-                          [hit.lat, hit.lon],
+                          [lat, lon],
                           Math.max(mapRef.current.getZoom(), 10),
                           { animate: true },
                         );
@@ -961,7 +514,9 @@ const MapPage: NextPage = () => {
                           </div>
                           <div className="text-xs text-gray-600 dark:text-gray-400">
                             {pet.type}
-                            {pet.shelterName ? ` • ${pet.shelterName}` : ""}
+                            {pet.shelterName
+                              ? ` \u2022 ${pet.shelterName}`
+                              : ""}
                           </div>
                           {pet.shelterAddress ? (
                             <div className="text-xs text-gray-600 dark:text-gray-400 mt-0.5 line-clamp-1">

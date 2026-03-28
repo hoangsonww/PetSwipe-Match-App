@@ -36,6 +36,8 @@ export interface Pet {
   shelterName: string;
   shelterContact?: string;
   shelterAddress?: string;
+  latitude?: number | null;
+  longitude?: number | null;
   matches: Match[];
   swipes: Swipe[];
   createdAt: string;

@@ -356,9 +356,15 @@ const decisionColors = ["#7097A8", "#D97757"];
 const InsightsPage: NextPage = () => {
   const router = useRouter();
   const { user: authUser, loading: authLoading } = useUser();
-  const { data, error, isLoading } = useSWR<InsightsData>(
+  const { data, error, isLoading, mutate } = useSWR<InsightsData>(
     authUser ? "user-insights" : null,
     fetchInsights,
+    {
+      errorRetryCount: 3,
+      errorRetryInterval: 2000,
+      revalidateOnFocus: true,
+      shouldRetryOnError: true,
+    },
   );
 
   useEffect(() => {
@@ -437,21 +443,40 @@ const InsightsPage: NextPage = () => {
   if (error) {
     return (
       <Layout>
-        <div className="mx-auto flex min-h-[70vh] max-w-2xl items-center justify-center px-6">
-          <Card className="w-full border-red-200">
-            <CardContent className="space-y-4 p-8 text-center">
-              <h1 className="text-2xl font-bold text-[#234851]">
-                Insights unavailable
-              </h1>
-              <p className="text-neutral-600 dark:text-neutral-300">
-                Your analytics dashboard could not load right now.
-              </p>
-              <Button
-                className="bg-[#7097A8] text-white hover:bg-[#5f868d]"
-                onClick={() => router.reload()}
-              >
-                Try again
-              </Button>
+        <Head>
+          <title>Insights | PetSwipe</title>
+        </Head>
+        <div className="mx-auto max-w-4xl px-6 py-12">
+          <Card className="overflow-hidden border-0 shadow-xl">
+            <CardContent className="bg-gradient-to-br from-[#234851] via-[#2e5b63] to-[#94b8b2] px-8 py-14 text-white">
+              <div className="mx-auto max-w-2xl text-center">
+                <div className="mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-full bg-white/15">
+                  <BarChart3 className="h-8 w-8" />
+                </div>
+                <h1 className="text-4xl font-black tracking-tight">
+                  Insights couldn&apos;t load
+                </h1>
+                <p className="mt-4 text-base text-white/85">
+                  This usually means a brief network hiccup or an expired
+                  session. Give it another try — if the problem persists, log
+                  out and back in.
+                </p>
+                <div className="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row">
+                  <Button
+                    className="bg-white text-[#234851] hover:bg-white/90"
+                    onClick={() => mutate()}
+                  >
+                    Retry now
+                  </Button>
+                  <Button
+                    variant="outline"
+                    className="border-white/40 bg-transparent text-white hover:bg-white/10"
+                    onClick={() => router.push("/home")}
+                  >
+                    Back to swiping
+                  </Button>
+                </div>
+              </div>
             </CardContent>
           </Card>
         </div>
@@ -637,6 +662,40 @@ const InsightsPage: NextPage = () => {
                   <TrendingUp className="h-5 w-5 text-[#7097A8]" />
                   7-day swipe activity
                 </CardTitle>
+                <div className="mt-2 flex items-center gap-4">
+                  <div className="flex items-center gap-1.5">
+                    <span
+                      className="inline-block h-2.5 w-2.5 rounded-full"
+                      style={{ background: "#7097A8" }}
+                    />
+                    <span className="text-sm font-semibold text-[#234851] dark:text-[#B6EBE9]">
+                      {analytics.dailySwipes.reduce((s, d) => s + d.likes, 0)}
+                    </span>
+                    <span className="text-xs text-neutral-500 dark:text-neutral-400">
+                      likes
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    <span
+                      className="inline-block h-2.5 w-2.5 rounded-full"
+                      style={{ background: "#D97757" }}
+                    />
+                    <span className="text-sm font-semibold text-[#234851] dark:text-[#B6EBE9]">
+                      {analytics.dailySwipes.reduce((s, d) => s + d.passes, 0)}
+                    </span>
+                    <span className="text-xs text-neutral-500 dark:text-neutral-400">
+                      passes
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-sm font-semibold text-[#234851] dark:text-[#B6EBE9]">
+                      {analytics.dailySwipes.reduce((s, d) => s + d.total, 0)}
+                    </span>
+                    <span className="text-xs text-neutral-500 dark:text-neutral-400">
+                      total
+                    </span>
+                  </div>
+                </div>
               </CardHeader>
               <CardContent className="min-w-0 overflow-hidden">
                 <ChartContainer
@@ -678,6 +737,25 @@ const InsightsPage: NextPage = () => {
                   <Compass className="h-5 w-5 text-[#7097A8]" />
                   Decision split
                 </CardTitle>
+                <div className="mt-2 flex items-center gap-4">
+                  {analytics.decisionBreakdown.map((entry, index) => (
+                    <div key={entry.name} className="flex items-center gap-1.5">
+                      <span
+                        className="inline-block h-2.5 w-2.5 rounded-full"
+                        style={{
+                          background:
+                            decisionColors[index % decisionColors.length],
+                        }}
+                      />
+                      <span className="text-sm font-semibold text-[#234851] dark:text-[#B6EBE9]">
+                        {entry.value}
+                      </span>
+                      <span className="text-xs text-neutral-500 dark:text-neutral-400">
+                        {entry.name}
+                      </span>
+                    </div>
+                  ))}
+                </div>
               </CardHeader>
               <CardContent className="min-w-0 overflow-hidden">
                 <ChartContainer

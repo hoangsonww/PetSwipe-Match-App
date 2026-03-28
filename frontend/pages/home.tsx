@@ -12,6 +12,7 @@ import {
   Award,
   Lightbulb,
   HelpCircle,
+  HeartHandshake,
   Loader2,
   ZoomIn,
   List,
@@ -995,6 +996,23 @@ const Home: NextPage = () => {
                 <p className="text-center text-sm font-medium">{scale}%</p>
               </PopoverContent>
             </Popover>
+
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <button
+                  onClick={() => router.replace("/success-stories")}
+                  className="p-2 rounded-full hover:bg-white/10 focus:outline-none focus:ring-2 focus:ring-white hover:text-[#7097A8]"
+                >
+                  <HeartHandshake size={22} />
+                </button>
+              </TooltipTrigger>
+              <TooltipContent
+                side="top"
+                className="bg-white text-[#7097A8] rounded-md px-3 py-2 shadow-lg text-sm font-medium"
+              >
+                Success Stories
+              </TooltipContent>
+            </Tooltip>
 
             <Tooltip>
               <TooltipTrigger asChild>

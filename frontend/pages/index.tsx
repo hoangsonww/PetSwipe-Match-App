@@ -516,6 +516,21 @@ const Landing: NextPage = () => {
                 FAQs
               </Button>
             </Link>
+            <Link href="/success-stories" passHref>
+              <Button
+                variant="ghost"
+                className="
+                  px-8 py-3 text-lg text-[#234851]
+                  border-2 border-dashed border-[#234851]
+                  rounded-lg
+                  hover:bg-[#f0fdfa]
+                  transition-colors duration-200 ease-in-out
+                  focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#234851]
+                "
+              >
+                Success Stories
+              </Button>
+            </Link>
             <div className="w-full flex justify-center">
               <Button
                 variant="outline"

@@ -6,6 +6,7 @@ import { sendCsv } from "../utils/csv";
 import stream from "stream";
 import multer from "multer";
 import { uploadPetPic } from "../utils/supabase";
+import { geocodeAddress, geocodeBatch } from "../services/geocodeService";
 
 interface RawPetRow {
   name: string;
@@ -294,6 +295,24 @@ export const uploadPets = [
 
         const saved = await petRepo().save(validPartials);
         res.json({ imported: saved.length, errors });
+
+        // Geocode in background after response is sent
+        const toGeocode = saved
+          .filter((p) => p.latitude == null && p.shelterAddress)
+          .map((p) => ({ id: p.id, address: p.shelterAddress }));
+        if (toGeocode.length > 0) {
+          geocodeBatch(toGeocode, 2)
+            .then(async (results) => {
+              const repo = petRepo();
+              for (const [id, coords] of results) {
+                await repo.update(id, {
+                  latitude: coords.lat,
+                  longitude: coords.lon,
+                });
+              }
+            })
+            .catch((err) => console.error("Background geocoding failed:", err));
+        }
       } catch (err) {
         next(err);
       }
@@ -616,6 +635,9 @@ export const createPet = async (
 
     const createdBy = (req.user as any)?.email ?? "test@unc.edu";
 
+    // Geocode the shelter address (never fails)
+    const coords = await geocodeAddress(shelterAddress);
+
     const pet = AppDataSource.getRepository(Pet).create({
       name,
       type,
@@ -625,6 +647,8 @@ export const createPet = async (
       shelterAddress,
       photoUrl,
       createdBy,
+      latitude: coords.lat,
+      longitude: coords.lon,
     });
 
     await AppDataSource.getRepository(Pet).save(pet);
@@ -857,7 +881,13 @@ export const updatePet = async (
     if (photoUrl !== undefined) pet.photoUrl = photoUrl;
     if (shelterName !== undefined) pet.shelterName = shelterName;
     if (shelterContact !== undefined) pet.shelterContact = shelterContact;
-    if (shelterAddress !== undefined) pet.shelterAddress = shelterAddress;
+    if (shelterAddress !== undefined) {
+      pet.shelterAddress = shelterAddress;
+      // Re-geocode when address changes
+      const coords = await geocodeAddress(shelterAddress);
+      pet.latitude = coords.lat;
+      pet.longitude = coords.lon;
+    }
 
     await repo.save(pet);
     res.json({ pet });
@@ -949,6 +979,69 @@ export const getPetById = async (
       return;
     }
     res.json(pet);
+  } catch (err) {
+    next(err);
+  }
+};
+
+/**
+ * @openapi
+ * /api/pets/geocode:
+ *   post:
+ *     summary: Batch geocode all pets that are missing coordinates
+ *     tags:
+ *       - Pets
+ *     responses:
+ *       '200':
+ *         description: Geocoding result
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 geocoded:
+ *                   type: integer
+ *                   description: Number of pets geocoded
+ *                 total:
+ *                   type: integer
+ *                   description: Total pets missing coordinates before this run
+ *       '500':
+ *         description: Internal server error
+ */
+export const geocodePets = async (
+  _req: Request,
+  res: Response,
+  next: NextFunction,
+): Promise<void> => {
+  try {
+    const repo = petRepo();
+    const missing = await repo
+      .createQueryBuilder("pet")
+      .where("pet.latitude IS NULL OR pet.longitude IS NULL")
+      .getMany();
+
+    if (missing.length === 0) {
+      res.json({ geocoded: 0, total: 0 });
+      return;
+    }
+
+    const items = missing.map((p) => ({
+      id: p.id,
+      address: p.shelterAddress,
+    }));
+
+    const results = await geocodeBatch(items, 2);
+    let geocoded = 0;
+
+    for (const [id, coords] of results) {
+      await repo.update(id, {
+        latitude: coords.lat,
+        longitude: coords.lon,
+      });
+      geocoded++;
+    }
+
+    res.json({ geocoded, total: missing.length });
   } catch (err) {
     next(err);
   }
