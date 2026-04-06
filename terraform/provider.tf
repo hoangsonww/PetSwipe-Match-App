@@ -6,6 +6,12 @@ terraform {
       source  = "hashicorp/aws"
       version = "~> 5.0"
     }
+
+    # Datadog provider — gated by var.enable_datadog in datadog.tf
+    datadog = {
+      source  = "DataDog/datadog"
+      version = "~> 3.39"
+    }
   }
 
   # S3 backend for state management
@@ -39,6 +45,17 @@ provider "aws" {
   # assume_role {
   #   role_arn = "arn:aws:iam::ACCOUNT_ID:role/TerraformRole"
   # }
+}
+
+# ─── Datadog Provider ─────────────────────────────────────────────────────────
+# Configured here; resources live in datadog.tf and are gated by enable_datadog.
+# Supply api_key/app_key via TF_VAR_datadog_api_key / TF_VAR_datadog_app_key
+# or a .tfvars file (never commit keys to source).
+provider "datadog" {
+  api_key  = var.datadog_api_key
+  app_key  = var.datadog_app_key
+  api_url  = "https://api.${var.datadog_site}/"
+  validate = var.enable_datadog
 }
 
 # Provider alias for DR region

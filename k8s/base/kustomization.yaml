@@ -26,6 +26,11 @@ resources:
   - frontend-ingress-networkpolicy.yaml
   - frontend-egress-networkpolicy.yaml
   - ingress.yaml
+  - datadog-secret.yaml
+  - datadog-rbac.yaml
+  - datadog-agent.yaml
+  - datadog-cluster-agent.yaml
+  - datadog-agent-service.yaml
 
 images:
   - name: petswipe-backend

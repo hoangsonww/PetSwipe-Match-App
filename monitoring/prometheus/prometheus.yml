@@ -17,3 +17,24 @@ scrape_configs:
     metrics_path: '/metrics'
     scrape_interval: 30s
     scrape_timeout: 10s
+
+  # ─── Backend Application Metrics ─────────────────────────────
+  - job_name: 'petswipe-backend'
+    static_configs:
+      - targets: ['backend:5001']
+    metrics_path: '/metrics'
+    scrape_interval: 15s
+    scrape_timeout: 10s
+
+# ─── Optional: Datadog Remote Write ─────────────────────────────
+# Uncomment and configure to forward Prometheus metrics to Datadog.
+# Requires DD_API_KEY to be set.
+# See: https://docs.datadoghq.com/integrations/guide/prometheus-host-collection/
+#
+# remote_write:
+#   - url: "https://prometheus-intake.datadoghq.com/api/v1/series"
+#     bearer_token: "${DD_API_KEY}"
+#     write_relabel_configs:
+#       - source_labels: [__name__]
+#         regex: "petswipe_.*|node_.*|process_.*"
+#         action: keep

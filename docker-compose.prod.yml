@@ -44,6 +44,12 @@ services:
       AWS_ACCESS_KEY_ID: ${AWS_ACCESS_KEY_ID}
       AWS_SECRET_ACCESS_KEY: ${AWS_SECRET_ACCESS_KEY}
       S3_BUCKET: ${S3_BUCKET}
+      DD_AGENT_HOST: datadog-agent
+      DD_TRACE_AGENT_PORT: "8126"
+      DD_SERVICE: petswipe-backend
+      DD_ENV: production
+      DD_LOGS_INJECTION: "true"
+      DD_RUNTIME_METRICS_ENABLED: "true"
     healthcheck:
       test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:5001/health >/dev/null 2>&1 || exit 1"]
       interval: 20s
@@ -71,6 +77,9 @@ services:
       NODE_ENV: production
       NEXT_TELEMETRY_DISABLED: "1"
       NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL}
+      DD_AGENT_HOST: datadog-agent
+      DD_SERVICE: petswipe-frontend
+      DD_ENV: production
     healthcheck:
       test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:3000/ >/dev/null 2>&1 || exit 1"]
       interval: 20s
@@ -121,10 +130,52 @@ services:
     networks:
       - petswipe
 
+  datadog-agent:
+    image: gcr.io/datadoghq/agent:7
+    restart: unless-stopped
+    profiles: ["observability"]
+    environment:
+      DD_API_KEY: ${DD_API_KEY}
+      DD_SITE: ${DD_SITE:-datadoghq.com}
+      DD_ENV: production
+      DD_SERVICE: petswipe
+      DD_APM_ENABLED: "true"
+      DD_APM_NON_LOCAL_TRAFFIC: "true"
+      DD_LOGS_ENABLED: "true"
+      DD_LOGS_CONFIG_CONTAINER_COLLECT_ALL: "true"
+      DD_PROCESS_AGENT_ENABLED: "true"
+      DD_DOGSTATSD_NON_LOCAL_TRAFFIC: "true"
+      DD_CONTAINER_EXCLUDE: "name:datadog-agent"
+      DD_AC_EXCLUDE: "name:datadog-agent"
+      DD_HEALTH_PORT: "5555"
+      DD_LOG_LEVEL: warn
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - /proc/:/host/proc/:ro
+      - /sys/fs/cgroup/:/host/sys/fs/cgroup:ro
+      - datadog-agent-data:/opt/datadog-agent/run
+    ports:
+      - "8126:8126"
+      - "8125:8125/udp"
+    healthcheck:
+      test: ["CMD-SHELL", "agent health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+    depends_on:
+      frontend:
+        condition: service_healthy
+      backend:
+        condition: service_healthy
+    networks:
+      - petswipe
+
 volumes:
   db-data:
   prometheus-data:
   grafana-data:
+  datadog-agent-data:
 
 networks:
   petswipe:

@@ -1,0 +1,199 @@
+##
+## Datadog Node Agent RBAC
+##
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: datadog-agent
+  namespace: petswipe
+  labels:
+    app.kubernetes.io/name: datadog-agent
+    app.kubernetes.io/component: monitoring
+    app.kubernetes.io/part-of: petswipe-platform
+automountServiceAccountToken: true
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: petswipe-datadog-agent
+  labels:
+    app.kubernetes.io/name: datadog-agent
+    app.kubernetes.io/component: monitoring
+    app.kubernetes.io/part-of: petswipe-platform
+rules:
+  - apiGroups: [""]
+    resources:
+      - nodes
+      - nodes/metrics
+      - nodes/spec
+      - nodes/stats
+      - nodes/proxy
+      - namespaces
+      - pods
+      - services
+      - endpoints
+      - events
+      - componentstatuses
+      - configmaps
+    verbs: ["get", "list", "watch"]
+  - apiGroups: [""]
+    resources:
+      - endpoints
+    verbs: ["get", "list", "watch", "create", "update"]
+  - apiGroups: ["apps"]
+    resources:
+      - deployments
+      - replicasets
+      - daemonsets
+      - statefulsets
+    verbs: ["get", "list", "watch"]
+  - apiGroups: ["batch"]
+    resources:
+      - jobs
+      - cronjobs
+    verbs: ["get", "list", "watch"]
+  - apiGroups: ["networking.k8s.io"]
+    resources:
+      - ingresses
+    verbs: ["get", "list", "watch"]
+  - apiGroups: ["autoscaling"]
+    resources:
+      - horizontalpodautoscalers
+    verbs: ["get", "list", "watch"]
+  - apiGroups: ["policy"]
+    resources:
+      - poddisruptionbudgets
+    verbs: ["get", "list", "watch"]
+  - apiGroups: ["metrics.k8s.io"]
+    resources:
+      - nodes
+      - pods
+    verbs: ["get", "list"]
+  - nonResourceURLs:
+      - "/version"
+      - "/healthz"
+      - "/metrics"
+    verbs: ["get"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: petswipe-datadog-agent
+  labels:
+    app.kubernetes.io/name: datadog-agent
+    app.kubernetes.io/component: monitoring
+    app.kubernetes.io/part-of: petswipe-platform
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: petswipe-datadog-agent
+subjects:
+  - kind: ServiceAccount
+    name: datadog-agent
+    namespace: petswipe
+---
+##
+## Datadog Cluster Agent RBAC
+##
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: datadog-cluster-agent
+  namespace: petswipe
+  labels:
+    app.kubernetes.io/name: datadog-cluster-agent
+    app.kubernetes.io/component: monitoring
+    app.kubernetes.io/part-of: petswipe-platform
+automountServiceAccountToken: true
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: petswipe-datadog-cluster-agent
+  labels:
+    app.kubernetes.io/name: datadog-cluster-agent
+    app.kubernetes.io/component: monitoring
+    app.kubernetes.io/part-of: petswipe-platform
+rules:
+  - apiGroups: [""]
+    resources:
+      - nodes
+      - namespaces
+      - pods
+      - services
+      - endpoints
+      - events
+      - componentstatuses
+      - configmaps
+    verbs: ["get", "list", "watch"]
+  - apiGroups: ["apps"]
+    resources:
+      - deployments
+      - replicasets
+      - daemonsets
+      - statefulsets
+    verbs: ["get", "list", "watch"]
+  - apiGroups: ["batch"]
+    resources:
+      - jobs
+      - cronjobs
+    verbs: ["get", "list", "watch"]
+  - apiGroups: ["autoscaling"]
+    resources:
+      - horizontalpodautoscalers
+    verbs: ["get", "list", "watch"]
+  ## Leader election
+  - apiGroups: ["coordination.k8s.io"]
+    resources:
+      - leases
+    verbs: ["get", "list", "watch", "create", "update", "delete"]
+  - apiGroups: [""]
+    resources:
+      - configmaps
+    resourceNames:
+      - datadog-leader-election
+      - datadog-custom-metrics
+    verbs: ["get", "update"]
+  - apiGroups: [""]
+    resources:
+      - configmaps
+    verbs: ["create"]
+  ## External Metrics Provider
+  - apiGroups: ["external.metrics.k8s.io"]
+    resources: ["*"]
+    verbs: ["get", "list", "watch"]
+  ## Cluster checks / endpoint checks
+  - apiGroups: [""]
+    resources:
+      - endpoints
+    verbs: ["get", "list", "watch"]
+  - apiGroups: ["networking.k8s.io"]
+    resources:
+      - ingresses
+    verbs: ["get", "list", "watch"]
+  - apiGroups: ["policy"]
+    resources:
+      - poddisruptionbudgets
+    verbs: ["get", "list", "watch"]
+  - nonResourceURLs:
+      - "/version"
+      - "/healthz"
+      - "/metrics"
+    verbs: ["get"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: petswipe-datadog-cluster-agent
+  labels:
+    app.kubernetes.io/name: datadog-cluster-agent
+    app.kubernetes.io/component: monitoring
+    app.kubernetes.io/part-of: petswipe-platform
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: petswipe-datadog-cluster-agent
+subjects:
+  - kind: ServiceAccount
+    name: datadog-cluster-agent
+    namespace: petswipe
