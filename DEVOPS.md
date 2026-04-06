@@ -19,6 +19,10 @@ This document describes the advanced DevOps and CI/CD features implemented for t
 - [CDN & Edge Caching](#cdn--edge-caching)
 - [Database Migrations](#database-migrations)
 - [Usage Examples](#usage-examples)
+- [Cost Optimization](#cost-optimization)
+- [Security](#security)
+- [Monitoring Stack](#monitoring-stack)
+- [Support & Troubleshooting](#support--troubleshooting)
 
 ## Overview
 
@@ -28,7 +32,8 @@ The PetSwipe infrastructure has been enhanced with enterprise-grade DevOps pract
 - **Service Mesh**: Advanced traffic management with AWS App Mesh
 - **Predictive Auto-Scaling**: ML-based capacity planning
 - **Policy Enforcement**: OPA-based governance
-- **SLO/SLA Tracking**: Error budget management
+- **SLO/SLA Tracking**: Error budget management with Datadog SLOs and CloudWatch
+- **Datadog Observability**: APM tracing, log management, infrastructure monitoring, synthetics, and 11 production monitors
 - **Automated Testing**: Infrastructure, load, and chaos testing
 - **Progressive Delivery**: Feature flags with AWS AppConfig
 - **Automated DR**: Backup and recovery testing
@@ -646,6 +651,13 @@ make slo-status ENV=production
 # View error budget
 make error-budget ENV=production
 
+# Datadog Agent status & APM traces
+make dd-status
+make dd-apm-status
+
+# Validate Datadog configuration
+make dd-validate
+
 # Run security scan
 make security-scan
 
@@ -743,50 +755,97 @@ make security-scan
 
 ```mermaid
 flowchart TB
-    subgraph "Data Collection"
-        App[Application] -->|Metrics| CW[CloudWatch]
+    subgraph Collection["Data Collection"]
+        App[Application Pods]
+        App -->|Metrics| CW[CloudWatch]
         App -->|Logs| CWL[CloudWatch Logs]
         App -->|Traces| XRay[X-Ray]
         App -->|Custom Metrics| Prom[Prometheus]
+        App -->|APM Traces + Logs| DDAgent[Datadog Agent]
     end
-    
-    subgraph "Processing"
+
+    subgraph Datadog["Datadog Platform"]
+        DDAgent --> DDAPM[APM & Traces]
+        DDAgent --> DDLogs[Log Management]
+        DDAgent --> DDInfra[Infrastructure Metrics]
+        DDForwarder[Log Forwarder Lambda] --> DDLogs
+        CWL -.->|Subscription Filter| DDForwarder
+        DDAPM --> DDDash[Datadog Dashboard<br/>Golden Signals · Service Map]
+        DDInfra --> DDDash
+        DDDash --> DDMonitors[11 Monitors<br/>Error Rate · Latency · CPU<br/>Memory · RDS · Anomaly]
+        DDMonitors --> DDSLOs[SLOs<br/>99.9% Availability<br/>P99 Latency]
+        DDSynth[Synthetics<br/>/health · /ready<br/>Every 5 min] --> DDMonitors
+    end
+
+    subgraph Processing["CloudWatch Processing"]
         CW --> Analysis[Metric Analysis]
         CWL --> LogInsights[Log Insights]
         XRay --> TraceAnalysis[Trace Analysis]
     end
-    
-    subgraph "Visualization"
+
+    subgraph Visualization["Visualization"]
         Analysis --> Grafana[Grafana Dashboards]
         Analysis --> CWDB[CloudWatch Dashboards]
-        LogInsights --> ELK[ELK Stack]
-        TraceAnalysis --> ServiceMap[Service Map]
+        TraceAnalysis --> ServiceMap[X-Ray Service Map]
     end
-    
-    subgraph "Alerting"
+
+    subgraph Alerting["Alerting & Incidents"]
         Analysis -->|Threshold| Alarm[CloudWatch Alarms]
-        Alarm -->|Critical| PD[PagerDuty]
+        DDMonitors -->|Alert| PD[PagerDuty]
+        Alarm -->|Critical| PD
         Alarm -->|Warning| SNS[SNS Topic]
         SNS --> Email[Email]
         SNS --> Slack[Slack]
+        PD --> Runbook[Runbook Wiki]
     end
 ```
 
-- **Metrics**: CloudWatch, Prometheus
-- **Logs**: CloudWatch Logs, ELK stack
-- **Traces**: X-Ray, OpenTelemetry
-- **Dashboards**: Grafana, CloudWatch Dashboards
-- **Alerts**: SNS, PagerDuty
-- **APM**: Custom application metrics
+| Concern | Tools |
+|---------|-------|
+| **Metrics** | CloudWatch, Prometheus, Datadog Infrastructure |
+| **Logs** | CloudWatch Logs, Datadog Log Management (with trace correlation) |
+| **Traces** | Datadog APM, AWS X-Ray, OpenTelemetry |
+| **Dashboards** | Datadog (golden signals + service map), Grafana, CloudWatch |
+| **Alerts** | Datadog Monitors (11), CloudWatch Alarms, SNS, PagerDuty |
+| **SLOs** | Datadog (99.9% availability, P99 latency), CloudWatch error budget |
+| **Synthetics** | Datadog (/health, /ready every 5 min), CloudWatch Canary |
+| **APM** | Datadog APM with continuous profiling and runtime metrics |
+
+### Datadog Quick Reference
+
+```bash
+# Docker Compose — start with Datadog (dev)
+export DD_API_KEY=your-key
+docker compose --profile datadog up -d
+
+# Docker Compose — start full observability stack (prod)
+docker compose --env-file .env.production -f docker-compose.yml -f docker-compose.prod.yml --profile observability up -d
+
+# Kubernetes — create secret and deploy
+kubectl create secret generic datadog-secret --from-literal=api-key=$DD_API_KEY -n petswipe
+kubectl kustomize k8s/base | kubectl apply -f -
+
+# Terraform — enable Datadog resources
+terraform apply -var='enable_datadog=true' -var='datadog_api_key=...' -var='datadog_app_key=...'
+
+# Agent management
+make dd-status          # Agent health
+make dd-validate        # Config check
+make dd-apm-status      # APM trace status
+make dd-flare           # Debug flare
+```
+
+For full Datadog documentation, see [MONITORING.md](MONITORING.md#-datadog-integration).
 
 ## Support & Troubleshooting
 
 ### Common Issues
 
-1. **Deployment Failures**: Check CloudWatch logs and EventBridge events
-2. **SLO Breaches**: Review error budget and scaling policies
+1. **Deployment Failures**: Check CloudWatch logs, EventBridge events, and `make dd-status`
+2. **SLO Breaches**: Review Datadog SLO dashboard and error budget (`make slo-status`)
 3. **Failed Migrations**: Check migration logs and restore from backup
 4. **Cache Issues**: Invalidate CloudFront distribution
+5. **Datadog Agent Down**: Run `make dd-validate` to check config; `make dd-flare` for debug bundle
 
 ### Getting Help
 
@@ -807,10 +866,11 @@ When adding new infrastructure:
 
 1. Write Terratest tests
 2. Define OPA policies
-3. Update SLO dashboards
-4. Document in this file
-5. Add Makefile targets
-6. Update cost estimates
+3. Update SLO dashboards (Datadog + CloudWatch)
+4. Add Datadog monitors for new services if applicable
+5. Document in this file
+6. Add Makefile targets
+7. Update cost estimates
 
 ## License
 

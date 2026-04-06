@@ -1,0 +1,125 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: datadog-cluster-agent
+  labels:
+    app.kubernetes.io/name: datadog-cluster-agent
+    app.kubernetes.io/component: monitoring
+    app.kubernetes.io/part-of: petswipe-platform
+spec:
+  replicas: 1
+  revisionHistoryLimit: 3
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: datadog-cluster-agent
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 0
+      maxSurge: 1
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: datadog-cluster-agent
+        app.kubernetes.io/component: monitoring
+    spec:
+      serviceAccountName: datadog-cluster-agent
+      automountServiceAccountToken: true
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        runAsGroup: 1000
+        fsGroup: 1000
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: cluster-agent
+          image: gcr.io/datadoghq/cluster-agent:7
+          imagePullPolicy: IfNotPresent
+          env:
+            - name: DD_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: datadog-secret
+                  key: api-key
+            - name: DD_SITE
+              value: "datadoghq.com"
+            - name: DD_CLUSTER_AGENT_ENABLED
+              value: "true"
+            - name: DD_CLUSTER_CHECKS_ENABLED
+              value: "true"
+            - name: DD_EXTERNAL_METRICS_PROVIDER_ENABLED
+              value: "true"
+            - name: DD_CLUSTER_AGENT_AUTH_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: datadog-secret
+                  key: cluster-agent-token
+                  optional: true
+            - name: DD_LEADER_ELECTION
+              value: "true"
+            - name: DD_COLLECT_KUBERNETES_EVENTS
+              value: "true"
+            - name: DD_CLUSTER_AGENT_KUBERNETES_SERVICE_NAME
+              value: datadog-cluster-agent
+            - name: DD_HEALTH_PORT
+              value: "5555"
+          ports:
+            - containerPort: 5005
+              name: agentport
+              protocol: TCP
+            - containerPort: 5555
+              name: health
+              protocol: TCP
+          livenessProbe:
+            httpGet:
+              path: /live
+              port: health
+            initialDelaySeconds: 15
+            periodSeconds: 15
+            timeoutSeconds: 5
+          readinessProbe:
+            httpGet:
+              path: /ready
+              port: health
+            initialDelaySeconds: 15
+            periodSeconds: 15
+            timeoutSeconds: 5
+          resources:
+            requests:
+              cpu: 200m
+              memory: 256Mi
+            limits:
+              cpu: 500m
+              memory: 512Mi
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop:
+                - ALL
+          volumeMounts:
+            - name: tmp
+              mountPath: /tmp
+      volumes:
+        - name: tmp
+          emptyDir:
+            sizeLimit: 64Mi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: datadog-cluster-agent
+  labels:
+    app.kubernetes.io/name: datadog-cluster-agent
+    app.kubernetes.io/component: monitoring
+    app.kubernetes.io/part-of: petswipe-platform
+spec:
+  type: ClusterIP
+  selector:
+    app.kubernetes.io/name: datadog-cluster-agent
+  ports:
+    - name: agentport
+      port: 5005
+      targetPort: agentport
+      protocol: TCP

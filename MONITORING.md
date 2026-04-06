@@ -3,7 +3,7 @@
 > [!TIP]
 > Comprehensive monitoring, observability, and alerting system for PetSwipe
 
-This directory contains the monitoring and observability configuration for the PetSwipe application using Prometheus, Grafana, and AWS CloudWatch.
+This directory contains the monitoring and observability configuration for the PetSwipe application using Prometheus, Grafana, AWS CloudWatch, and (optionally) Datadog.
 
 ## 📊 Table of Contents
 
@@ -22,6 +22,7 @@ This directory contains the monitoring and observability configuration for the P
 13. [Health Checks](#-health-checks)
 14. [Performance Monitoring](#-performance-monitoring)
 15. [Data Persistence](#-data-persistence)
+16. [Datadog Integration](#-datadog-integration)
 
 ---
 
@@ -857,3 +858,237 @@ Both Prometheus metrics and Grafana configurations are persisted using Docker vo
 - `prometheus-data`: Stores time-series metrics data (15 day retention)
 - `grafana-data`: Stores dashboards, users, and settings
 - Backup schedule: Daily volume snapshots, weekly S3 backups
+
+---
+
+## 🐕 Datadog Integration
+
+PetSwipe supports Datadog as a comprehensive observability platform covering infrastructure monitoring, APM (Application Performance Monitoring), log management, and process monitoring. Datadog integration is **optional** and gated behind Docker Compose profiles and environment variables — it runs alongside, not instead of, the existing Prometheus + Grafana stack.
+
+### Prerequisites
+
+- Datadog account with an API key
+- `DD_API_KEY` environment variable set before starting the agent
+- For Kubernetes: a `datadog-secret` with your API key and cluster agent token
+
+### Architecture
+
+```mermaid
+flowchart BT
+    subgraph Apps["Application Pods / Containers"]
+        BE["petswipe-backend<br/>DD_SERVICE=petswipe-backend"]
+        FE["petswipe-frontend<br/>DD_SERVICE=petswipe-frontend"]
+    end
+
+    subgraph Agent["Datadog Agent — DaemonSet / Sidecar"]
+        APMPort["APM Traces<br/>Port 8126/TCP"]
+        StatsD["DogStatsD Metrics<br/>Port 8125/UDP"]
+        LogCol["Log Collection<br/>Container Logs"]
+        ProcessAgent["Process Agent<br/>Live Containers"]
+    end
+
+    subgraph Platform["Datadog Platform"]
+        APM["APM &amp; Traces"]
+        Logs["Log Management"]
+        Infra["Infrastructure<br/>Monitoring"]
+        Proc["Live Processes"]
+        SLOs["SLO Tracking"]
+    end
+
+    BE --> APMPort
+    FE --> APMPort
+    BE --> StatsD
+    FE --> StatsD
+    BE --> LogCol
+    FE --> LogCol
+    APMPort --> APM
+    StatsD --> Infra
+    LogCol --> Logs
+    ProcessAgent --> Proc
+    APM --> SLOs
+    Infra --> SLOs
+```
+
+In Docker Compose the agent runs as a sidecar container. In Kubernetes it runs as a DaemonSet with a separate Cluster Agent deployment for cluster-level checks and external metrics.
+
+### Quick Start
+
+#### Docker Compose — Development
+
+```bash
+# Set your Datadog API key
+export DD_API_KEY=your-api-key-here
+
+# Start with the datadog profile
+docker compose --profile datadog up -d
+
+# Verify agent health
+make dd-status
+```
+
+The dev agent (`docker-compose.yml`, profile `datadog`) sets `DD_ENV=development` and exposes ports 8126 (APM) and 8125/udp (DogStatsD).
+
+#### Docker Compose — Production
+
+```bash
+# Ensure .env.production contains:
+#   DD_API_KEY=<key>
+#   DD_SITE=datadoghq.com
+#   DD_ENV=production
+
+docker compose \
+  --env-file .env.production \
+  -f docker-compose.yml -f docker-compose.prod.yml \
+  --profile observability up -d
+```
+
+The production agent (`docker-compose.prod.yml`, profile `observability`) adds:
+- `DD_LOG_LEVEL=warn` to reduce agent noise
+- `DD_AC_EXCLUDE` to skip self-monitoring
+- A persistent volume `datadog-agent-data` for run state
+- `depends_on` backend and frontend health checks
+
+The prod compose file also injects Datadog APM env vars into the **backend** (`DD_AGENT_HOST`, `DD_TRACE_AGENT_PORT`, `DD_LOGS_INJECTION`, `DD_RUNTIME_METRICS_ENABLED`) and **frontend** (`DD_AGENT_HOST`, `DD_SERVICE`, `DD_ENV`) services.
+
+#### Kubernetes
+
+```bash
+# 1. Edit the placeholder secret with your keys
+#    k8s/base/datadog-secret.yaml — replace REPLACE_WITH_DATADOG_API_KEY
+#    and REPLACE_WITH_CLUSTER_AGENT_TOKEN
+
+# 2. Or create the secret imperatively
+kubectl create secret generic datadog-secret \
+  --from-literal=api-key=YOUR_DD_API_KEY \
+  --from-literal=cluster-agent-token=$(openssl rand -hex 16) \
+  --namespace=petswipe
+
+# 3. Apply all base manifests (Datadog resources are in kustomization.yaml)
+kubectl kustomize k8s/base | kubectl apply -f -
+```
+
+### Datadog Agent — Kubernetes Manifests
+
+All manifests live under `k8s/base/` and are included in the base `kustomization.yaml`.
+
+| Manifest | Kind | Purpose |
+|----------|------|---------|
+| `datadog-agent.yaml` | DaemonSet | Node-level metrics, APM traces (port 8126), log collection, process monitoring. Image: `gcr.io/datadoghq/agent:7`. |
+| `datadog-cluster-agent.yaml` | Deployment + Service | Kubernetes events, cluster checks, external metrics provider, leader election. Port 5005 for agent communication. |
+| `datadog-rbac.yaml` | ServiceAccount, ClusterRole, ClusterRoleBinding (×2) | `datadog-agent` SA for node/pod/service access; `datadog-cluster-agent` SA for leader election, external metrics, and cluster checks. |
+| `datadog-secret.yaml` | Secret | `api-key` and `cluster-agent-token` — must be populated before apply. |
+| `datadog-agent-service.yaml` | Service (ClusterIP) | Exposes 8126/TCP (APM) and 8125/UDP (DogStatsD) to application pods. |
+
+### APM Tracing
+
+Both backend and frontend Kubernetes deployments (`k8s/base/backend-deployment.yaml`, `k8s/base/frontend-deployment.yaml`) include Datadog Unified Service Tagging env vars:
+
+| Env Var | Backend Value | Frontend Value | Source |
+|---------|--------------|----------------|--------|
+| `DD_AGENT_HOST` | `status.hostIP` (fieldRef) | `status.hostIP` (fieldRef) | Pod spec |
+| `DD_ENV` | label `tags.datadoghq.com/env` | label `tags.datadoghq.com/env` | Pod spec |
+| `DD_SERVICE` | `petswipe-backend` | `petswipe-frontend` | Pod spec |
+| `DD_VERSION` | `latest` | `latest` | Pod spec |
+| `DD_TRACE_AGENT_PORT` | `8126` | `8126` | Pod spec |
+| `DD_LOGS_INJECTION` | `true` | `true` | Pod spec |
+| `DD_RUNTIME_METRICS_ENABLED` | `true` | `true` | Pod spec |
+| `DD_PROFILING_ENABLED` | `true` | `true` | Pod spec |
+
+To enable APM in your Node.js app, install `dd-trace`:
+
+```bash
+cd backend && npm install dd-trace
+```
+
+Then add as the **very first line** of your entry point (before any other imports):
+
+```javascript
+require('dd-trace').init();
+```
+
+### Makefile Commands
+
+| Command | What It Does |
+|---------|-------------|
+| `make dd-status` | Runs `docker compose exec datadog-agent agent status` — full agent health report |
+| `make dd-validate` | Checks `DD_API_KEY` is set, then runs `agent configcheck` inside the container |
+| `make dd-apm-status` | Runs `agent status` and filters to the APM Agent section |
+| `make dd-flare` | Generates a Datadog support flare (interactive — asks for case ID) |
+
+### Environment Variables Reference
+
+Variables used across Docker Compose and `.env.production.example`:
+
+| Variable | Required | Default | Where Set |
+|----------|----------|---------|-----------|
+| `DD_API_KEY` | Yes | — | `.env.production.example` line 40, `docker-compose.yml` line 86 |
+| `DD_SITE` | No | `datadoghq.com` | `.env.production.example` line 41 |
+| `DD_ENV` | No | `development` (dev) / `production` (prod) | Compose files |
+| `DD_SERVICE` | No | `petswipe` | Compose agent; overridden per-service in prod |
+| `DD_APM_ENABLED` | No | `true` | Compose agent |
+| `DD_LOGS_ENABLED` | No | `true` | Compose agent |
+| `DD_PROCESS_AGENT_ENABLED` | No | `true` | Compose agent |
+| `DD_DOGSTATSD_NON_LOCAL_TRAFFIC` | No | `true` | Compose agent |
+| `DD_HEALTH_PORT` | No | `5555` | Compose agent (used by healthcheck) |
+
+### Terraform-Managed Resources (AWS)
+
+When `enable_datadog = true` in your Terraform variables, the following resources are provisioned via `terraform/datadog.tf`:
+
+**Setup:**
+```hcl
+# In your .tfvars
+enable_datadog       = true
+datadog_api_key      = "your-api-key"      # sensitive
+datadog_app_key      = "your-app-key"      # sensitive
+datadog_site         = "datadoghq.com"
+```
+
+**AWS Integration** — Links Datadog to your AWS account for automatic CloudWatch, ECS, RDS, and ALB metric ingestion.
+
+**Log Forwarding** — Deploys the official Datadog Forwarder Lambda (via CloudFormation) and creates subscription filters for ECS, Application, and ALB log groups.
+
+**Monitors (11 total):**
+
+| Monitor | Type | Threshold | Window |
+|---------|------|-----------|--------|
+| Service Health | Composite | OR of error rate + latency + cpu | — |
+| High Error Rate | Query alert | > 1% (warn 0.5%) | 5 min |
+| High P99 Latency | Query alert | > 1.5s (warn 1.0s) | 5 min |
+| CPU High | Query alert | > 80% (warn 70%) | 10 min |
+| Memory High | Query alert | > 85% (warn 75%) | 10 min |
+| RDS CPU High | Query alert | > 80% (warn 70%) | 10 min |
+| RDS Connections High | Query alert | > 80 (warn 60) | 5 min |
+| RDS Storage Low | Query alert | < 10 GB (warn 20 GB) | 15 min |
+| APM Error Rate | Query alert | > 5% (warn 2%) | 5 min |
+| APM P99 Latency | Query alert | > 2s (warn 1.5s) | 5 min |
+| Log Error Spike | Anomaly (agile) | ≥ 1 anomaly | 1h lookback |
+
+**SLOs:**
+
+| SLO | Type | Target | Window |
+|-----|------|--------|--------|
+| Availability | Monitor-based | 99.9% | 7d + 30d |
+| Latency (P99) | Metric-based | 99.0% < 1.5s | 7d + 30d |
+
+**Dashboard** — Pre-configured overview dashboard with golden signals, business metrics (swipes/matches), infrastructure, APM service map, log stream, and SLO status widgets.
+
+**Synthetics:**
+
+| Test | Endpoint | Frequency |
+|------|----------|-----------|
+| API Health | `GET /health` | 5 min |
+| API Readiness | `GET /ready` | 5 min |
+
+**Maintenance Window** — Weekly Sunday 04:00–05:00 UTC (aligned with RDS maintenance).
+
+All Terraform resources are gated with `count = var.enable_datadog ? 1 : 0` and produce zero cost when disabled.
+
+### Disabling Datadog
+
+Datadog is fully opt-in. To run without it:
+
+- **Docker Compose (dev)**: Omit `--profile datadog` — the `datadog-agent` service simply won't start.
+- **Docker Compose (prod)**: Omit `--profile observability` (note: this also skips other observability services sharing that profile such as Prometheus and Grafana in prod).
+- **Kubernetes**: Remove the five `datadog-*.yaml` entries from `k8s/base/kustomization.yaml` and re-apply.
+- **Terraform**: Set `enable_datadog = false` in your `.tfvars` — all 25 resources are destroyed/skipped.

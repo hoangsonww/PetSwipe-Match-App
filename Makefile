@@ -84,7 +84,7 @@
 	load-test infra-test security-scan policy-validate tf-init tf-plan tf-apply tf-destroy deploy \
 	deploy-blue-green deploy-canary db-migrate db-rollback db-backup db-restore slo-status error-budget \
 	dr-test chaos-test ff-list ff-enable ff-disable rotate-secrets invalidate-cache preflight tf-preflight k8s-preflight \
-	prod-build prod-up prod-down k8s-render k8s-render-prod release-bundle
+	prod-build prod-up prod-down k8s-render k8s-render-prod release-bundle dd-status dd-validate dd-flare dd-apm-status
 
 # Configuration
 ENV ?= development
@@ -149,6 +149,9 @@ help:
 	@echo "  make slo-status           → Check SLO/SLA status"
 	@echo "  make error-budget         → Check error budget"
 	@echo "  make chaos-test           → Run chaos engineering tests"
+	@echo "  make dd-status            → Check Datadog Agent status"
+	@echo "  make dd-validate          → Validate Datadog configuration"
+	@echo "  make dd-apm-status        → Check APM trace status"
 	@echo ""
 	@echo "🚩 Feature Flags:"
 	@echo "  make ff-list              → List all feature flags"
@@ -421,6 +424,34 @@ ff-disable:
 		--function-name petswipe-$(ENV)-ff-analytics \
 		--payload "{\"action\":\"disable\",\"flag\":\"$$FLAG_NAME\"}" \
 		/tmp/ff-disable.json
+
+# ═══════════════════════════════════════════════════════════════
+# Datadog Commands
+# ═══════════════════════════════════════════════════════════════
+
+# Check Datadog Agent status (Docker Compose)
+dd-status:
+	@echo "Checking Datadog Agent status..."
+	docker compose exec datadog-agent agent status
+
+# Validate Datadog Agent configuration
+dd-validate:
+	@echo "Validating Datadog Agent configuration..."
+	@if [ -z "$$DD_API_KEY" ]; then \
+		echo "⚠️  DD_API_KEY is not set"; \
+		exit 1; \
+	fi
+	docker compose exec datadog-agent agent configcheck
+
+# Check Datadog Agent connectivity
+dd-flare:
+	@echo "Generating Datadog Agent flare for debugging..."
+	docker compose exec datadog-agent agent flare
+
+# Show Datadog APM traces status
+dd-apm-status:
+	@echo "Checking Datadog APM status..."
+	docker compose exec datadog-agent agent status | grep -A 20 "APM Agent"
 
 # ═══════════════════════════════════════════════════════════════
 # Utility Commands

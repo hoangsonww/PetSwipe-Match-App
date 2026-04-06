@@ -20,6 +20,11 @@ spec:
       labels:
         app.kubernetes.io/name: petswipe-frontend
         app.kubernetes.io/component: web
+        tags.datadoghq.com/env: production
+        tags.datadoghq.com/service: petswipe-frontend
+        tags.datadoghq.com/version: latest
+      annotations:
+        ad.datadoghq.com/frontend.logs: '[{"source":"nextjs","service":"petswipe-frontend"}]'
     spec:
       priorityClassName: petswipe-critical
       serviceAccountName: petswipe-frontend
@@ -58,6 +63,26 @@ spec:
           env:
             - name: TMPDIR
               value: /tmp
+            - name: DD_AGENT_HOST
+              valueFrom:
+                fieldRef:
+                  fieldPath: status.hostIP
+            - name: DD_ENV
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.labels['tags.datadoghq.com/env']
+            - name: DD_SERVICE
+              value: petswipe-frontend
+            - name: DD_VERSION
+              value: latest
+            - name: DD_TRACE_AGENT_PORT
+              value: "8126"
+            - name: DD_LOGS_INJECTION
+              value: "true"
+            - name: DD_RUNTIME_METRICS_ENABLED
+              value: "true"
+            - name: DD_PROFILING_ENABLED
+              value: "true"
           ports:
             - name: http
               containerPort: 3000

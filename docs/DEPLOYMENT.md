@@ -30,6 +30,7 @@ The repository also includes a portable Kubernetes deployment stack under `k8s/`
 - ✅ **Health Checks** - Comprehensive health monitoring during deployments
 - ✅ **Traffic Control** - Gradual or instant traffic shifting
 - ✅ **Observability** - Full CloudWatch integration with dashboards and alerts
+- ✅ **Datadog Integration** - APM tracing, log management, synthetics, SLO tracking
 - ✅ **Security** - KMS encryption, WAF, and security scanning
 
 ---
@@ -151,6 +152,10 @@ flowchart TB
         CanaryECS["Canary ECS Service"]
     end
 
+    subgraph Observability["Datadog (optional)"]
+        DDAgent["Datadog Agent<br/>APM · Logs · Metrics"]
+    end
+
     Edge --> Listener
     Listener --> BlueTG
     Listener --> GreenTG
@@ -159,6 +164,10 @@ flowchart TB
     BlueTG --> BlueECS
     GreenTG --> GreenECS
     CanaryTG --> CanaryECS
+
+    BlueECS -.-> DDAgent
+    GreenECS -.-> DDAgent
+    CanaryECS -.-> DDAgent
 ```
 
 ### Components
@@ -215,6 +224,17 @@ export AWS_ACCOUNT_ID=$(aws sts get-caller-identity --query Account --output tex
 export PROJECT=petswipe
 export ENVIRONMENT=production
 ```
+
+**Datadog (optional, for observability profile):**
+
+| Variable | Description | Required |
+|----------|-------------|----------|
+| `DD_API_KEY` | Datadog API key | Yes (if using Datadog) |
+| `DD_SITE` | Datadog intake site | No (default: `datadoghq.com`) |
+| `DD_ENV` | Environment tag | No (default: `production`) |
+
+These variables are already templated in `.env.production.example`. When Datadog is not
+enabled, they are ignored by both Docker Compose and Terraform.
 
 ---
 
@@ -521,6 +541,95 @@ fields @timestamp, request_uri, status_code, response_time
 | stats count() by request_uri, status_code
 | sort count desc
 ```
+
+### Datadog Monitoring
+
+When Datadog is enabled (via `--profile observability` or Kubernetes DaemonSet), additional monitoring is available:
+
+```mermaid
+flowchart TB
+    subgraph Deploy["Deployment"]
+        App["Application Pods"]
+    end
+
+    subgraph DDAgent["Datadog Agent"]
+        APM["APM Traces<br/>Port 8126"]
+        LogColl["Log Collection"]
+        Metrics["Infrastructure<br/>Metrics"]
+    end
+
+    subgraph DDPlatform["Datadog Platform"]
+        Dashboard["Overview Dashboard<br/>Golden Signals"]
+        Monitors["11 Monitors<br/>Error Rate · Latency<br/>CPU · Memory · RDS"]
+        SLOs["SLOs<br/>99.9% Availability<br/>P99 Latency"]
+        Synthetics["Synthetics<br/>/health · /ready<br/>Every 5 min"]
+    end
+
+    subgraph Incidents["Incident Response"]
+        PD["PagerDuty"]
+        Runbook["Runbook Wiki"]
+    end
+
+    App --> APM
+    App --> LogColl
+    App --> Metrics
+    APM --> Dashboard
+    LogColl --> Dashboard
+    Metrics --> Dashboard
+    Dashboard --> Monitors
+    Monitors --> SLOs
+    Monitors --> PD
+    PD --> Runbook
+    Synthetics --> Monitors
+```
+
+**Datadog Monitors** (defined in `terraform/datadog.tf`, gated by `enable_datadog = true`):
+
+| Monitor | Threshold | Severity |
+|---------|-----------|----------|
+| Service Health Composite | Combines error rate + health check | Critical |
+| High 5XX Error Rate | > 1% for 5 min | Warning (0.5%) → Critical (1%) |
+| High P99 Latency | > 1.5s for 5 min | Warning (1s) → Critical (1.5s) |
+| ECS CPU High | > 80% for 10 min | Warning (70%) → Critical (80%) |
+| ECS Memory High | > 85% for 10 min | Warning (75%) → Critical (85%) |
+| RDS CPU High | > 80% for 10 min | Warning (70%) → Critical (80%) |
+| RDS Connections High | > 80 for 5 min | Warning (60) → Critical (80) |
+| RDS Free Storage Low | < 10 GB | Warning (< 20 GB) → Critical (< 10 GB) |
+| APM Error Rate | > 5% for 5 min | Warning (2%) → Critical (5%) |
+| APM P99 Latency | > 2s for 5 min | Warning (1.5s) → Critical (2s) |
+| Log Error Spike | Anomaly detection | Critical |
+
+**SLOs** (from `terraform/datadog.tf`):
+
+- **Availability**: 99.9% target over 30-day and 7-day rolling windows
+- **Latency**: 99.0% of requests < 1.5s (P99) over 30-day and 7-day rolling windows
+
+**Synthetics** — two API tests run every 5 minutes from `us-east-1`, `us-west-2`, `eu-west-1`:
+
+- `GET /health` — expects `200` with body containing `ok`, response < 2s
+- `GET /ready` — same assertions
+
+**Setup:**
+
+```bash
+# Docker Compose (requires DD_API_KEY in .env.production)
+docker compose --env-file .env.production \
+  -f docker-compose.yml -f docker-compose.prod.yml \
+  --profile observability up -d
+
+# Kubernetes (DaemonSet in k8s/base/datadog-agent.yaml)
+kubectl create secret generic datadog-secret \
+  --from-literal=api-key=$DD_API_KEY \
+  --namespace=petswipe
+
+# Terraform (requires both API key and app key for dashboards/SLOs)
+terraform apply \
+  -var='enable_datadog=true' \
+  -var='datadog_api_key=...' \
+  -var='datadog_app_key=...'
+```
+
+For full Datadog documentation, see [MONITORING.md](../MONITORING.md#-datadog-integration).
 
 ---
 
