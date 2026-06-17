@@ -18,6 +18,12 @@ const {
   getProfile,
   uploadAvatarHandler,
 } = require("../src/controllers/userController");
+const {
+  getConversations,
+  getMessages,
+  sendMessage,
+  createConversation,
+} = require("../src/controllers/conversationController");
 
 // A tiny Express-like response mock
 function resMock() {
@@ -39,6 +45,8 @@ describe("Controller sanity suite (JS)", () => {
       findOne: jest.fn(),
       save: jest.fn(),
       create: jest.fn((v) => v),
+      count: jest.fn(),
+      update: jest.fn(),
     };
   });
 
@@ -154,6 +162,45 @@ describe("Controller sanity suite (JS)", () => {
     const req = { user: {}, file: undefined };
     const res = resMock();
     await uploadAvatarHandler(req, res, () => {});
+    expect(res.status).toHaveBeenCalledWith(400);
+  });
+
+  /* ---------- CONVERSATIONS ---------- */
+
+  test("getConversations unauthorized → 401", async () => {
+    const req = {};
+    const res = resMock();
+    await getConversations(req, res, () => {});
+    expect(res.status).toHaveBeenCalledWith(401);
+  });
+
+  test("getConversations authorized → attempts query", async () => {
+    global.__repo.find.mockResolvedValue([]);
+
+    const req = { user: { id: "user1" } };
+    const res = resMock();
+    await getConversations(req, res, () => {});
+    expect(global.__repo.find).toHaveBeenCalled();
+  });
+
+  test("createConversation missing petId → 400", async () => {
+    const req = { user: { id: "user1" }, body: {} };
+    const res = resMock();
+    await createConversation(req, res, () => {});
+    expect(res.status).toHaveBeenCalledWith(400);
+  });
+
+  test("sendMessage unauthorized → 401", async () => {
+    const req = { params: { id: "conv1" }, body: { content: "Hello" } };
+    const res = resMock();
+    await sendMessage(req, res, () => {});
+    expect(res.status).toHaveBeenCalledWith(401);
+  });
+
+  test("sendMessage missing content → 400", async () => {
+    const req = { user: { id: "user1" }, params: { id: "conv1" }, body: {} };
+    const res = resMock();
+    await sendMessage(req, res, () => {});
     expect(res.status).toHaveBeenCalledWith(400);
   });
 });
