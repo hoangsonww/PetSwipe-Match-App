@@ -80,6 +80,27 @@ export const components = {
             },
           },
         },
+        favorites: {
+          type: "array",
+          description: "Array of Favorite objects",
+          items: {
+            type: "object",
+            properties: {
+              id: { type: "string", format: "uuid" },
+              pet: {
+                type: "object",
+                properties: {
+                  id: { type: "string", format: "uuid" },
+                  name: { type: "string" },
+                  type: { type: "string" },
+                  photoUrl: { type: "string", format: "uri", nullable: true },
+                },
+                required: ["id", "name", "type"],
+              },
+              favoritedAt: { type: "string", format: "date-time" },
+            },
+          },
+        },
         createdAt: {
           type: "string",
           format: "date-time",
@@ -181,6 +202,25 @@ export const components = {
             },
           },
         },
+        favorites: {
+          type: "array",
+          description: "Array of Favorite objects",
+          items: {
+            type: "object",
+            properties: {
+              id: { type: "string", format: "uuid" },
+              user: {
+                type: "object",
+                properties: {
+                  id: { type: "string", format: "uuid" },
+                  email: { type: "string", format: "email" },
+                },
+                required: ["id", "email"],
+              },
+              favoritedAt: { type: "string", format: "date-time" },
+            },
+          },
+        },
         createdAt: { type: "string", format: "date-time" },
         updatedAt: { type: "string", format: "date-time" },
       },
@@ -259,6 +299,32 @@ export const components = {
           format: "date-time",
           description: "Timestamp when the swipe occurred",
         },
+      },
+    },
+
+    Favorite: {
+      type: "object",
+      properties: {
+        id: { type: "string", format: "uuid" },
+        user: {
+          type: "object",
+          properties: {
+            id: { type: "string", format: "uuid" },
+            email: { type: "string", format: "email" },
+          },
+          required: ["id", "email"],
+        },
+        pet: {
+          type: "object",
+          properties: {
+            id: { type: "string", format: "uuid" },
+            name: { type: "string" },
+            type: { type: "string" },
+            photoUrl: { type: "string", format: "uri", nullable: true },
+          },
+          required: ["id", "name", "type"],
+        },
+        favoritedAt: { type: "string", format: "date-time" },
       },
     },
   },

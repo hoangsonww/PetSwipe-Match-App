@@ -1,4 +1,4 @@
-import React, { useMemo, useCallback, useState } from "react";
+import React, { useMemo, useCallback, useState, useEffect } from "react";
 import type { NextPage } from "next";
 import Head from "next/head";
 import { useRouter } from "next/router";
@@ -19,14 +19,14 @@ import {
   Copy,
   ExternalLink,
 } from "lucide-react";
-import type { Pet, Swipe } from "@/lib/api"; // interface only
+import type { Pet, Swipe, Favorite } from "@/lib/api"; // interface only
 import {
   Popover,
   PopoverTrigger,
   PopoverContent,
 } from "@/components/ui/popover";
 import { useUser } from "@/hooks/useUser";
-import { swipeApi } from "@/lib/api";
+import { swipeApi, favoriteApi } from "@/lib/api";
 
 // ──────────────────────────────────────────────────────────────────────────────
 // Data: fetch via Next.js API proxy to avoid CORS
@@ -67,8 +67,20 @@ const PetPage: NextPage = () => {
     { revalidateOnFocus: false },
   );
   const hasDecision = !!pet && !!mySwipes?.some((s) => s?.pet?.id === pet.id);
-
+  const [favorited, setFavorited] = useState(false);
+  const [favLoading, setFavLoading] = useState(false);
   const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    if (user && pet?.id) {
+      favoriteApi
+        .list()
+        .then((favs) => {
+          setFavorited(favs.some((f) => f.pet.id === pet.id));
+        })
+        .catch(() => {});
+    }
+  }, [user, pet?.id]);
   const handleDecision = useCallback(
     async (liked: boolean) => {
       if (!pet?.id) return;
@@ -84,6 +96,26 @@ const PetPage: NextPage = () => {
     },
     [pet],
   );
+
+  const toggleFavorite = useCallback(async () => {
+    if (!pet?.id) return;
+    try {
+      setFavLoading(true);
+      if (favorited) {
+        await favoriteApi.remove(pet.id);
+        setFavorited(false);
+        toast.success("Removed from favorites");
+      } else {
+        await favoriteApi.add(pet.id);
+        setFavorited(true);
+        toast.success("Added to favorites");
+      }
+    } catch {
+      toast.error("Failed to update favorites");
+    } finally {
+      setFavLoading(false);
+    }
+  }, [favorited, pet]);
 
   const pageUrl = useMemo(() => {
     if (typeof window === "undefined" || typeof petId !== "string") return "";
@@ -527,6 +559,18 @@ const PetPage: NextPage = () => {
                   </button>
                 </PopoverContent>
               </Popover>
+
+              <Button
+                variant="secondary"
+                onClick={toggleFavorite}
+                disabled={favLoading}
+                className="bg-neutral-50 hover:bg-neutral-100 text-neutral-900 dark:bg-neutral-800 dark:hover:bg-neutral-700 dark:text-neutral-100 border border-neutral-200 dark:border-neutral-700"
+              >
+                {favLoading ? (
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                ) : null}
+                {favorited ? "Unfavorite" : "Favorite"}
+              </Button>
 
               {contactHref ? (
                 <a href={contactHref} className="inline-block">
