@@ -484,6 +484,19 @@ const PetPage: NextPage = () => {
               </div>
             ) : null}
 
+            {/* ────────────────────────────────────────────────────────────────
+                Apply to Adopt (only once the user has swiped "Adopt")
+               ──────────────────────────────────────────────────────────────── */}
+            {user &&
+            mySwipes?.some((s) => s?.pet?.id === pet.id && s.liked) ? (
+              <Button
+                onClick={() => router.push(`/pet/${pet.id}/apply`)}
+                className="w-full bg-teal-700 hover:bg-teal-800 text-white dark:bg-teal-600 dark:hover:bg-teal-500"
+              >
+                Apply to Adopt
+              </Button>
+            ) : null}
+
             {/* Bottom actions */}
             <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
               <Popover>
